@@ -1,6 +1,6 @@
 local addonName, ns = ...
 
-local ADDON_VERSION = "0.1.0"
+local ADDON_VERSION = "0.1.0-alpha"
 local function newProfile()
     return {
         mainCharacterGuid = nil,

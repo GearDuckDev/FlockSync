@@ -193,7 +193,7 @@ For update checks to work:
    GitHub releases found" on manual checks and stays silent otherwise.
 2. Bump `version` in `apps/desktop/package.json`, then build with `package:win`.
 3. Publish a **non-draft, non-prerelease** GitHub release whose tag is that
-   version (`v0.2.0` or `0.2.0`). Attach the Setup and Portable executables.
+   version (`v0.1.0-alpha` or `0.1.0-alpha`). Attach the Setup and Portable executables.
 
 The update banner's **Download on GitHub** opens the release page. Installation
 stays manual; there is no silent auto-install. Unauthenticated checks are
