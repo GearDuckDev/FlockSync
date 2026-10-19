@@ -26,7 +26,9 @@ or `FlockSync_AppHelper`.
 
 1. Install the officer desktop sync client using `FlockSync-Setup.exe`, or run
    the portable executable from the guild-provided release.
-2. Enter Server URL: `https://flocksync.gearduckdev.com`.
+2. Enter the API Server URL provided by your guild administrator. For the
+   GearDuckDev-hosted service, use `https://flocksync.gearduckdev.com`; for a
+   self-hosted guild server, use that server's URL.
 3. Log in with your officer credentials. (If you self-registered on the
    dashboard, ask an admin to promote your account to `OFFICER` first.)
 4. Select your World of Warcraft installation directory if it was not

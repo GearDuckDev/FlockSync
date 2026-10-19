@@ -177,8 +177,9 @@ Bump the desktop package version before publishing a new release.
 Unsigned builds can show Windows SmartScreen warnings. For public distribution,
 configure electron-builder code signing with your own certificate via its
 environment variables; never commit a certificate or signing password.
-Test both executables on a clean Windows machine, set the Pi API URL, log in,
-select the WoW folder and confirm a sync after `/reload`.
+Test both executables on a clean Windows machine, enter the API Server URL for
+the FlockSync instance the guild uses, log in, select the WoW folder and confirm
+a sync after `/reload`.
 
 ### Publishing updates (GitHub Releases)
 

@@ -1,6 +1,6 @@
 import type { AuthUser } from '@flocksync/shared-types';
 
-export const DEFAULT_API_URL = 'https://flocksync.gearduckdev.com';
+export const DEFAULT_API_URL = '';
 export const DEFAULT_WOW_PATH = 'C:\\Program Files (x86)\\World of Warcraft\\_classic_beta_';
 
 export interface AppConfig {

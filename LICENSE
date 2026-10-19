@@ -1,22 +1,27 @@
 Copyright (c) 2026 GearDuckDev. All Rights Reserved.
 
 This repository, including the FlockSync World of Warcraft addon, desktop
-application, API, web application, and related documentation and assets, is
-proprietary and is provided for personal use only.
+application, API, web application, documentation, and related assets, is
+proprietary. No rights are granted except those expressly stated below.
 
-Permission is granted to download, install, and use an unmodified official
-release of the FlockSync addon and desktop application for their intended
-personal, non-commercial purposes.
+Permission is granted to download, install, and use unmodified official
+releases of the FlockSync addon and desktop application for personal,
+non-commercial use.
+
+You may also deploy and operate an unmodified copy of the FlockSync API and web
+application on infrastructure under your control, solely for private use by
+your own guild. You may make configuration changes required to operate that
+private deployment, but you may not modify the application's source code or
+create derivative works.
 
 You may not:
-- Modify, adapt, fork, or create derivative works from this repository or its
-  contents.
-- Redistribute, re-upload, publish, or host this repository or its contents on
-  any platform or website.
+- Modify, adapt, fork, or create derivative works from the source code, except
+  for permitted deployment configuration described above.
+- Redistribute, re-upload, publish, sublicense, or provide copies of this
+  repository or its core files to third parties.
 - Incorporate this code, in whole or in part, into other software or addons.
-- Use this repository or its contents for any commercial purpose.
-- Copy, deploy, or operate the API or web application except as expressly
-  authorized in writing by GearDuckDev.
+- Use the software or its code for commercial purposes.
+- Offer a hosted service to other guilds or the public using this software.
 
 All other rights are explicitly reserved by GearDuckDev. No rights are granted
 by implication, estoppel, or otherwise.

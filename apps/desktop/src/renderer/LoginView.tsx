@@ -27,10 +27,16 @@ export const LoginView = ({ initialUrl, onLoggedIn }: Props): React.JSX.Element 
     <div className="center">
       <form className="card login" onSubmit={(e) => void submit(e)}>
         <h1>FlockSync</h1>
-        <p className="muted">Sign in to start syncing your guild data.</p>
+        <p className="muted">Enter your guild's FlockSync server URL to sign in and sync your data.</p>
         <label>
           API Server URL
-          <input value={apiBaseUrl} onChange={(e) => setApiBaseUrl(e.target.value)} required />
+          <input
+            type="url"
+            value={apiBaseUrl}
+            onChange={(e) => setApiBaseUrl(e.target.value)}
+            placeholder="https://flocksync.yourguild.org"
+            required
+          />
         </label>
         <label>
           Email
