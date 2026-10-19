@@ -1,0 +1,32 @@
+{
+  "name": "@flocksync/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FlockSync desktop sync client",
+  "author": "GearDuckDev",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "pnpm --filter @flocksync/shared-types build && electron-vite dev",
+    "build": "pnpm --filter @flocksync/shared-types build && electron-vite build",
+    "typecheck": "pnpm --filter @flocksync/shared-types build && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "package:win": "pnpm --filter @flocksync/shared-types build && electron-vite build && electron-builder --win nsis portable --x64"
+  },
+  "dependencies": {
+    "@flocksync/shared-types": "workspace:*",
+    "chokidar": "^5.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.8.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^6.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  }
+}

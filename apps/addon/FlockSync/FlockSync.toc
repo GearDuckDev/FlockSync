@@ -1,0 +1,39 @@
+## Interface: 16001
+## Title: FlockSync
+## Author: GearDuckDev
+## SavedVariables: FlockSyncDB
+
+Config.lua
+Core.lua
+Cleanup.lua
+Serializer.lua
+Snapshot.lua
+Availability.lua
+Lockouts.lua
+Professions.lua
+GearGoals.lua
+ItemSearch.lua
+Attunements.lua
+Scanner.lua
+Comms.lua
+SnapshotComms.lua
+Roster.lua
+Ledger.lua
+RaidAssignments.lua
+Tooltips.lua
+UIList.lua
+UITabs.lua
+UIAvailability.lua
+UIItemSearch.lua
+UIProfessions.lua
+UIRaids.lua
+UICrafters.lua
+UILfg.lua
+UIRole.lua
+UISettings.lua
+Walkthrough.lua
+UIOptions.lua
+UI.lua
+Minimap.lua
+Slash.lua
+Events.lua

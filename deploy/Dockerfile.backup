@@ -1,0 +1,7 @@
+FROM alpine:3.23
+RUN apk add --no-cache sqlite
+COPY deploy/backup-sqlite.sh /usr/local/bin/backup-sqlite
+COPY deploy/start-backup-cron.sh /usr/local/bin/start-backup-cron
+RUN sed -i 's/\r$//' /usr/local/bin/backup-sqlite /usr/local/bin/start-backup-cron \
+    && chmod 755 /usr/local/bin/backup-sqlite /usr/local/bin/start-backup-cron
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/start-backup-cron"]

@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.production
+*.db
+*.db-wal
+*.db-shm
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+out/
+release/
+data/
+FlockSync_Pi_Deploy.zip
+.pi_staging/

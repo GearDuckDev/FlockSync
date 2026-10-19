@@ -1,0 +1,26 @@
+{
+"name": "flocksync",
+"version": "1.0.0",
+"private": true,
+"description": "WoW Guild Management Suite Monorepo",
+"scripts": {
+"dev:api": "pnpm --filter @flocksync/api run dev",
+"dev:web": "pnpm --filter @flocksync/web run dev",
+"dev:desktop": "pnpm --filter @flocksync/desktop run dev",
+"lint": "pnpm --recursive run lint",
+"typecheck": "pnpm --recursive run typecheck",
+"build": "pnpm --recursive run build"
+},
+"keywords": [
+"wow",
+"addon",
+"flocksync",
+"gearduck"
+],
+"author": "GearDuckDev",
+"license": "UNLICENSED",
+"packageManager": "pnpm@12.11.2",
+"engines": {
+"node": ">=20.0.0"
+}
+}

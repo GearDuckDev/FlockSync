@@ -1,0 +1,1 @@
+ALTER TABLE `characters` ADD `auto_stale` integer DEFAULT false NOT NULL;

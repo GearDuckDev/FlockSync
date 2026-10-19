@@ -1,0 +1,22 @@
+Copyright (c) 2026 GearDuckDev. All Rights Reserved.
+
+This repository, including the FlockSync World of Warcraft addon, desktop
+application, API, web application, and related documentation and assets, is
+proprietary and is provided for personal use only.
+
+Permission is granted to download, install, and use an unmodified official
+release of the FlockSync addon and desktop application for their intended
+personal, non-commercial purposes.
+
+You may not:
+- Modify, adapt, fork, or create derivative works from this repository or its
+  contents.
+- Redistribute, re-upload, publish, or host this repository or its contents on
+  any platform or website.
+- Incorporate this code, in whole or in part, into other software or addons.
+- Use this repository or its contents for any commercial purpose.
+- Copy, deploy, or operate the API or web application except as expressly
+  authorized in writing by GearDuckDev.
+
+All other rights are explicitly reserved by GearDuckDev. No rights are granted
+by implication, estoppel, or otherwise.

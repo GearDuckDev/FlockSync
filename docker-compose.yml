@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3001"
+      DATABASE_URL: /app/data/flocksync.db
+    volumes:
+      - ./data/sqlite:/app/data
+    restart: unless-stopped
+    stop_grace_period: 30s
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token
+    depends_on:
+      - web
+  db-backup:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backup
+    volumes:
+      - ./data/sqlite:/data:ro
+      - ${NAS_BACKUP_PATH:-./data/backups}:/backups
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

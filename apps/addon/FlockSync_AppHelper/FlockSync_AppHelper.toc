@@ -1,0 +1,6 @@
+## Interface: 16001
+## Title: FlockSync AppHelper
+## Author: GearDuckDev
+## SavedVariables: FlockSyncHelperDB
+
+Core.lua

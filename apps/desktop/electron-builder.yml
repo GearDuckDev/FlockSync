@@ -1,0 +1,24 @@
+appId: dev.gearduck.flocksync
+productName: FlockSync
+directories:
+  output: release
+files:
+  - out/**/*
+  - package.json
+  - "!node_modules/**/*"
+# electron-vite bundles all runtime dependencies (including shared-types).
+asar: true
+npmRebuild: false
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  artifactName: FlockSync-Setup-${version}-${arch}.${ext}
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+portable:
+  artifactName: FlockSync-Portable-${version}-${arch}.${ext}

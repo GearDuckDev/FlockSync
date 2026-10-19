@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/out
+**/release
+.git
+**/.git
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/.env
+**/.env.*
+data
+**/data
+**/*.log
+.vscode
+.github
+COMMANDS.txt

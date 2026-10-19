@@ -1,0 +1,46 @@
+{
+  "Lua.runtime.version": "Lua 5.1",
+  "Lua.diagnostics.globals": [
+    "FlockSyncDB",
+    "FlockSyncHelperDB",
+    "SlashCmdList",
+    "UIDropDownMenu_Initialize",
+    "UIDropDownMenu_SetWidth",
+    "UIDropDownMenu_SetText",
+    "UIDropDownMenu_AddButton",
+    "UIDropDownMenu_CreateInfo",
+    "UISpecialFrames",
+    "GetUnitName",
+    "StaticPopupDialogs",
+    "YES",
+    "NO",
+    "StaticPopup_Show",
+    "GameTooltip_Hide",
+    "ChatFrame_SendTell",
+    "RAID_CLASS_COLORS",
+    "ChatFrame_OpenChat",
+    "ChatEdit_GetActiveWindow",
+    "TooltipDataProcessor",
+    "ItemRefTooltip",
+    "ShoppingTooltip1",
+    "ShoppingTooltip2",
+    "DEFAULT_CHAT_FRAME"
+  ],
+  "Lua.workspace.library": [
+    "apps/addon/FlockSync",
+    "apps/addon/FlockSync_AppHelper",
+    "~\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core"
+  ],
+"github.copilot.chat.codeGeneration.useInstructionFiles": true,
+"Lua.runtime.builtin": {
+  "basic": "disable",
+  "debug": "disable",
+  "io": "disable",
+  "math": "disable",
+  "os": "disable",
+  "package": "disable",
+  "string": "disable",
+  "table": "disable",
+  "utf8": "disable"
+}
+}
