@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   compareReleaseVersions, selectLatestRelease, ReleaseVersionSchema,
-  UpdateCheckQuerySchema, ServerReturnPayloadSchema, ReleaseInfoSchema
+  UpdateCheckQuerySchema, ServerReturnPayloadSchema, ReleaseInfoSchema, loadReleaseManifests
 } from "../dist/index.js";
 
 const release = (component, version, overrides = {}) => ({
@@ -12,6 +12,64 @@ const release = (component, version, overrides = {}) => ({
   prerelease: version.includes("-"),
   assets: component === "desktop" ? [{ name: `FlockSync-Setup-${version}-x64.exe` }] : [],
   ...overrides
+});
+
+const combined = (overall, desktop, server, addon) => ({
+  ...release("unused", overall),
+  tag_name: `v${overall}`,
+  assets: [
+    { name: "flocksync-release.json" },
+    { name: `FlockSync-Setup-${desktop}-x64.exe` },
+    { name: "server.zip" }, { name: "addon.zip" }
+  ],
+  manifest: {
+    schemaVersion: 1, releaseVersion: overall,
+    components: {
+      desktop: { version: desktop, assets: [`FlockSync-Setup-${desktop}-x64.exe`] },
+      server: { version: server, assets: ["server.zip"] },
+      addon: { version: addon, assets: ["addon.zip"] },
+      helper: { version: "0.2.1-beta", assets: ["addon.zip"] }
+    }
+  }
+});
+
+test("combined releases compare each component, not the overall tag", () => {
+  const before = combined("0.3.1-beta", "0.2.1-beta", "0.2.1-beta", "0.3.1-beta");
+  const after = combined("0.3.2-beta", "0.2.1-beta", "0.2.1-beta", "0.3.2-beta");
+  for (const component of ["desktop", "server"]) {
+    assert.equal(selectLatestRelease([after, before], component, "beta")?.version, "0.2.1-beta");
+    assert.equal(compareReleaseVersions(selectLatestRelease([after], component, "beta").version, "0.2.1-beta"), 0);
+  }
+  assert.equal(selectLatestRelease([after, before], "addon", "beta")?.version, "0.3.2-beta");
+  assert.equal(selectLatestRelease([after], "addon", "release"), null);
+  const missing = { ...after, assets: [] };
+  assert.equal(selectLatestRelease([missing], "server", "beta"), null);
+  const mixed = combined("0.4.0-beta", "0.2.1", "0.2.1-beta", "0.3.2-beta");
+  assert.equal(selectLatestRelease([mixed], "desktop", "release")?.version, "0.2.1");
+  assert.equal(selectLatestRelease([mixed], "server", "release"), null);
+  const changedServer = combined("0.3.3-beta", "0.2.1-beta", "0.2.2-beta", "0.3.2-beta");
+  assert.equal(selectLatestRelease([changedServer, after], "server", "beta")?.version, "0.2.2-beta");
+  assert.equal(selectLatestRelease([{ ...after, tag_name: "v9.0.0-beta" }], "desktop", "beta"), null);
+});
+
+test("combined manifest loader validates tag, schema and download failure", async () => {
+  const hydrated = combined("0.3.1-beta", "0.2.1-beta", "0.2.1-beta", "0.3.1-beta");
+  const { manifest, ...raw } = hydrated;
+  const calls = [];
+  const fetcher = async (url) => { calls.push(url); return new Response(JSON.stringify(manifest)); };
+  const signal = AbortSignal.timeout(5000);
+  const result = await loadReleaseManifests([raw], "GearDuckDev/FlockSync", fetcher, signal);
+  assert.deepEqual(result[0].manifest, manifest);
+  assert.equal(calls[0], "https://github.com/GearDuckDev/FlockSync/releases/download/v0.3.1-beta/flocksync-release.json");
+  await assert.rejects(loadReleaseManifests([raw], "GearDuckDev/FlockSync",
+    async () => new Response("not found", { status: 404 }), signal), /download failed/);
+  await assert.rejects(loadReleaseManifests([raw], "GearDuckDev/FlockSync",
+    async () => new Response(JSON.stringify({ ...manifest, releaseVersion: "9.0.0" })), signal), /does not match/);
+  await assert.rejects(loadReleaseManifests([raw], "GearDuckDev/FlockSync",
+    async () => new Response(JSON.stringify({ schemaVersion: 999 })), signal));
+  const noManifest = { ...raw, assets: [] };
+  const ignored = await loadReleaseManifests([noManifest], "GearDuckDev/FlockSync", fetcher, signal);
+  assert.equal(selectLatestRelease(ignored, "desktop", "beta"), null);
 });
 const versions = ["0.3.0-alpha", "0.3.0-alpha.2", "0.3.0-alpha.10", "0.3.0-beta", "0.3.0-beta.1", "0.3.0", "0.4.0-alpha"];
 

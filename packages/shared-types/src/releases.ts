@@ -33,13 +33,29 @@ export const ServerUpdateStatusSchema = z.object({
   updateAvailable: z.boolean()
 }).strict();
 export type ServerUpdateStatus = z.infer<typeof ServerUpdateStatusSchema>;
+const ManifestComponentSchema = z.object({
+  version: ReleaseVersionSchema,
+  assets: z.array(z.string().min(1).max(200)).min(1)
+}).strict();
+export const ReleaseManifestSchema = z.object({
+  schemaVersion: z.literal(1),
+  releaseVersion: ReleaseVersionSchema,
+  components: z.object({
+    desktop: ManifestComponentSchema,
+    server: ManifestComponentSchema,
+    addon: ManifestComponentSchema,
+    helper: ManifestComponentSchema
+  }).strict()
+}).strict();
+export type ReleaseManifest = z.infer<typeof ReleaseManifestSchema>;
 export const GitHubReleaseSchema = z.object({
   tag_name: z.string(),
   html_url: z.string().url(),
   body: z.string().nullable().optional(),
   draft: z.boolean(),
   prerelease: z.boolean(),
-  assets: z.array(z.object({ name: z.string() }))
+  assets: z.array(z.object({ name: z.string(), browser_download_url: z.string().url().optional() })),
+  manifest: ReleaseManifestSchema.optional()
 });
 export const GitHubReleaseListSchema = z.array(GitHubReleaseSchema);
 export type GitHubRelease = z.infer<typeof GitHubReleaseSchema>;
@@ -77,13 +93,19 @@ export const selectLatestRelease = (
   let latest: ReleaseInfo | null = null;
   for (const release of releases) {
     const prefix = `${component}-v`;
-    if (release.draft || !release.tag_name.startsWith(prefix)) continue;
-    const parsed = ReleaseVersionSchema.safeParse(release.tag_name.slice(prefix.length));
+    if (release.draft) continue;
+    const combined = release.manifest;
+    if (!combined && !release.tag_name.startsWith(prefix)) continue;
+    if (combined && (release.tag_name !== `v${combined.releaseVersion}` ||
+      release.prerelease !== (getVersionChannel(combined.releaseVersion) !== "release"))) continue;
+    const entry = combined?.components[component];
+    if (entry && !entry.assets.every((name) => release.assets.some((asset) => asset.name === name))) continue;
+    const parsed = ReleaseVersionSchema.safeParse(entry?.version ?? release.tag_name.slice(prefix.length));
     if (!parsed.success) continue;
     const version = parsed.data;
     const releaseChannel = getVersionChannel(version);
     if (ranks[releaseChannel] < ranks[channel]) continue;
-    if (release.prerelease !== (releaseChannel !== "release")) continue;
+    if (!combined && release.prerelease !== (releaseChannel !== "release")) continue;
     if (component === "desktop" && !release.assets.some((asset) =>
       asset.name === `FlockSync-Setup-${version}-x64.exe` ||
       asset.name === `FlockSync-Portable-${version}-x64.exe`)) continue;

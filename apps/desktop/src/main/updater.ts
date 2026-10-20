@@ -1,6 +1,7 @@
 import { app, ipcMain, net, type BrowserWindow } from 'electron';
 import {
   GitHubReleaseListSchema,
+  loadReleaseManifests,
   ReleaseVersionSchema,
   type GitHubRelease,
 } from '@flocksync/shared-types';
@@ -74,7 +75,11 @@ const fetchGitHubReleases = async (repo: string): Promise<GitHubRelease[]> => {
       if (!parsed.success) throw new Error('GitHub returned an unexpected release list format.');
       releases.push(...parsed.data);
       const hasNextPage = /(?:^|,)\s*<[^>]+>\s*;\s*rel="?next"?/i.test(res.headers.get('link') ?? '');
-      if (!hasNextPage) return releases;
+      if (!hasNextPage) {
+        return await loadReleaseManifests(releases, repo,
+          (input, init) => net.fetch(input instanceof URL ? input.toString() : input, init),
+          controller.signal);
+      }
       if (page === MAX_RELEASE_PAGES) {
         throw new Error(`GitHub release list exceeds ${MAX_RELEASE_PAGES} pages; update check was not completed.`);
       }

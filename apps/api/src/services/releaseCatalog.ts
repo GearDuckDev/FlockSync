@@ -1,5 +1,5 @@
 import {
-  getVersionChannel, GitHubReleaseListSchema, selectLatestRelease, UpdateChannelSchema,
+  getVersionChannel, GitHubReleaseListSchema, loadReleaseManifests, selectLatestRelease, UpdateChannelSchema,
   type AddonReleaseCatalog, type GitHubRelease
 } from "@flocksync/shared-types";
 
@@ -47,7 +47,9 @@ export const createReleaseCatalog = (options: ReleaseCatalogOptions) => {
       if (!parsed.success) throw new Error("GitHub returned invalid release metadata.");
       releases.push(...parsed.data);
       const hasNext = /rel="next"/.test(response.headers.get("link") ?? "");
-      if (!hasNext && parsed.data.length < 100) return releases;
+      if (!hasNext && parsed.data.length < 100) {
+        return loadReleaseManifests(releases, options.repository, fetcher, signal);
+      }
     }
     throw new Error("GitHub release history exceeds the pagination limit; update status is unknown.");
   };
@@ -74,9 +76,11 @@ export const createReleaseCatalog = (options: ReleaseCatalogOptions) => {
     if (cached && cached.expires > now()) {
       const catalog: AddonReleaseCatalog = {};
       for (const channel of UpdateChannelSchema.options) {
-        const candidates = cached.releases.filter((release) =>
-          release.tag_name.startsWith("addon-v") &&
-          getVersionChannel(release.tag_name.slice("addon-v".length)) === channel);
+        const candidates = cached.releases.filter((release) => {
+          const version = release.manifest?.components.addon.version ??
+            (release.tag_name.startsWith("addon-v") ? release.tag_name.slice("addon-v".length) : undefined);
+          return version !== undefined && getVersionChannel(version) === channel;
+        });
         const latest = selectLatestRelease(candidates, "addon", channel);
         if (latest) catalog[channel] = latest;
       }

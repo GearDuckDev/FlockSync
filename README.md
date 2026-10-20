@@ -58,7 +58,12 @@ creates and verifies a SQLite backup in the configured `NAS_BACKUP_PATH`,
 aborting if backup fails. Docker deployment remains administrator-initiated.
 
 For publishing tags, packaging, and release uploads, see
-[RELEASES.md](./RELEASES.md). The addon only announces cached updates once on
+[RELEASES.md](./RELEASES.md). Publish one combined release with all downloads
+and the generated component-version manifest. From the repository root, use
+`.\scripts\package-release.ps1 -ReleaseVersion 0.3.1-beta` for this beta build.
+Checkers compare their own component version, so an unchanged component does
+not announce an update when the overall release tag changes.
+The addon only announces cached updates once on
 initial login (not reloads or zone changes); stable installs ignore previews.
 Alpha/beta addon users manage their downloads in CurseForge. Release metadata
 arrives through desktop sync and guild snapshots, not an in-game web request.

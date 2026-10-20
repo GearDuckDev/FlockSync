@@ -1,207 +1,155 @@
-# Publishing FlockSync releases
+# Publishing FlockSync: one release, all downloads
 
-FlockSync has three independently released components. Use component-specific
-Git tags so an addon update never looks like a desktop or server update.
-Creating a commit or pushing a tag alone does **not** publish an update: create
-a GitHub Release for the tag and upload the matching artifacts too.
+Publish **one GitHub Release** with all artifacts and `flocksync-release.json`.
+The overall Git tag identifies the bundle; the manifest identifies the version
+of each component. Desktop, server, and addon update checks compare their own
+installed version with their own manifest entry, never with the bundle tag.
 
-## Current beta release
+## Current beta
 
-| Component | Version | GitHub tag |
-| --- | --- | --- |
-| Desktop | `0.2.0-beta` | `desktop-v0.2.0-beta` |
-| Web + API / server | `0.2.0-beta` | `server-v0.2.0-beta` |
-| Main addon | `0.3.0-beta` | `addon-v0.3.0-beta` |
-| AppHelper (included in officer bundle) | `0.2.0-beta` | Uses the main addon release |
+| Item | Version |
+| --- | --- |
+| Combined GitHub tag | `v0.3.1-beta` |
+| Desktop | `0.2.1-beta` |
+| API + web / server | `0.2.1-beta` |
+| Main addon | `0.3.1-beta` |
+| AppHelper | `0.2.1-beta` |
+| Root/shared-types package | `0.2.1-beta` |
 
-Root/shared-types packages are `0.2.0-beta`. Mark all three GitHub releases as
-**prereleases**, and the CurseForge addon upload as **Beta**. Users must select
-Beta or Alpha to receive desktop/server beta update notices.
+## Each time you release
 
-## Tags and channels
+1. Update **only changed components' versions**. A bug fix increments the patch
+   (`0.2.1-beta` -> `0.2.2-beta`); a feature increments the minor
+   (`0.2.1-beta` -> `0.3.0-beta`). Keep API and web versions aligned. Update the
+   TOC of each affected addon. Reserve `1.0.0` for general availability.
+2. Choose a new overall release version. Normally increment the previous
+   bundle tag's patch for fixes or minor for features. It does not need to equal
+   every component version. Never reuse a published tag.
+3. Run the relevant tests. Build/package everything with one PowerShell command
+   from the repo root (replace the version for future releases):
 
-| Component | Tag format | Example |
-| --- | --- | --- |
-| Windows desktop app | `desktop-v<version>` | `desktop-v0.2.0-alpha.1` |
-| Web dashboard + API/Docker deployment | `server-v<version>` | `server-v0.2.0-beta.1` |
-| In-game addons | `addon-v<version>` | `addon-v0.3.0-alpha.1` |
+   ```powershell
+   .\scripts\package-release.ps1 -ReleaseVersion 0.3.1-beta
+   ```
 
-Supported versions are `MAJOR.MINOR.PATCH`, optionally followed by `-alpha`,
-`-alpha.N`, `-beta`, or `-beta.N`. Use numeric preview counters for successive
-preview builds. Examples: `0.3.0-alpha.1`, `0.3.0-alpha.2`, `0.3.0-beta.1`,
-then `0.3.0`. Do not reuse or move a published tag.
+   This typechecks, builds API/web, packages desktop/addons/server, copies the
+   executables to the output folder, and generates the manifest from actual
+   package/TOC versions. It stops on failure and removes an old manifest first,
+   so a failed build cannot leave a publish-ready old manifest.
+4. Review `git status` and the diff, stage intended source/docs/version changes,
+   and commit with a user-facing changelog. Build output remains gitignored.
+5. Push the commit and create **one** tag:
 
-| Selected update channel | Eligible versions | GitHub release setting |
-| --- | --- | --- |
-| Release (default) | Stable only | Stable tags: **not** a prerelease |
-| Beta | Beta and stable | Beta tags: check **Set as a pre-release** |
-| Alpha | Alpha, beta, and stable | Alpha tags: check **Set as a pre-release** |
+   ```powershell
+   git push origin main
+   git tag -a v0.3.1-beta -m "FlockSync 0.3.1-beta"
+   git push origin v0.3.1-beta
+   ```
 
-Checks choose the highest eligible version, not the most recently uploaded
-release. Switching to Release does not downgrade an installed preview.
-Draft releases are ignored. Preview suffixes and GitHub's prerelease checkbox
-must agree. Old unprefixed tags such as `v0.2.0-alpha` are ignored by the new
-component-aware checkers.
+6. On GitHub, open **Releases -> Draft a new release**:
+   - Tag: `v0.3.1-beta`.
+   - Title: `FlockSync 0.3.1-beta`.
+   - Paste the combined changelog, download choices, and upgrade instructions.
+   - Check **Set as a pre-release** for alpha/beta builds.
+   - Attach the six files below. Publish only after all uploads finish.
+7. Publish the member addon ZIP to CurseForge separately, using the main addon
+   version and matching **Alpha**, **Beta**, or **Release** type. A GitHub
+   release does not upload anything to CurseForge.
+8. Verify downloads and manual checks using the intended channel. Smoke-test
+   the installer/portable app and in-game addon before distributing widely.
 
-**Hosting requirement:** release metadata must be readable without a GitHub
-token. The default repository is `GearDuckDev/FlockSync`. Private repositories
-cannot be read by these checkers, even if users are logged into GitHub in their
-browser. A public releases-only repository is an alternative; configure the
-desktop's `githubRepo` in its user-data `config.json` and the API's
-`GITHUB_REPOSITORY` environment variable to point to it. Do not distribute an
-embedded personal access token.
+## Upload these six files from `release`
 
-## 1. Prepare the versions and changelog
+| File | Audience |
+| --- | --- |
+| `flocksync-release.json` | Required component version manifest; every release |
+| `FlockSync-Setup-0.2.1-beta-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.2.1-beta-x64.exe` | Windows portable app |
+| `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
+| `FlockSync-Raider-Only.zip` | Main addon for guild members |
+| `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
 
-- Fix: increment the patch number (`0.3.0` -> `0.3.1`).
-- Feature: increment the minor number (`0.3.0` -> `0.4.0`).
-- Keep alpha/beta suffixes while the software is still in testing.
-- Reserve `1.0.0` for the first release ready for general use. After that, use
-  appropriate semantic version increments, including major releases for
-  incompatible changes.
-- Desktop: update `version` in `apps/desktop/package.json`.
-- Server: align `version` in `apps/api/package.json` and `apps/web/package.json`
-  for the server release; the API reports the running server version.
-- Addons: update `## Version` in each affected addon's `.toc`. Use the main
-  `FlockSync.toc` version for the `addon-v...` tag. If the helper also changed,
-  update its TOC too; unchanged helpers can retain their previous version.
-- Keep any other affected version references consistent. Do not bump unrelated
-  components just to match a repository tag.
-- Write user-facing release notes: changes, installation steps, compatibility
-  requirements, and any migration or backup instructions. These notes should
-  also make sense as a CurseForge changelog.
+Executable filenames change with the desktop version. The packaging script
+prints the exact list for each release. Do not upload old matching-pattern
+files just because they remain in the output folder. Do not rename the files
+without updating the manifest/packager. Never upload real environment files,
+databases, SavedVariables, credentials, or machine-local settings.
 
-## 2. Validate and build only what you are releasing
+## Why unchanged components do not notify
 
-Run the relevant tests, then from the repository root in PowerShell:
+For example, a later `v0.3.2-beta` bundle might contain:
 
-```powershell
-pnpm run typecheck
-```
+- desktop `0.2.1-beta` (unchanged);
+- server `0.2.1-beta` (unchanged);
+- addon `0.3.2-beta` (updated).
 
-### Desktop
+Desktop and server users already on `0.2.1-beta` receive no update notice.
+Addon users on `0.3.1-beta` receive a notice. Rebuilding an unchanged component
+does not itself increment its version. **If behavior changed, increment its
+component version**; checkers compare versions, not source code or file hashes.
+The manifest is generated, not a hand-maintained list.
 
-```powershell
-pnpm --filter @flocksync/desktop package:win
-```
+## Channels and compatibility
 
-Upload from `apps\desktop\release`:
+| Selected channel | Eligible component versions |
+| --- | --- |
+| Release (default) | Stable only |
+| Beta | Beta and stable |
+| Alpha | Alpha, beta, and stable |
 
-- `FlockSync-Setup-<version>-x64.exe`
-- `FlockSync-Portable-<version>-x64.exe`
+Supported versions: `MAJOR.MINOR.PATCH`, optionally with `-alpha`, `-alpha.N`,
+`-beta`, or `-beta.N`. The bundle tag must be `v<version>` and match the
+manifest's `releaseVersion`. Mark alpha/beta bundles as GitHub prereleases;
+stable bundles must not be marked as prereleases. Component eligibility uses
+each component's version suffix, so an unchanged stable component can remain
+stable inside a preview bundle. Draft releases are ignored.
 
-Keep these names unchanged. A desktop release is only eligible for an update
-notice if at least one matching installer/portable filename is attached.
-Check the version inside the app and test the packaged executables.
-The app displays an update banner; downloading and installation remain manual.
-Old desktop builds using `/releases/latest` do not understand this tagging
-system: distribute this channel-aware build manually for the initial upgrade.
+The checker selects the highest eligible component version across published
+releases, not simply the newest GitHub release. Missing manifests on old
+unprefixed releases are ignored. Legacy component-prefixed releases remain
+readable for compatibility, but **do not create three releases going forward**.
+Malformed/unavailable manifests report an error rather than a false
+"up-to-date" result. Components missing their declared downloads are ineligible.
 
-### Server (web + API/Docker)
+Previously distributed checkers do not understand this combined manifest.
+Install/deploy this manifest-aware version manually for the initial upgrade.
+Afterward, subsequent combined releases are detected normally.
 
-```powershell
-pnpm --filter @flocksync/api build
-pnpm --filter @flocksync/web build
-.\scripts\package-pi-deploy.ps1
-docker compose --env-file .env.production build api web
-```
+Release metadata/downloads must be publicly readable. A private source
+repository needs a public releases-only repository or a separate update
+service. Configure desktop `githubRepo` in its user-data `config.json` and API
+`GITHUB_REPOSITORY` accordingly. Never embed a personal access token.
 
-The Docker build requires a running Docker engine. Upload
-`release\FlockSync_Pi_Deploy.zip`. This is a deployment source package, **not**
-a prebuilt container image. The current Compose setup builds locally; there
-are no registry images to pull for the API/web services.
+## Server installation and automatic backup
 
-Preserve production configuration and data, select/extract the updated source
-on the server, and deploy with the guarded update command:
+Preserve `.env.production` and the `data` directory while extracting/selecting
+the new source. Confirm `NAS_BACKUP_PATH` is configured and its directory
+already exists and is writable; mount the NAS first if applicable.
+
+From the deployed project directory on the Pi:
 
 ```sh
 sh deploy/update-server.sh
+docker compose --env-file .env.production ps
 docker compose --env-file .env.production logs --tail 100 api web
 ```
 
-The script automatically creates and verifies a uniquely named pre-update
-SQLite backup at the configured `NAS_BACKUP_PATH` before building/restarting
-API/web containers. It aborts if backup fails. The destination must be configured,
-already exist, and be writable; mount the NAS first if applicable. These
-rollback snapshots are retained until manually removed. Direct Docker commands
-bypass this safeguard. Keep a separate secure backup of production configuration.
+The script creates and verifies a uniquely named SQLite backup at the chosen
+destination **before rebuilding or restarting API/web**. Backup failure aborts
+the update. Pre-update backups remain until manually removed. Direct Docker
+commands bypass this guard. Keep a separate secure copy of configuration.
+The ZIP contains source, not prebuilt images; Docker must be running.
+Never use `docker compose down -v` as an upgrade step. Verify login and sync.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for setup and restore guidance.
 
-Do not overwrite the server's real environment file or data directory with
-example configuration. Do not use `docker compose down -v` as an update step.
-Check health, login, and sync after deploying. See [DEPLOYMENT.md](./DEPLOYMENT.md)
-for production setup and backup details.
+## Addon reminders
 
-### Addons
+WoW cannot fetch GitHub directly. The API supplies addon release metadata during
+desktop sync; AppHelper loads it and guild snapshots relay compact versions to
+members. Fresh metadata may require a subsequent sync/login.
 
-```powershell
-.\scripts\package-addons.ps1
-```
-
-Upload:
-
-| Artifact | Audience |
-| --- | --- |
-| `release\FlockSync-Raider-Only.zip` | Guild members; main addon only |
-| `release\FlockSync-Addon-Bundle.zip` | Officers; main addon and AppHelper |
-
-Inspect both ZIPs for the expected top-level addon folders and updated TOCs.
-Test in WoW. Publish the member addon to CurseForge too, selecting its matching
-Alpha, Beta, or Release type. **GitHub publication does not upload to CurseForge.**
-Do not nest the addon in an extra directory when uploading.
-
-## 3. Commit, tag, and create the GitHub Release
-
-Review `git status` and your diff first. Stage only the intended source,
-documentation, and version changes; build output stays gitignored and is
-uploaded as release assets. Do not include secrets, database files, personal
-SavedVariables, or machine-local configuration.
-
-Example for an addon alpha release (replace the version with its actual TOC):
-
-```powershell
-git add <explicit-paths-to-reviewed-changes>
-git commit
-git push origin HEAD
-git tag -a addon-v0.3.0-alpha.1 -m "FlockSync addon 0.3.0-alpha.1"
-git push origin addon-v0.3.0-alpha.1
-```
-
-Use `desktop-v...` or `server-v...` instead when publishing those components.
-If one commit updates several components, create a separate tag and GitHub
-Release for each component being shipped.
-
-On GitHub:
-
-1. Open **Releases -> Draft a new release**.
-2. Select the exact tag you pushed.
-3. Use a descriptive title such as **FlockSync Addon 0.3.0-alpha.1**.
-4. Paste the user-facing changelog and setup/migration instructions.
-5. Upload the fresh artifacts for **that component**, not stale output from
-   an earlier build. Do not attach desktop binaries to an addon-only release.
-6. Check **Set as a pre-release** for alpha/beta; leave it unchecked for stable.
-7. Publish the release (do not leave it as a draft).
-8. Confirm the release and downloads are readable without authentication and
-   use **Check for Updates** on the intended channel to verify detection.
-
-## What users see
-
-- **Desktop:** choose Release, Beta, or Alpha in App Settings. Scheduled checks
-  run 15 seconds after startup and every six hours. Manual checks bypass
-  Remind Me Later; automatic checks remain muted until the next app launch.
-- **Web:** every signed-in user sees a compact amber banner at the top-right when
-  a newer eligible server release exists. It checks on dashboard load and every
-  six hours, without interrupting the user. Administrators can select the channel
-  and check manually in Admin Settings; the preference is per browser and also
-  applies to the banner. The notice links to the server release; installation
-  uses the guarded update script above, not an automatic container restart.
-- **Addon:** no direct web requests are possible inside WoW. The API obtains
-  addon release metadata, the desktop delivers it through AppHelper during a
-  sync, and guild snapshots relay compact versions to members. Metadata may
-  take a subsequent sync to arrive while the server refreshes its cache.
-  Metadata received during play is saved for a later login, not announced.
-  At initial character login, the addon checks the saved catalog once and
-  prints at most one chat notice. UI reloads and zone transitions do not check.
-  Stable installs only see stable updates; beta installs can see beta/stable;
-  alpha installs can see all three. Users manage preview downloads in
-  CurseForge, not through an in-game channel selector. Offline guilds or guilds
-  without a recently synced officer may have stale or no release information.
+The addon checks its saved catalog once at initial character login and prints
+at most one chat notice. Reloads, zone changes, and metadata received during
+play do not announce updates. Stable installs ignore previews; beta installs
+see beta/stable; alpha installs see all three. Use CurseForge to manage preview
+downloads. Stale/no guild metadata does not guarantee an addon is current.

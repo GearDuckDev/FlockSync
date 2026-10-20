@@ -209,10 +209,12 @@ be public (or use a public releases-only repository); private repositories
 cannot be read by the unauthenticated checker.
 
 Choose **Release** (default), **Beta**, or **Alpha** in App Settings. Publish
-desktop updates as `desktop-v<version>` with matching Setup/Portable assets.
+all downloads together as `v<overall-version>` with `flocksync-release.json`.
+The generated manifest records each component's version; an unchanged desktop
+or server does not trigger an update just because the overall tag changed.
 Mark alpha/beta releases as prereleases; stable releases must not be marked as
-prereleases. Addon and server tags use different prefixes and cannot trigger
-desktop notices. See [RELEASES.md](./RELEASES.md) for the full tagging,
+prereleases. Use `.\scripts\package-release.ps1 -ReleaseVersion <version>` for
+one-command packaging. See [RELEASES.md](./RELEASES.md) for the full tagging,
 versioning, build, upload, and recurring release checklist.
 
 The update banner's **Download on GitHub** opens the release page. Installation

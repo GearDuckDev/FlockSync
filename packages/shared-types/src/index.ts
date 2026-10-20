@@ -103,9 +103,10 @@ export {
   UpdateChannelSchema, ReleaseComponentSchema, ReleaseVersionSchema, ReleaseInfoSchema,
   AddonReleaseCatalogSchema, UpdateCheckQuerySchema, ServerUpdateStatusSchema,
   GitHubReleaseSchema, GitHubReleaseListSchema, getVersionChannel,
-  compareReleaseVersions, selectLatestRelease
+  compareReleaseVersions, selectLatestRelease, ReleaseManifestSchema
 } from "./releases.js";
 export type {
   UpdateChannel, ReleaseComponent, ReleaseInfo, AddonReleaseCatalog,
-  ServerUpdateStatus, GitHubRelease
+  ServerUpdateStatus, GitHubRelease, ReleaseManifest
 } from "./releases.js";
+export { loadReleaseManifests, RELEASE_MANIFEST_ASSET } from "./releaseManifests.js";

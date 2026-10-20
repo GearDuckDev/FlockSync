@@ -17,6 +17,7 @@ const { createUser } = await import("../dist/services/users.service.js");
 const { updatesRoutes } = await import("../dist/routes/updates.routes.js");
 const { syncRoutes } = await import("../dist/routes/sync.routes.js");
 const { releaseCatalog } = await import("../dist/services/releases.service.js");
+const { createReleaseCatalog } = await import("../dist/services/releaseCatalog.js");
 const { currentServerVersion } = await import("../dist/config/version.js");
 const app = Fastify();
 await registerAuthPlugin(app);
@@ -104,6 +105,36 @@ try {
     assert.equal((await call(`/api/updates/server?channel=${channel}`, "ADMIN")).json().channel, channel);
   }
   const originalList = releaseCatalog.list;
+  const combinedManifest = {
+    schemaVersion: 1, releaseVersion: "99.0.0",
+    components: {
+      desktop: { version: currentServerVersion, assets: [`FlockSync-Setup-${currentServerVersion}-x64.exe`] },
+      server: { version: currentServerVersion, assets: ["server.tar.gz"] },
+      addon: { version: "0.3.2-beta", assets: ["FlockSync.zip"] },
+      helper: { version: "0.2.1-beta", assets: ["FlockSync_AppHelper.zip"] }
+    }
+  };
+  const combinedCatalog = createReleaseCatalog({
+    repository: "GearDuckDev/FlockSync",
+    fetcher: async (url) => new Response(JSON.stringify(url.includes("/releases/download/") ? combinedManifest : [{
+      tag_name: "v99.0.0",
+      html_url: "https://github.com/GearDuckDev/FlockSync/releases/tag/v99.0.0",
+      draft: false, prerelease: false,
+      assets: [
+        { name: "flocksync-release.json" },
+        ...Object.values(combinedManifest.components).flatMap((entry) => entry.assets.map((name) => ({ name })))
+      ]
+    }]))
+  });
+  const combinedList = await combinedCatalog.list();
+  releaseCatalog.list = async () => combinedList;
+  for (const role of ["ADMIN", "OFFICER", "MEMBER"]) {
+    const unchanged = await call("/api/updates/server?channel=beta", role);
+    assert.equal(unchanged.statusCode, 200);
+    assert.equal(unchanged.json().latest.version, currentServerVersion);
+    assert.equal(unchanged.json().updateAvailable, false, "a newer overall tag is not a server update");
+  }
+  assert.equal(combinedCatalog.cachedAddonReleases(assert.fail).beta.version, "0.3.2-beta");
   releaseCatalog.list = async () => [];
   const empty = await call("/api/updates/server", "ADMIN");
   assert.equal(empty.json().latest, null);

@@ -6,6 +6,7 @@ import { setImmediate as tick } from "node:timers/promises";
 import { test } from "node:test";
 import { selectLatestRelease } from "@flocksync/shared-types";
 import { createReleaseCatalog } from "../dist/services/releaseCatalog.js";
+import "./combinedReleaseChecks.mjs";
 
 const release = (tag, extra = {}) => ({
   tag_name: tag, html_url: `https://github.com/GearDuckDev/FlockSync/releases/tag/${tag}`,
