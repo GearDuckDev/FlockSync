@@ -153,3 +153,41 @@ at most one chat notice. Reloads, zone changes, and metadata received during
 play do not announce updates. Stable installs ignore previews; beta installs
 see beta/stable; alpha installs see all three. Use CurseForge to manage preview
 downloads. Stale/no guild metadata does not guarantee an addon is current.
+
+## Live beta verification (development)
+
+To repeat the older/current/newer version matrix against the published beta
+without editing source versions or using production data, build isolated images:
+
+```powershell
+pnpm --filter @flocksync/api build
+docker build -f Dockerfile.api -t flocksync-api:update-verification .
+docker build -f Dockerfile.web -t flocksync-web:update-verification .
+node scripts\test-updates-live.mjs
+```
+
+This opt-in check requires Docker and public GitHub access. It expects a beta
+bundle, exercises the real GitHub catalog and HTTP endpoints with isolated
+databases for all user roles, and tests matching, older, and newer component
+versions/channels. Only temporary container copies of the API package version
+are changed. Test containers, network, and temporary files are removed afterward.
+It does not run automatically in the ordinary offline test suites.
+
+To include the desktop updater's live GitHub check and native Electron transport
+smoke test, run from the repository root:
+
+```powershell
+$env:FLOCKSYNC_LIVE_UPDATE_TEST = "1"
+$loader = ([System.Uri](Resolve-Path .\apps\desktop\test\typescript-loader.mjs).Path).AbsoluteUri
+try {
+  node --experimental-transform-types --experimental-loader $loader --test .\apps\desktop\test\*.test.ts
+} finally {
+  Remove-Item Env:\FLOCKSYNC_LIVE_UPDATE_TEST
+}
+pnpm --filter @flocksync/desktop exec electron test\nativeElectronFetchSmoke.cjs
+```
+
+The desktop test targets `v0.3.1-beta` and simulates installed versions in an
+isolated configuration directory. The scheduler test invokes timer callbacks
+without waiting six hours. These checks do not launch the packaged desktop UI
+or a WoW client; verify the visible desktop and in-game notices separately.

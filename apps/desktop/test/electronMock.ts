@@ -16,11 +16,15 @@ export const app = {
   getPath: (): string => fixtureRoot,
   isPackaged: false,
 };
-let fetchImplementation: (url: string, init?: RequestInit) => Promise<Response> = async () => {
+const defaultFetchImplementation = async (): Promise<Response> => {
   throw new Error('Unexpected GitHub request');
 };
+let fetchImplementation: (url: string, init?: RequestInit) => Promise<Response> = defaultFetchImplementation;
 export const setFetchImplementation = (implementation: (url: string, init?: RequestInit) => Promise<Response>): void => {
   fetchImplementation = implementation;
+};
+export const resetFetchImplementation = (): void => {
+  fetchImplementation = defaultFetchImplementation;
 };
 export const net = {
   fetch: (url: string, init?: RequestInit): Promise<Response> => fetchImplementation(url, init),
