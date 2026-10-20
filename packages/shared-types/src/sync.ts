@@ -55,7 +55,7 @@ export const GuildGoalMatchSummarySchema = z.object({
 export type GuildGoalMatchSummary = z.infer<typeof GuildGoalMatchSummarySchema>;
 
 export const ServerReturnPayloadSchema = z.object({
-  isAuthorizedOfficer: z.boolean().optional(),
+  isAuthorizedOfficer: z.boolean().default(true),
   culledCharacterGuids: z.array(z.string()),
   serverTimestamp: z.number().int().nonnegative(),
   craftersIndex: z.array(GuildCrafterSummarySchema).optional(),

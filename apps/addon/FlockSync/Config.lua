@@ -47,11 +47,10 @@ function ns.InitializeDatabase()
     end
     FlockSyncDB.config.officerRankThreshold =
         FlockSyncDB.config.officerRankThreshold or 2
-    -- Config v2 (production): the development-era officer override is reset
-    -- once; officers are detected via the desktop link or guild rank instead.
-    if (FlockSyncDB.config.configVersion or 1) < 2 then
+    -- Config v4 disables the development override; officer status is guild-scoped.
+    if (FlockSyncDB.config.configVersion or 1) < 4 then
         FlockSyncDB.config.forceOfficerMode = false
-        FlockSyncDB.config.configVersion = 2
+        FlockSyncDB.config.configVersion = 4
     end
     if FlockSyncDB.config.forceOfficerMode == nil then
         FlockSyncDB.config.forceOfficerMode = false
@@ -77,6 +76,9 @@ function ns.InitializeDatabase()
     end
     if type(FlockSyncDB.characters) ~= "table" then
         FlockSyncDB.characters = {}
+    end
+    if type(FlockSyncDB.officerGuilds) ~= "table" then
+        FlockSyncDB.officerGuilds = {}
     end
 end
 

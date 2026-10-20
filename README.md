@@ -264,18 +264,22 @@ next `/reload` or login.
 ## Roles and security
 
 Officer detection in game accepts a session-only `/fs debug officer` override,
-the saved `forceOfficerMode` dev override (off by default; existing installs are
-reset to off once by the config v2 migration), a desktop-created helper
-authorization flag, native officer-note permission,
-or the configured guild-rank threshold. Options → Role & Main shows the active
-reason. Enabling the saved override through **Local Test Officer Mode** requires
-confirming a warning popup. Officer/Admin desktop login, path saves and app
-resume initialize missing helper files in discovered account SavedVariables
-folders without overwriting existing data; restart WoW or `/reload` to load
-them. Existing helper files receive the flag on the next successful sync.
-This flag persists on disk (it is not a live login or automatic logout
-revocation), and the local testing override is not production access control.
-API authentication and Officer/Admin authorization are still required to sync.
+the saved `forceOfficerMode` development override (off by default), native
+officer-note permission, or the configured guild-rank threshold. When a
+character is recognized through native permission or guild rank, the addon
+remembers that guild for the WoW account. Other characters in that account can
+act as data catchers only while they are in that same guild. Options → Role &
+Main shows why the mode is active. The **Officer Mode (Local Test)** checkbox
+requires confirmation before enabling the saved override.
+
+When an Officer/Admin signs into the desktop client or saves a WoW path, the
+client initializes missing helper files and updates existing helper files to
+set `isAuthorizedOfficer = true`, preserving culls and cached snapshot data.
+That flag supports same-guild account recognition; it does not authorize a
+different guild. Restart WoW or `/reload` to load the helper change. The guild
+recognition persists in account SavedVariables. The local testing override and
+helper flag are not API access controls. API authentication and Officer/Admin
+authorization are still required to sync.
 
 - Roles are `MEMBER`, `OFFICER` and `ADMIN`. Writes (sync, raid teams, tasks, aliases, cull/delete) require Officer or Admin.
 - Anyone can create an account from the dashboard's **Create account** tab. Self-registered accounts are always `MEMBER` (read-only roster, lineups, ledger; no Officer Tasks).

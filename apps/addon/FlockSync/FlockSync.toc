@@ -5,6 +5,7 @@
 ## SavedVariables: FlockSyncDB
 
 Config.lua
+Officer.lua
 Core.lua
 Cleanup.lua
 Serializer.lua

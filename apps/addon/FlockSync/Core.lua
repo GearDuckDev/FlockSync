@@ -62,37 +62,6 @@ function ns.FormatCharacterLabel(name, realm)
     return name .. " (" .. realm .. ")"
 end
 
-function ns.GetOfficerStatusReason()
-    local config = FlockSyncDB and FlockSyncDB.config or {}
-    if ns.debugOfficerOverride == true then
-        return "Debug Override (Session)"
-    end
-    if config.forceOfficerMode == true then
-        return "Dev Override"
-    end
-    if type(FlockSyncHelperDB) == "table"
-        and FlockSyncHelperDB.isAuthorizedOfficer == true then
-        return "Desktop App Linked"
-    end
-    if C_GuildInfo and C_GuildInfo.CanViewOfficerNote
-        and C_GuildInfo.CanViewOfficerNote() == true then
-        return "Guild Officer Permission"
-    end
-    if not IsInGuild() then
-        return nil
-    end
-    local _, _, rankIndex = GetGuildInfo("player")
-    if type(rankIndex) == "number"
-        and rankIndex <= (config.officerRankThreshold or 2) then
-        return "Guild Rank"
-    end
-    return nil
-end
-
-function ns.IsPlayerOfficer()
-    return ns.GetOfficerStatusReason() ~= nil
-end
-
 function ns.MergeCharacter(incoming)
     if type(incoming) ~= "table" or type(incoming.guid) ~= "string" then
         return

@@ -255,6 +255,15 @@ earlier versions. Set availability under `/fs options`, and use
 `/reload` to write SavedVariables. Raiders do not need the desktop app or an
 API account just to broadcast guild data. The helper is only for officers.
 
+The local testing override `forceOfficerMode` defaults to `false`. The addon
+records guilds for which a character has native officer-note permission or a
+sufficient guild rank; other characters in that same WoW account are catchers
+only while in one of those guilds. The desktop-created authorization flag is
+also restricted to guilds already recognized by the addon for that account.
+When an Officer/Admin logs in to the desktop app or saves a WoW path, it creates
+or authorizes `FlockSync_AppHelper.lua` in each discovered account
+SavedVariables folder; restart WoW or `/reload` to load it.
+
 ## 4. Development and verification
 
 ### Updating and redeploying the Pi stack

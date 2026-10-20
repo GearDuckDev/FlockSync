@@ -44,6 +44,7 @@ test('bootstrap initializes all discovered folders, preserves files, and reports
     await mkdir(folder('blocked'), { recursive: true });
     const existing = serializeServerReturnToLua({
       isAuthorizedOfficer: false, culledCharacterGuids: ['keep-me'], serverTimestamp: 456,
+      craftersIndex: [], upcomingRaids: [], goalMatches: [],
     });
     await writeFile(file('existing'), existing);
     // A directory occupying the filename exercises exclusive-write failure handling.
@@ -53,9 +54,17 @@ test('bootstrap initializes all discovered folders, preserves files, and reports
     const parsed = ServerReturnPayloadSchema.parse(helper);
     assert.equal(parsed.isAuthorizedOfficer, true);
     assert.equal(parsed.serverTimestamp, 0);
-    assert.equal(await readFile(file('existing'), 'utf8'), existing);
+    const updatedExisting = ServerReturnPayloadSchema.parse(
+      readHelper(await readFile(file('existing'), 'utf8')),
+    );
+    assert.equal(updatedExisting.isAuthorizedOfficer, true);
+    assert.deepEqual(updatedExisting.culledCharacterGuids, ['keep-me']);
+    assert.equal(updatedExisting.serverTimestamp, 456);
+    assert.deepEqual(updatedExisting.craftersIndex, []);
+    assert.deepEqual(updatedExisting.upcomingRaids, []);
+    assert.deepEqual(updatedExisting.goalMatches, []);
     await initializeOfficerHelpers(root, log);
-    assert.equal(logs.filter((e) => e.status === 'SUCCESS').length, 1);
+    assert.equal(logs.filter((e) => e.status === 'SUCCESS').length, 2);
     assert.equal(logs.filter((e) => e.status === 'ERROR').length, 2);
     await initializeOfficerHelpers(join(root, 'missing'), log);
   } finally {

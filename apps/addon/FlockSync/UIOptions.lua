@@ -27,6 +27,12 @@ function ns.RefreshOfficerStatus()
     refreshStatus()
 end
 
+local statusFrame = CreateFrame("Frame")
+statusFrame:RegisterEvent("PLAYER_LOGIN")
+statusFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
+statusFrame:RegisterEvent("GUILD_ROSTER_UPDATE")
+statusFrame:SetScript("OnEvent", refreshStatus)
+
 StaticPopupDialogs["FLOCKSYNC_CONFIRM_OFFICER_MODE"] = {
     text = "Warning: Forcing Officer Mode allows this client to intercept and store all guild "
         .. "data locally for testing. This is typically only used by developers. Are you sure "
@@ -77,7 +83,7 @@ local function buildRolePanel(container)
     container.scanButton = ns.AddPanelButton(container, "Force Scan & Broadcast", 200, publishVerbose)
     container.scanButton:SetHeight(28)
     container.officerCheck = CreateFrame("CheckButton", nil, container, "UICheckButtonTemplate")
-    container.officerCheck.text:SetText("Local Test Officer Mode")
+    container.officerCheck.text:SetText("Officer Mode (Local Test)")
     container.officerCheck:SetScript("OnClick", onOfficerClick)
     container.officerStatus = ns.AddPanelText(container, "GameFontHighlightSmall", 390)
     container.officerStatus:SetPoint("TOPLEFT", container.officerCheck, "BOTTOMLEFT", 2, -2)
