@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AttendanceRecordSchema, LootRecordSchema } from "./ledger.js";
 import { CharacterSchema } from "./player.js";
+import { AddonReleaseCatalogSchema } from "./releases.js";
 
 export const OfficerSyncPayloadSchema = z.object({
   addonVersion: z.string().min(1),
@@ -60,7 +61,8 @@ export const ServerReturnPayloadSchema = z.object({
   serverTimestamp: z.number().int().nonnegative(),
   craftersIndex: z.array(GuildCrafterSummarySchema).optional(),
   upcomingRaids: z.array(GuildUpcomingRaidSummarySchema).optional(),
-  goalMatches: z.array(GuildGoalMatchSummarySchema).optional()
+  goalMatches: z.array(GuildGoalMatchSummarySchema).optional(),
+  addonReleases: AddonReleaseCatalogSchema.optional()
 }).strict();
 
 export type ServerReturnPayload = z.infer<typeof ServerReturnPayloadSchema>;

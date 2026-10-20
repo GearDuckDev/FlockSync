@@ -10,7 +10,7 @@ import {
   onAppSettingsChanged,
   saveAppSettings,
 } from './appSettings';
-import { checkForUpdates, startUpdater, stopUpdater } from './updater';
+import { checkForUpdates, resetUpdateChannel, startUpdater, stopUpdater } from './updater';
 import { createTray, destroyTray, hasTray, notifyFromTray, refreshTrayMenu } from './tray';
 
 let mainWindow: BrowserWindow | null = null;
@@ -101,8 +101,14 @@ if (!app.requestSingleInstanceLock()) {
       saveSettings: (patch) => void saveAppSettings(patch),
       quit: quitApp,
     });
+    let observedUpdateChannel = getAppSettings().updateChannel;
     onAppSettingsChanged((settings) => {
       refreshTrayMenu();
+      if (settings.updateChannel !== observedUpdateChannel) {
+        observedUpdateChannel = settings.updateChannel;
+        resetUpdateChannel();
+        void checkForUpdates(false);
+      }
       mainWindow?.webContents.send('app-settings-changed', settings);
     });
 

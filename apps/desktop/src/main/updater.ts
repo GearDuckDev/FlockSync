@@ -1,17 +1,19 @@
 import { app, ipcMain, net, type BrowserWindow } from 'electron';
-import { z } from 'zod';
+import {
+  GitHubReleaseListSchema,
+  ReleaseVersionSchema,
+  type GitHubRelease,
+} from '@flocksync/shared-types';
 import type { UpdateCheckResult, UpdateInfo } from '../shared/ipc';
-import { isNewerVersion, stripVersionPrefix } from './versionCompare';
+import { loadStored } from './configStore';
+import { selectDesktopUpdate } from './releaseSelection';
 
 const STARTUP_DELAY_MS = 15_000;
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const REQUEST_TIMEOUT_MS = 15_000;
-
-const LatestReleaseSchema = z.object({
-  tag_name: z.string().min(1),
-  html_url: z.string().url(),
-  body: z.string().nullable().optional(),
-});
+const REQUEST_TIMEOUT_MS = 30_000;
+const RELEASE_CACHE_TTL_MS = 5 * 60 * 1000;
+const RELEASE_FAILURE_TTL_MS = 30 * 1000;
+const MAX_RELEASE_PAGES = 20;
 
 interface UpdaterOptions {
   getWindow: () => BrowserWindow | null;
@@ -25,57 +27,133 @@ let pendingUpdate: UpdateInfo | null = null;
 let lastAnnouncedVersion: string | null = null;
 let options: UpdaterOptions | null = null;
 let timers: NodeJS.Timeout[] = [];
+let checkGeneration = 0;
+let releaseCache: { repo: string; releases: GitHubRelease[]; expiresAt: number } | null = null;
+const releaseRequests = new Map<string, Promise<GitHubRelease[]>>();
+const releaseFailures = new Map<string, { error: Error; expiresAt: number }>();
 
 const send = (channel: string, payload: unknown): void => {
   const win = options?.getWindow();
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
 };
 
-const fetchLatestRelease = async (repo: string): Promise<z.infer<typeof LatestReleaseSchema>> => {
+const githubFailure = (status: number, repo: string, response: Response): Error => {
+  if (status === 404 || status === 401) {
+    return new Error(`GitHub repository ${repo} is private or does not exist.`);
+  }
+  if (status === 403 || status === 429) {
+    const remaining = response.headers.get('x-ratelimit-remaining');
+    const retryAfter = response.headers.get('retry-after');
+    if (status === 429 || remaining === '0' || retryAfter !== null) {
+      const retry = retryAfter ? ` Retry after ${retryAfter} seconds.` : '';
+      return new Error(`GitHub rate limit reached.${retry}`);
+    }
+    return new Error(`GitHub denied access to ${repo}; check repository visibility and API access.`);
+  }
+  return new Error(`GitHub responded with HTTP ${status}.`);
+};
+
+const fetchGitHubReleases = async (repo: string): Promise<GitHubRelease[]> => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const res = await net.fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': `FlockSync-Desktop/${app.getVersion()}`,
-      },
-      signal: controller.signal,
-    });
-    if (res.status === 404) throw new Error(`No published GitHub releases found for ${repo}.`);
-    if (res.status === 403 || res.status === 429) throw new Error('GitHub rate limit reached. Try again later.');
-    if (!res.ok) throw new Error(`GitHub responded with HTTP ${res.status}.`);
-    const parsed = LatestReleaseSchema.safeParse(await res.json());
-    if (!parsed.success) throw new Error('GitHub returned an unexpected release format.');
-    return parsed.data;
+    const releases: GitHubRelease[] = [];
+    for (let page = 1; page <= MAX_RELEASE_PAGES; page++) {
+      const url = new URL(`https://api.github.com/repos/${repo}/releases`);
+      url.searchParams.set('per_page', '100');
+      url.searchParams.set('page', String(page));
+      const res = await net.fetch(url.toString(), {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': `FlockSync-Desktop/${app.getVersion()}`,
+        },
+        signal: controller.signal,
+      });
+      if (!res.ok) throw githubFailure(res.status, repo, res);
+      const parsed = GitHubReleaseListSchema.safeParse(await res.json());
+      if (!parsed.success) throw new Error('GitHub returned an unexpected release list format.');
+      releases.push(...parsed.data);
+      const hasNextPage = /(?:^|,)\s*<[^>]+>\s*;\s*rel="?next"?/i.test(res.headers.get('link') ?? '');
+      if (!hasNextPage) return releases;
+      if (page === MAX_RELEASE_PAGES) {
+        throw new Error(`GitHub release list exceeds ${MAX_RELEASE_PAGES} pages; update check was not completed.`);
+      }
+    }
+    throw new Error('GitHub release list pagination did not complete.');
   } finally {
     clearTimeout(timeout);
   }
 };
 
-export const getPendingUpdate = (): UpdateInfo | null => (updateMutedForSession ? null : pendingUpdate);
+const getGitHubReleases = (repo: string): Promise<GitHubRelease[]> => {
+  if (releaseCache?.repo === repo && releaseCache.expiresAt > Date.now()) {
+    return Promise.resolve(releaseCache.releases);
+  }
+  const failure = releaseFailures.get(repo);
+  if (failure && failure.expiresAt > Date.now()) return Promise.reject(failure.error);
+  releaseFailures.delete(repo);
+  const inFlight = releaseRequests.get(repo);
+  if (inFlight) return inFlight;
+  const promise = fetchGitHubReleases(repo).then((releases) => {
+    if (releases.length === 0) throw new Error(`No published GitHub releases found for ${repo}.`);
+    releaseCache = { repo, releases, expiresAt: Date.now() + RELEASE_CACHE_TTL_MS };
+    releaseFailures.delete(repo);
+    return releases;
+  }).catch((error: unknown) => {
+    const failureError = error instanceof Error ? error : new Error(String(error));
+    releaseFailures.set(repo, { error: failureError, expiresAt: Date.now() + RELEASE_FAILURE_TTL_MS });
+    throw failureError;
+  }).finally(() => {
+    if (releaseRequests.get(repo) === promise) releaseRequests.delete(repo);
+  });
+  releaseRequests.set(repo, promise);
+  return promise;
+};
+
+export const getPendingUpdate = (): UpdateInfo | null => {
+  if (updateMutedForSession || !pendingUpdate) return null;
+  const channel = loadStored().updateChannel;
+  if (channel === 'release' && pendingUpdate.channel !== 'release') return null;
+  if (channel === 'beta' && pendingUpdate.channel === 'alpha') return null;
+  return pendingUpdate;
+};
+
+export const resetUpdateChannel = (): void => {
+  checkGeneration++;
+  pendingUpdate = null;
+  send('update-not-available', app.getVersion());
+};
 
 export const checkForUpdates = async (manual = false): Promise<UpdateCheckResult> => {
   if (updateMutedForSession && !manual) return { status: 'skipped' };
   if (!options) return { status: 'error', message: 'Updater is not initialized.' };
+  const generation = checkGeneration;
   const currentVersion = app.getVersion();
   try {
-    const release = await fetchLatestRelease(options.getRepo());
-    const version = stripVersionPrefix(release.tag_name);
-    if (!isNewerVersion(version, currentVersion)) {
+    const currentReleaseVersion = currentVersion.replace(/^v/i, '');
+    if (!ReleaseVersionSchema.safeParse(currentReleaseVersion).success) {
+      throw new Error(`Installed version ${currentVersion} is not a valid release version.`);
+    }
+    const stored = loadStored();
+    const releases = await getGitHubReleases(options.getRepo());
+    if (generation !== checkGeneration || stored.updateChannel !== loadStored().updateChannel) {
+      return { status: 'skipped' };
+    }
+    const update = selectDesktopUpdate(releases, currentReleaseVersion, stored.updateChannel);
+    if (!update) {
       pendingUpdate = null;
       if (manual) send('update-not-available', currentVersion);
       return { status: 'up-to-date', currentVersion };
     }
-    const update: UpdateInfo = { version, url: release.html_url, releaseNotes: release.body ?? '' };
     pendingUpdate = update;
     send('update-available', update);
-    if (lastAnnouncedVersion !== version) {
-      lastAnnouncedVersion = version;
+    if (lastAnnouncedVersion !== update.version) {
+      lastAnnouncedVersion = update.version;
       options.onUpdateFound(update);
     }
     return { status: 'available', update };
   } catch (err) {
+    if (generation !== checkGeneration) return { status: 'skipped' };
     const message = err instanceof Error && err.name !== 'AbortError' ? err.message : 'Update check timed out.';
     console.warn(`[updater] ${manual ? 'manual' : 'scheduled'} check failed: ${message}`);
     return { status: 'error', message };
@@ -86,6 +164,7 @@ export const startUpdater = (opts: UpdaterOptions): void => {
   options = opts;
   ipcMain.handle('check-for-updates', () => checkForUpdates(true));
   ipcMain.on('dismiss-update', () => {
+    checkGeneration++;
     updateMutedForSession = true;
     pendingUpdate = null;
   });

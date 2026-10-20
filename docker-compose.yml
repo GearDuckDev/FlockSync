@@ -33,7 +33,11 @@ services:
       dockerfile: deploy/Dockerfile.backup
     volumes:
       - ./data/sqlite:/data:ro
-      - ${NAS_BACKUP_PATH:-./data/backups}:/backups
+      - type: bind
+        source: ${NAS_BACKUP_PATH:?Set NAS_BACKUP_PATH in .env.production to an existing backup directory}
+        target: /backups
+        bind:
+          create_host_path: false
     depends_on:
       api:
         condition: service_healthy

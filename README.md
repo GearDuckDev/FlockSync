@@ -49,7 +49,19 @@ the tray. Both toggles are also under **App Settings** on the dashboard, next to
 **Check for Updates** and the current version. The app checks GitHub Releases
 15 seconds after launch and every 6 hours. When a newer version exists, a banner
 offers **Download on GitHub** or **Remind Me Later**, which mutes automatic
-checks until the next launch. Manual checks always run.
+checks until the next launch. Manual checks always run. App Settings lets you
+choose Release (default), Beta, or Alpha updates. Administrators can check for
+server updates on the same channels in the web dashboard's Admin Settings.
+Every signed-in user sees a small amber banner at the top-right when an update
+is available. Deploy server updates with `sh deploy/update-server.sh`: it first
+creates and verifies a SQLite backup in the configured `NAS_BACKUP_PATH`,
+aborting if backup fails. Docker deployment remains administrator-initiated.
+
+For publishing tags, packaging, and release uploads, see
+[RELEASES.md](./RELEASES.md). The addon only announces cached updates once on
+initial login (not reloads or zone changes); stable installs ignore previews.
+Alpha/beta addon users manage their downloads in CurseForge. Release metadata
+arrives through desktop sync and guild snapshots, not an in-game web request.
 
 ## How it works
 

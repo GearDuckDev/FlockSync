@@ -6,13 +6,22 @@ export const UpdateBanner = (): React.JSX.Element | null => {
 
   useEffect(() => {
     let active = true;
+    let receivedUpdateEvent = false;
     void window.flocksync.getAppSettings().then((s) => {
-      if (active && s.pendingUpdate) setUpdate((current) => current ?? s.pendingUpdate);
+      if (active && !receivedUpdateEvent) setUpdate(s.pendingUpdate);
     });
-    const unsubscribe = window.flocksync.onUpdateAvailable(setUpdate);
+    const unsubscribe = window.flocksync.onUpdateAvailable((next) => {
+      receivedUpdateEvent = true;
+      setUpdate(next);
+    });
+    const unsubscribeClear = window.flocksync.onUpdateNotAvailable(() => {
+      receivedUpdateEvent = true;
+      setUpdate(null);
+    });
     return () => {
       active = false;
       unsubscribe();
+      unsubscribeClear();
     };
   }, []);
 
@@ -26,7 +35,7 @@ export const UpdateBanner = (): React.JSX.Element | null => {
   return (
     <div className="update-banner" role="status">
       <div className="row spread">
-        <strong>FlockSync v{update.version} is available!</strong>
+        <strong>FlockSync v{update.version} ({update.channel}) is available!</strong>
         <div className="row">
           <button onClick={() => void window.flocksync.openExternalUrl(update.url)}>Download on GitHub</button>
           <button className="ghost" onClick={remindLater}>

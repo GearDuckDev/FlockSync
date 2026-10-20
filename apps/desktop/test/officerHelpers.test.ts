@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { createServer } from 'node:http';
-import { ServerReturnPayloadSchema } from '@flocksync/shared-types';
+import { AddonReleaseCatalogSchema, ServerReturnPayloadSchema } from '@flocksync/shared-types';
 import { initializeOfficerHelpers } from '../src/main/helperBootstrap';
 import { serializeServerReturnToLua } from '../src/main/luaParser';
 import { luaToJs, parseLuaAssignment } from '../src/main/luaTable';
@@ -13,6 +12,15 @@ import { syncFile } from '../src/main/syncService';
 
 const readHelper = (source: string): unknown =>
   luaToJs(parseLuaAssignment(source, 'FlockSyncHelperDB'));
+
+const addonReleases = AddonReleaseCatalogSchema.parse({
+  release: {
+    version: '1.2.0',
+    url: 'https://github.com/GearDuckDev/FlockSync/releases/tag/addon-v1.2.0',
+    releaseNotes: 'Stable addon',
+    channel: 'release',
+  },
+});
 
 test('helper serializer supports legacy payloads and explicit authorization', () => {
   for (const flag of [undefined, true, false]) {
@@ -33,7 +41,7 @@ test('helper serializer supports legacy payloads and explicit authorization', ()
 });
 
 test('bootstrap initializes all discovered folders, preserves files, and reports I/O errors', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'flocksync-helper-'));
+  const root = await mkdtemp(join(process.cwd(), '.flocksync-helper-fixture-'));
   const logs: SyncLogEvent[] = [];
   const log = (event: SyncLogEvent): void => { logs.push(event); };
   try {
@@ -44,6 +52,7 @@ test('bootstrap initializes all discovered folders, preserves files, and reports
     await mkdir(folder('blocked'), { recursive: true });
     const existing = serializeServerReturnToLua({
       isAuthorizedOfficer: false, culledCharacterGuids: ['keep-me'], serverTimestamp: 456,
+      addonReleases,
       craftersIndex: [], upcomingRaids: [], goalMatches: [],
     });
     await writeFile(file('existing'), existing);
@@ -63,6 +72,7 @@ test('bootstrap initializes all discovered folders, preserves files, and reports
     assert.deepEqual(updatedExisting.craftersIndex, []);
     assert.deepEqual(updatedExisting.upcomingRaids, []);
     assert.deepEqual(updatedExisting.goalMatches, []);
+    assert.deepEqual(updatedExisting.addonReleases, addonReleases);
     await initializeOfficerHelpers(root, log);
     assert.equal(logs.filter((e) => e.status === 'SUCCESS').length, 2);
     assert.equal(logs.filter((e) => e.status === 'ERROR').length, 2);
@@ -84,7 +94,9 @@ test('snapshot arrays survive Lua serialization and sync writes the helper besid
     goalMatches: [{ itemId: 789, neededBy: [{ characterGuid: 'crafter', characterName: name, classId: 1, role: 'DPS' }] }],
   });
   assert.deepEqual(readHelper(serializeServerReturnToLua(payload)), payload);
-  const empty = { culledCharacterGuids: [], serverTimestamp: 0, craftersIndex: [], upcomingRaids: [], goalMatches: [] };
+  const empty = ServerReturnPayloadSchema.parse({
+    culledCharacterGuids: [], serverTimestamp: 0, craftersIndex: [], upcomingRaids: [], goalMatches: [],
+  });
   assert.deepEqual(readHelper(serializeServerReturnToLua(empty)), { ...empty, isAuthorizedOfficer: true });
   assert.equal(ServerReturnPayloadSchema.safeParse({
     ...payload, goalMatches: [{ itemId: NaN, neededBy: [] }],
@@ -96,7 +108,7 @@ test('snapshot arrays survive Lua serialization and sync writes the helper besid
     response.end(JSON.stringify(legacyResponse ? { culledCharacterGuids: [], serverTimestamp: 123 } : payload));
   });
   let legacyResponse = false;
-  const root = await mkdtemp(join(tmpdir(), 'flocksync-snapshot-'));
+  const root = await mkdtemp(join(process.cwd(), '.flocksync-snapshot-fixture-'));
   try {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();

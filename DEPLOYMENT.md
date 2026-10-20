@@ -51,7 +51,8 @@ container can write there; Synology root-squash mappings and export permissions
 must allow it. Test creating a file through the mounted share. Never store NAS
 credentials in the repository. Configure service startup ordering so the NAS is
 mounted **before** Compose; otherwise backups can land on the Pi's mountpoint
-directory instead. For a trial without NAS, set `NAS_BACKUP_PATH=./data/backups`.
+directory instead. For a trial without NAS, set `NAS_BACKUP_PATH=./data/backups`
+and create it with `mkdir -p data/backups` before starting Compose.
 
 ### Start the stack
 
@@ -129,22 +130,40 @@ Migration `0001_character_auto_stale` adds `characters.auto_stale`. Addon-report
 automatically on a newer, fresh login; manual web culls clear the flag and stay
 sticky. Redeploy the API to apply it (it runs automatically on startup).
 
-Before upgrades, take a backup:
+For every server upgrade, select/extract the new source while preserving
+`.env.production` and `data`, then run from that deployed project directory:
 
 ```sh
-docker compose --env-file .env.production run --rm -e BACKUP_ONCE=1 db-backup
-docker compose --env-file .env.production up -d --build
+sh deploy/update-server.sh
 ```
+
+The script builds backup tooling, runs a one-shot SQLite backup in the configured
+`NAS_BACKUP_PATH`, verifies it, and only then builds/recreates API and web containers.
+Backup failure aborts the upgrade without rebuilding or restarting API/web.
+This guard applies when using the script; direct Docker commands bypass it.
+The script does not download a release or change tags for you.
+
+`NAS_BACKUP_PATH` must be set in `.env.production`, and that directory must
+already exist. Compose refuses to silently create a missing destination or use
+a fallback. Mount the NAS first if that is your chosen destination; verify the
+mount is actually live before upgrading. A local trial directory must be
+created manually, for example `mkdir -p data/backups`.
 
 ### Backups, retention and restore
 
 The Alpine sidecar runs once at startup, then daily at midnight UTC via cron. SQLite's
 online `.backup` API takes a consistent snapshot while WAL writes continue.
 It verifies `PRAGMA quick_check`, renames the temporary file only on success,
-and then deletes backups older than 30 days. Successful runs publish
+and then deletes daily backups older than 30 days. Successful daily runs publish
 `flocksync-YYYYMMDD.db`; rerunning on the same day replaces that day's backup
 only after validation. Failed backups log an error and leave existing backups
 untouched; cron retries at the next daily run. Inspect logs and NAS contents regularly.
+
+Pre-update backups are published as
+`flocksync-pre-update-<UTC timestamp>-<unique suffix>.db` and are not overwritten
+by daily runs or deleted by automatic retention. Review/remove these rollback
+snapshots manually when no longer needed. They contain the database, not your
+production environment file: keep a separate secure configuration backup.
 
 The source volume is mounted read-only. With a live WAL database, SQLite needs
 readable WAL/SHM files already created by the API, which Compose waits for
@@ -183,21 +202,22 @@ a sync after `/reload`.
 
 ### Publishing updates (GitHub Releases)
 
-The desktop app checks `https://api.github.com/repos/<githubRepo>/releases/latest`
-without authentication. `githubRepo` defaults to `GearDuckDev/FlockSync` and is
-stored in the app's `config.json` (in its user-data folder under `%APPDATA%`).
-For update checks to work:
+The desktop app reads the paginated GitHub releases list without authentication.
+`githubRepo` defaults to `GearDuckDev/FlockSync` and is stored in the app's
+`config.json` (in its user-data folder under `%APPDATA%`). The repository must
+be public (or use a public releases-only repository); private repositories
+cannot be read by the unauthenticated checker.
 
-1. The repository must be **public**. The API returns 404 for private repos and
-   for repos with no published release. The app then reports "No published
-   GitHub releases found" on manual checks and stays silent otherwise.
-2. Bump `version` in `apps/desktop/package.json`, then build with `package:win`.
-3. Publish a **non-draft, non-prerelease** GitHub release whose tag is that
-   version (`v0.1.0-alpha` or `0.1.0-alpha`). Attach the Setup and Portable executables.
+Choose **Release** (default), **Beta**, or **Alpha** in App Settings. Publish
+desktop updates as `desktop-v<version>` with matching Setup/Portable assets.
+Mark alpha/beta releases as prereleases; stable releases must not be marked as
+prereleases. Addon and server tags use different prefixes and cannot trigger
+desktop notices. See [RELEASES.md](./RELEASES.md) for the full tagging,
+versioning, build, upload, and recurring release checklist.
 
 The update banner's **Download on GitHub** opens the release page. Installation
-stays manual; there is no silent auto-install. Unauthenticated checks are
-limited to 60 per hour per IP, which is far above the 6-hour schedule.
+stays manual; there is no silent auto-install. Requests are cached to reduce
+GitHub's unauthenticated rate-limit usage.
 
 ### Tray and start-on-boot behavior
 
@@ -219,7 +239,7 @@ and an existing Pi ZIP does not update itself after source changes.
 
 1. Regenerate the Pi ZIP with `.\scripts\package-pi-deploy.ps1`, copy and extract
    it on the Pi, preserving `.env.production` and `data`.
-2. Run `docker compose --env-file .env.production up -d --build api web`.
+2. Run `sh deploy/update-server.sh` to back up and verify SQLite before updating.
 3. Build a fresh desktop executable using `pnpm --filter @flocksync/desktop package:win`.
    Close the old desktop app completely and start the new executable.
 4. Log out of WoW, let the desktop sync finish, and inspect that account's

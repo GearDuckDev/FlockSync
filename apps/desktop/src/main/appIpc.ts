@@ -1,13 +1,8 @@
 import { app, ipcMain, shell } from 'electron';
-import { z } from 'zod';
 import type { AppSettingsState } from '../shared/ipc';
+import { AppSettingsPatchSchema } from './appSettingsSchema';
 import { getAppSettings, saveAppSettings } from './appSettings';
 import { getPendingUpdate } from './updater';
-
-const AppSettingsPatchSchema = z
-  .object({ minimizeToTray: z.boolean(), startOnBoot: z.boolean() })
-  .partial()
-  .strict();
 
 const settingsState = (): AppSettingsState => ({
   settings: getAppSettings(),
@@ -30,9 +25,10 @@ export const registerAppIpc = (): void => {
   ipcMain.handle('save-app-settings', (_e, raw: unknown): AppSettingsState => {
     const parsed = AppSettingsPatchSchema.safeParse(raw);
     if (!parsed.success) return settingsState();
-    const patch: Partial<Record<'minimizeToTray' | 'startOnBoot', boolean>> = {};
+    const patch: Partial<AppSettingsState['settings']> = {};
     if (parsed.data.minimizeToTray !== undefined) patch.minimizeToTray = parsed.data.minimizeToTray;
     if (parsed.data.startOnBoot !== undefined) patch.startOnBoot = parsed.data.startOnBoot;
+    if (parsed.data.updateChannel !== undefined) patch.updateChannel = parsed.data.updateChannel;
     saveAppSettings(patch);
     return settingsState();
   });

@@ -8,6 +8,7 @@ import {
 import { listRoster, setCharacterActive } from "../services/roster.service.js";
 import { processOfficerSync } from "../services/sync.service.js";
 import { purgeCharacter } from "../services/purge.service.js";
+import { releaseCatalog } from "../services/releases.service.js";
 
 export const syncRoutes: FastifyPluginAsync = async (app) => {
   app.post("/sync", {
@@ -19,7 +20,12 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const result = processOfficerSync(payload.data, request.user.id);
-    return ServerReturnPayloadSchema.parse(result);
+    const addonReleases = releaseCatalog.cachedAddonReleases((error) => {
+      app.log.warn({ err: error }, "Addon release metadata unavailable; sync remains successful");
+    });
+    return ServerReturnPayloadSchema.parse({
+      ...result, ...(addonReleases === undefined ? {} : { addonReleases })
+    });
   });
 
   app.get("/roster", { preHandler: app.authenticate }, async (request, reply) => {

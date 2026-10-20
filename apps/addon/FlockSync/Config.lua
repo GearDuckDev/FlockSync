@@ -1,6 +1,13 @@
 local addonName, ns = ...
 
-local ADDON_VERSION = "0.1.0-alpha"
+function ns.GetAddonVersion()
+    if C_AddOns and C_AddOns.GetAddOnMetadata then
+        return C_AddOns.GetAddOnMetadata(addonName, "Version")
+    elseif GetAddOnMetadata then
+        return GetAddOnMetadata(addonName, "Version")
+    end
+end
+
 local function newProfile()
     return {
         mainCharacterGuid = nil,
@@ -39,7 +46,7 @@ function ns.InitializeDatabase()
     if type(FlockSyncDB) ~= "table" then
         FlockSyncDB = {}
     end
-    FlockSyncDB.addonVersion = ADDON_VERSION
+    FlockSyncDB.addonVersion = ns.GetAddonVersion() or "unknown"
     FlockSyncDB.officerCharacter = FlockSyncDB.officerCharacter or ""
     FlockSyncDB.exportedAt = FlockSyncDB.exportedAt or 0
     if type(FlockSyncDB.config) ~= "table" then

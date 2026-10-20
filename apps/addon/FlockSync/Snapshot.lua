@@ -38,6 +38,7 @@ local function validRaid(raid)
 end
 
 local function rebuild(source, origin)
+    ns.CacheAddonReleases(source.addonReleases)
     local snapshot = ns.Snapshot
     snapshot.craftersByItem = {}
     snapshot.goalsByItem = {}

@@ -98,3 +98,14 @@ export type {
   GuildCrafterSummary, GuildUpcomingRaidSummary, GuildGoalMatchSummary,
   OfficerSyncPayload, ServerReturnPayload
 } from "./sync.js";
+
+export {
+  UpdateChannelSchema, ReleaseComponentSchema, ReleaseVersionSchema, ReleaseInfoSchema,
+  AddonReleaseCatalogSchema, UpdateCheckQuerySchema, ServerUpdateStatusSchema,
+  GitHubReleaseSchema, GitHubReleaseListSchema, getVersionChannel,
+  compareReleaseVersions, selectLatestRelease
+} from "./releases.js";
+export type {
+  UpdateChannel, ReleaseComponent, ReleaseInfo, AddonReleaseCatalog,
+  ServerUpdateStatus, GitHubRelease
+} from "./releases.js";

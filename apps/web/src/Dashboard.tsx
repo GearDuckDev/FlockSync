@@ -12,6 +12,8 @@ import { AttunementsPage } from './AttunementsPage';
 import { LootAttendancePage } from './LootAttendancePage';
 import { OfficerTasksPage } from './OfficerTasksPage';
 import { AdminUsersPage } from './AdminUsersPage';
+import { ServerUpdates } from './components/admin/ServerUpdates';
+import { ServerUpdateBanner } from './components/ServerUpdateBanner';
 import { UsernameModal } from './components/UsernameModal';
 import { CreateTaskModal, type TaskDraft } from './components/tasks/CreateTaskModal';
 
@@ -60,6 +62,7 @@ export const Dashboard = (): React.JSX.Element => {
           </button>
         </div>
       </header>
+      <ServerUpdateBanner />
       <nav className="flex gap-1 border-b border-slate-800">
         {TABS.filter((t) => canSee(t.access)).map((t) => (
           <button
@@ -80,7 +83,7 @@ export const Dashboard = (): React.JSX.Element => {
       {activeTab === 'attunements' && <AttunementsPage data={data} canManage={canManage} onCreateTask={startTask} />}
       {activeTab === 'ledger' && <LootAttendancePage data={data} />}
       {activeTab === 'tasks' && <OfficerTasksPage data={data} />}
-      {activeTab === 'admin' && <AdminUsersPage />}
+      {activeTab === 'admin' && <div className="space-y-5"><ServerUpdates /><AdminUsersPage /></div>}
       {editingUsername && user && <UsernameModal target={user}
         onClose={() => setEditingUsername(false)} onSaved={() => setEditingUsername(false)} />}
       {draft && <CreateTaskModal draft={draft} roster={data.roster} onError={data.handleError} onClose={() => setDraft(null)} />}

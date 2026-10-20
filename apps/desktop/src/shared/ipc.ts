@@ -1,4 +1,4 @@
-import type { AuthUser } from '@flocksync/shared-types';
+import type { AuthUser, ReleaseInfo, UpdateChannel } from '@flocksync/shared-types';
 
 export const DEFAULT_API_URL = '';
 export const DEFAULT_WOW_PATH = 'C:\\Program Files (x86)\\World of Warcraft\\_classic_beta_';
@@ -31,13 +31,10 @@ export type LoginResult = { ok: true; user: AuthUser } | { ok: false; error: str
 export interface AppSettings {
   minimizeToTray: boolean;
   startOnBoot: boolean;
+  updateChannel: UpdateChannel;
 }
 
-export interface UpdateInfo {
-  version: string;
-  url: string;
-  releaseNotes: string;
-}
+export type UpdateInfo = ReleaseInfo;
 
 export interface AppSettingsState {
   settings: AppSettings;
