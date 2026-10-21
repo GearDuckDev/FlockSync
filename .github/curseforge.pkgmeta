@@ -23,6 +23,7 @@ ignore:
   - release
   - data
   - DEPLOYMENT.md
+  - CURSEFORGE.md
   - README.md
   - RELEASES.md
   - docker-compose.yml
