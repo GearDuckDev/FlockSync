@@ -196,6 +196,12 @@ Suggested project description:
 6. Run again with the same tag and **publish** checked to upload to CurseForge.
    Verify the file, game version, release type, and moderation status there.
 
+The artifact uploader explicitly includes the exact verified ZIP inside the
+hidden `.curseforge-release` directory. Keep `include-hidden-files: true` on
+that step; upload-artifact otherwise skips dot-prefixed directories. If an
+older run failed only at artifact saving, check the preceding CurseForge upload
+step and the project's files before publishing again to avoid duplicate uploads.
+
 The workflow is manual on purpose: server-only releases must not automatically
 re-upload an unchanged main addon. The package label comes from the main
 addon's TOC, not the overall bundle tag. For example, bundle `v0.3.2-beta`

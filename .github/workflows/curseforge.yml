@@ -124,5 +124,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: FlockSync-CurseForge-${{ steps.addon.outputs.version }}
-          path: .curseforge-release/*.zip
+          path: .curseforge-release/FlockSync-${{ steps.addon.outputs.version }}.zip
+          include-hidden-files: true
           if-no-files-found: error
