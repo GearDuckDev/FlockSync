@@ -63,9 +63,10 @@ installed version with their own manifest entry, never with the bundle tag.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
    - Attach the six files below. Publish only after all uploads finish.
-7. Publish the member addon ZIP to CurseForge separately, using the main addon
-   version and matching **Alpha**, **Beta**, or **Release** type. A GitHub
-   release does not upload anything to CurseForge.
+7. The CurseForge workflow automatically publishes the main addon when the GitHub
+   release is published, using the main addon's version and the tag's matching
+   **Alpha**, **Beta**, or **Release** type. Configure `CF_API_TOKEN` first.
+   Unchanged main addon versions are skipped; see the workflow section below.
 8. Verify downloads and manual checks using the intended channel. Smoke-test
    the installer/portable app and in-game addon before distributing widely.
 
@@ -190,13 +191,21 @@ Suggested project description:
 2. In GitHub, open **Settings -> Secrets and variables -> Actions -> New
    repository secret**, name it **CF_API_TOKEN**, and paste the token privately.
    Never put it in source, an issue, a workflow input, or release notes.
-3. Commit/push `.github/workflows/curseforge.yml` to the default branch.
+3. Commit/push `.github/workflows/curseforge.yml` to the default branch and
+   include it in future release tags. GitHub uses the workflow at the release
+   tag for release events; tags created before this change are not retroactive.
 4. Open **Actions -> Package or publish CurseForge addon -> Run workflow**.
    Enter an existing combined release tag. Leave **publish** unchecked first.
 5. Download the workflow artifact, then inspect the inner addon ZIP. It must
    contain `FlockSync/FlockSync.toc` and the main addon Lua files, without
    AppHelper, API/web/desktop code, database files, or environment configuration.
-6. Run again with the same tag and **publish** checked to upload to CurseForge.
+6. For future releases, publish the GitHub Release after uploading all six
+   release assets. The `release: published` event uploads the verified main
+   addon to CurseForge automatically. It covers stable releases and pre-releases;
+   merely pushing a tag or saving/editing a draft does not trigger an upload.
+7. For an already-published release, or an upload that still needs its first
+   attempt, run manually with **publish** checked. Manual runs bypass the
+   unchanged-version guard. Check CurseForge first to avoid uploading duplicates.
    Verify the file, game version, release type, and moderation status there.
 
 The artifact uploader explicitly includes the exact verified ZIP inside the
@@ -205,13 +214,26 @@ that step; upload-artifact otherwise skips dot-prefixed directories. If an
 older run failed only at artifact saving, check the preceding CurseForge upload
 step and the project's files before publishing again to avoid duplicate uploads.
 
-The workflow is manual on purpose: server-only releases must not automatically
-re-upload an unchanged main addon. The package label comes from the main
-addon's TOC, not the overall bundle tag. For example, bundle `v0.3.2-beta`
-packages main addon `0.3.1-beta`; use that for its first CurseForge upload only
-if that addon version has not already been uploaded. Thereafter publish only
-when the main addon version changes. The tag and addon must share the same
-alpha/beta/stable channel because BigWigs derives upload type from the Git tag.
+Automatic runs skip a main addon version already present in an earlier published
+combined GitHub release, preventing server/desktop-only releases from re-uploading
+the unchanged addon. This checks GitHub history, not CurseForge upload status;
+if an earlier upload failed or was never attempted, use a manual run.
+Rerunning a successful publishing job can still duplicate an upload: inspect the
+project's files first. The package label comes from the main addon's TOC, not the
+overall bundle tag. AppHelper is never included in this CurseForge upload.
+
+| Combined tag | GitHub release setting | CurseForge file type |
+| --- | --- | --- |
+| `v0.4.0-alpha` or `v0.4.0-alpha.1` | Pre-release | Alpha |
+| `v0.4.0-beta` or `v0.4.0-beta.1` | Pre-release | Beta |
+| `v0.4.0` | Not a pre-release | Release |
+
+Use a plain `vX.Y.Z` tag for **Release**, not a literal `-release` suffix:
+FlockSync's manifest/update checkers use standard stable versions with no suffix.
+The workflow rejects unsupported tags and automatic runs with an inconsistent
+GitHub pre-release flag. The tag and main addon TOC must share the same channel.
+BigWigs derives the upload type from the selected Git tag, including manual
+runs; the overall tag version and the addon's component version may differ.
 
 BigWigs detects Forever from Interface `16001`; do not substitute a retail or
 Classic interface just to make an upload pass. If CurseForge does not offer
