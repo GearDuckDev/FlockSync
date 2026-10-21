@@ -49,10 +49,11 @@ function ns.RemoveAccountCharacter(guid)
             profile.mainCharacterName = nil
         end
     end
-    local mine = FlockSyncDB.characters[UnitGUID("player")]
-    if mine and mine.mainCharacterGuid == guid then
-        mine.mainCharacterGuid = nil
-        mine.mainCharacterName = nil
+    for _, character in pairs(FlockSyncDB.characters) do
+        if type(character) == "table" and character.mainCharacterGuid == guid then
+            character.mainCharacterGuid = nil
+            character.mainCharacterName = nil
+        end
     end
     return true
 end

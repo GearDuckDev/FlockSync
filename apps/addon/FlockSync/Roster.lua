@@ -45,6 +45,10 @@ local function rebuildRoster()
     end
 end
 
+function ns.RefreshGuildRosterCache()
+    rebuildRoster()
+end
+
 function ns.RequestGuildRoster()
     if not IsInGuild() then
         return

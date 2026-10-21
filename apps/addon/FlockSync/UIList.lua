@@ -93,24 +93,57 @@ function ns.AddPanelButton(parent, label, width, onClick)
     return button
 end
 
--- Item names load asynchronously; spell ids (enchants) have no item record.
+local recipeCache = {}
+local requestedItems = {}
+
+local function getSpellDetails(id)
+    if C_Spell and C_Spell.GetSpellInfo then
+        local info = C_Spell.GetSpellInfo(id)
+        if info and info.name then
+            return info.name, info.iconID
+        end
+    end
+    if GetSpellInfo then
+        local name, _, icon = GetSpellInfo(id)
+        if name then
+            return name, icon
+        end
+    end
+    return nil, nil
+end
+
+-- Item names load asynchronously; spell ids (enchants) have no item record,
+-- though their numeric IDs can overlap with unrelated items in the game DB.
 function ns.ResolveRecipeOutput(id)
+    local cached = recipeCache[id]
+    if cached then
+        return cached.name, cached.link, cached.icon, cached.isItem
+    end
+    local spellName, spellIcon = getSpellDetails(id)
+    if spellName and spellName:match("^[Ee]nchant ") then
+        local spellLink = (C_Spell and C_Spell.GetSpellLink and C_Spell.GetSpellLink(id))
+            or (GetSpellLink and GetSpellLink(id)) or nil
+        recipeCache[id] = { name = spellName, link = spellLink, icon = spellIcon, isItem = false }
+        return spellName, spellLink, spellIcon, false
+    end
     local getInstant = C_Item and C_Item.GetItemInfoInstant or GetItemInfoInstant
     local getInfo = C_Item and C_Item.GetItemInfo or GetItemInfo
     if getInstant and getInstant(id) then
         local name, link, _, _, _, _, _, _, _, icon = getInfo(id)
-        if not name and C_Item and C_Item.RequestLoadItemDataByID then
+        if name then
+            local resolvedIcon = icon or select(5, getInstant(id))
+            recipeCache[id] = { name = name, link = link, icon = resolvedIcon, isItem = true }
+            return name, link, resolvedIcon, true
+        end
+        if not requestedItems[id] and C_Item and C_Item.RequestLoadItemDataByID then
+            requestedItems[id] = true
             C_Item.RequestLoadItemDataByID(id)
         end
-        return name, link, icon or select(5, getInstant(id)), true
+        return nil, nil, select(5, getInstant(id)), true
     end
-    if C_Spell and C_Spell.GetSpellInfo then
-        local info = C_Spell.GetSpellInfo(id)
-        return info and info.name, nil, info and info.iconID
+    if spellName then
+        recipeCache[id] = { name = spellName, link = nil, icon = spellIcon, isItem = false }
+        return spellName, nil, spellIcon, false
     end
-    if GetSpellInfo then
-        local name, _, icon = GetSpellInfo(id)
-        return name, nil, icon
-    end
-    return nil, nil, nil
+    return nil, nil, nil, false
 end

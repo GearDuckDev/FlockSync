@@ -1,6 +1,6 @@
 {
   "name": "@flocksync/desktop",
-  "version": "0.3.0-beta",
+  "version": "0.3.1",
   "private": true,
   "description": "FlockSync desktop sync client",
   "author": "GearDuckDev",

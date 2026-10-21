@@ -1,3 +1,9 @@
+if not UPDATE_NOTICES_SOURCE then
+    local f = assert(io.open("apps/addon/FlockSync/UpdateNotices.lua", "rb"))
+    UPDATE_NOTICES_SOURCE = f:read("*a")
+    f:close()
+end
+
 local frames, output = {}, {}
 local installed = "0.2.0"
 local ns = { GetAddonVersion = function() return installed end }

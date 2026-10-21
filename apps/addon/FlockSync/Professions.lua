@@ -21,28 +21,105 @@ local function getStore(profile)
     return profile.professions
 end
 
+local function bumpUpdatedAt(store)
+    store.updatedAt = math.max(GetServerTime(), (store.updatedAt or 0) + 1)
+end
+
+-- Queries the client's active skill lines when available so dropped professions
+-- do not stay in the player's profile forever.
+local function learnedProfessionSet()
+    if GetProfessions and GetProfessionInfo then
+        local slots = { GetProfessions() }
+        local learned, count = {}, 0
+        for i = 1, 6 do
+            local index = slots[i]
+            if index then
+                local name = GetProfessionInfo(index)
+                if type(name) == "string" and name ~= "" then
+                    learned[name] = true
+                    count = count + 1
+                end
+            end
+        end
+        if count > 0 then
+            return learned
+        end
+    end
+    if GetNumSkillLines and GetSkillLineInfo then
+        local num = GetNumSkillLines() or 0
+        local learned, count = {}, 0
+        for i = 1, num do
+            local name, isHeader = GetSkillLineInfo(i)
+            if not isHeader and type(name) == "string" and name ~= "" then
+                learned[name] = true
+                count = count + 1
+            end
+        end
+        if count > 0 then
+            return learned
+        end
+    end
+    return nil
+end
+
+local function pruneUnlearned(store, activeName)
+    local learned = learnedProfessionSet()
+    if not learned then
+        return false
+    end
+    if activeName then
+        learned[activeName] = true
+    end
+    local removed = false
+    for name in pairs(store.list) do
+        if not learned[name] then
+            store.list[name] = nil
+            removed = true
+        end
+    end
+    if removed then
+        bumpUpdatedAt(store)
+        store.pendingPrune = true
+    end
+    return removed
+end
+
 -- Recipe lists only show what the open window displays (collapsed headers or
 -- filters hide entries), so scans are merged into what was captured before.
 local function mergeProfession(store, name, level, maxLevel, recipeIds)
+    local changed = pruneUnlearned(store, name) or store.pendingPrune == true
+    store.pendingPrune = nil
     local entry = store.list[name]
     if type(entry) ~= "table" then
         entry = { name = name, recipes = {} }
         store.list[name] = entry
+        changed = true
     end
-    entry.level = level
-    entry.maxLevel = maxLevel
+    if entry.level ~= level or entry.maxLevel ~= maxLevel then
+        entry.level = level
+        entry.maxLevel = maxLevel
+        changed = true
+    end
     local known = {}
     for _, id in ipairs(entry.recipes) do
         known[id] = true
     end
+    local added = false
     for _, id in ipairs(recipeIds) do
         if not known[id] then
             known[id] = true
             entry.recipes[#entry.recipes + 1] = id
+            added = true
         end
     end
-    table.sort(entry.recipes)
-    store.updatedAt = GetServerTime()
+    if added then
+        table.sort(entry.recipes)
+        changed = true
+    end
+    if changed then
+        bumpUpdatedAt(store)
+    end
+    return changed
 end
 
 local function collect(count, infoFn, linkFn)
@@ -122,12 +199,13 @@ local function scanCraft()
         local craftName, _, craftType = GetCraftInfo(index)
         return craftName, craftType
     end, function(index)
-        return GetCraftItemLink and GetCraftItemLink(index)
+        return (GetCraftItemLink and GetCraftItemLink(index))
+            or (GetCraftRecipeLink and GetCraftRecipeLink(index))
     end)
     return name, level or 0, maxLevel or 0, ids
 end
 
--- Returns true when a profession window was read and stored.
+-- Returns true when a profession window was read and produced new/updated data.
 function ns.ScanProfessions(source)
     local profile = ns.GetProfile()
     if not profile then
@@ -142,20 +220,36 @@ function ns.ScanProfessions(source)
     if not name then
         return false
     end
-    mergeProfession(getStore(profile), name, level, maxLevel, ids)
+    return mergeProfession(getStore(profile), name, level, maxLevel, ids)
+end
+
+function ns.ClearProfessions()
+    local profile = ns.GetProfile()
+    if not profile then
+        return false
+    end
+    local store = getStore(profile)
+    if next(store.list) == nil then
+        return false
+    end
+    store.list = {}
+    store.pendingPrune = nil
+    bumpUpdatedAt(store)
     return true
 end
 
 function ns.SetAcceptingRequests(value)
     local profile = ns.GetProfile()
     profile.acceptingRequests = value and true or false
-    getStore(profile).updatedAt = GetServerTime()
+    bumpUpdatedAt(getStore(profile))
 end
 
 function ns.ProfessionSummary()
     local profile = ns.GetProfile()
+    local store = getStore(profile)
+    pruneUnlearned(store)
     local lines = {}
-    for _, entry in pairs(getStore(profile).list) do
+    for _, entry in pairs(store.list) do
         lines[#lines + 1] = string.format("%s %d/%d (%d recipes)",
             entry.name, entry.level or 0, entry.maxLevel or 0, #entry.recipes)
     end
@@ -170,6 +264,8 @@ end
 function ns.BuildProfessionsPayload()
     local profile = ns.GetProfile()
     local store = getStore(profile)
+    pruneUnlearned(store)
+    store.pendingPrune = nil
     local primary = {}
     for _, entry in pairs(store.list) do
         primary[#primary + 1] = {
@@ -180,9 +276,22 @@ function ns.BuildProfessionsPayload()
             acceptingRequests = profile.acceptingRequests == true,
         }
     end
-    if #primary == 0 then
+    if #primary == 0 and (store.updatedAt or 0) <= 0 then
         return nil
     end
     table.sort(primary, function(a, b) return a.name < b.name end)
     return { primary = primary, updatedAt = store.updatedAt }
+end
+
+function ns.ConsumePendingProfessionPrune()
+    local profile = ns.GetProfile()
+    if not profile then
+        return false
+    end
+    local store = getStore(profile)
+    if store.pendingPrune then
+        store.pendingPrune = nil
+        return true
+    end
+    return false
 end

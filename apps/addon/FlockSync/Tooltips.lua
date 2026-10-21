@@ -1,6 +1,8 @@
 local addonName, ns = ...
 
 local MAX_NAMES = 4
+local GOAL_PREFIX = "|cff00ff00FlockSync Goal:|r"
+local CRAFTER_PREFIX = "|cff00c0ffFlockSync Crafter:|r"
 
 -- Joins unique names, collapsing the overflow into "+N more".
 local function nameList(entries)
@@ -23,21 +25,45 @@ local function nameList(entries)
     return text, #names
 end
 
+local function alreadyAnnotated(tooltip, itemId)
+    if tooltip.NumLines and tooltip.GetName then
+        local base = tooltip:GetName()
+        local total = tooltip:NumLines() or 0
+        if base and total > 0 then
+            for i = 1, total do
+                local left = _G[base .. "TextLeft" .. i]
+                local text = left and left.GetText and left:GetText()
+                if type(text) == "string"
+                    and (text:sub(1, #GOAL_PREFIX) == GOAL_PREFIX
+                        or text:sub(1, #CRAFTER_PREFIX) == CRAFTER_PREFIX) then
+                    return true
+                end
+            end
+            return false
+        end
+    end
+    return tooltip._flockSyncLastItemId == itemId
+end
+
 local function appendSnapshotLines(tooltip, itemId)
     if type(itemId) ~= "number" or not tooltip or not tooltip.AddLine
-        or not ns.IsEnabled("showTooltips") then
+        or not ns.IsEnabled("showTooltips") or alreadyAnnotated(tooltip, itemId) then
         return
     end
     local goals = ns.Snapshot.goalsByItem[itemId]
+    local crafters = ns.Snapshot.craftersByItem[itemId]
+    if not goals and not crafters then
+        return
+    end
+    tooltip._flockSyncLastItemId = itemId
     if goals then
         local names, count = nameList(goals)
-        tooltip:AddLine("|cff00ff00FlockSync Goal:|r Needed by " .. count
+        tooltip:AddLine(GOAL_PREFIX .. " Needed by " .. count
             .. (count == 1 and " guildmate" or " guildmates") .. " (" .. names .. ")",
             1, 1, 1, true)
     end
-    local crafters = ns.Snapshot.craftersByItem[itemId]
     if crafters then
-        tooltip:AddLine("|cff00c0ffFlockSync Crafter:|r " .. nameList(crafters)
+        tooltip:AddLine(CRAFTER_PREFIX .. " " .. nameList(crafters)
             .. " (Accepting Requests)", 1, 1, 1, true)
     end
 end
@@ -48,6 +74,14 @@ local function itemIdFromTooltip(tooltip)
     end
     local _, link = tooltip:GetItem()
     return ns.ParseItemInput(link)
+end
+
+for _, tooltip in ipairs({ GameTooltip, ItemRefTooltip, ShoppingTooltip1, ShoppingTooltip2 }) do
+    if tooltip and tooltip.HookScript then
+        pcall(tooltip.HookScript, tooltip, "OnTooltipCleared", function(self)
+            self._flockSyncLastItemId = nil
+        end)
+    end
 end
 
 -- Interface 16001 ships the retail tooltip data pipeline; data.id is the item id.

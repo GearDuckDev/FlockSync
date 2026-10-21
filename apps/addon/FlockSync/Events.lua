@@ -8,7 +8,7 @@ local function scheduleScan()
     pendingScan = true
     C_Timer.After(2, function()
         pendingScan = false
-        ns.PublishLocalScan()
+        ns.PublishLocalScan(true)
     end)
 end
 
@@ -39,13 +39,15 @@ frame:RegisterEvent("TRADE_SKILL_SHOW")
 pcall(frame.RegisterEvent, frame, "CRAFT_SHOW")
 -- Fires once the recipe list is ready on clients using C_TradeSkillUI.
 pcall(frame.RegisterEvent, frame, "TRADE_SKILL_LIST_UPDATE")
-frame:SetScript("OnEvent", function(_, event)
+frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "PLAYER_ENTERING_WORLD" then
         ns.RegisterAccountCharacter()
         ns.RequestLockouts()
         scheduleScan()
         -- Delay so the loading screen is gone and guild/unit data is ready.
-        C_Timer.After(3, ns.ShowStartupWindow)
+        if arg1 ~= false or arg2 ~= false then
+            C_Timer.After(3, ns.ShowStartupWindow)
+        end
     elseif event == "PLAYER_LOGOUT" then
         -- Flush pending equipment changes before logout/reload writes SavedVariables.
         ns.CaptureLocalScan()
@@ -53,8 +55,12 @@ frame:SetScript("OnEvent", function(_, event)
         scanProfessionsSoon("tradeskill")
     elseif event == "CRAFT_SHOW" then
         scanProfessionsSoon("craft")
+    elseif event == "QUEST_TURNED_IN" then
+        if arg1 == nil or not ns.IsAttunementQuest or ns.IsAttunementQuest(arg1) then
+            scheduleScan()
+        end
     elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "PLAYER_LEVEL_UP"
-        or event == "UPDATE_INSTANCE_INFO" or event == "QUEST_TURNED_IN" then
+        or event == "UPDATE_INSTANCE_INFO" then
         scheduleScan()
     end
 end)

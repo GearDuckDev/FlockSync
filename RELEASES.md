@@ -5,27 +5,27 @@ The overall Git tag identifies the bundle; the manifest identifies the version
 of each component. Desktop, server, and addon update checks compare their own
 installed version with their own manifest entry, never with the bundle tag.
 
-## Current beta
+## Current release (pre-1.0)
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.4.0-beta` |
-| Desktop | `0.3.0-beta` |
-| API + web / server | `0.3.0-beta` |
-| Main addon | `0.4.0-beta` |
-| AppHelper | `0.2.1-beta` |
-| Shared types | `0.3.0-beta` |
-| Root package | `0.2.1-beta` |
+| Combined GitHub tag | `v0.5.0` |
+| Desktop | `0.3.1` |
+| API + web / server | `0.3.1` |
+| Main addon | `0.5.0` |
+| AppHelper | `0.2.2` |
+| Shared types | `0.3.1` |
+| Root package | `0.2.2` |
 
-### Changes in this beta
+### Changes in this release
 
-- Website ADMIN/OFFICER accounts can collect guild broadcasts on same-guild,
-  same-realm alts without first logging in on a native officer-ranked character.
-- AppHelper has an independent login update notice using its own component
-  version and channel, pointing officers to the GitHub officer bundle.
-- Deploy the API first, then update desktop and the main addon. AppHelper's
-  own code/version is unchanged. See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for
-  copy-ready release notes and activation instructions.
+- Reduced redundant character broadcasts, snapshot traffic, and repeated UI lookups.
+- Improved profession cleanup/reset, loot filtering, raid invites, and tooltip behavior.
+- Fixed guild retry lockups, stale profession pruning timestamps, and unbounded
+  item-search recency bookkeeping.
+- All components were version-bumped at the user's request. Desktop, API/web,
+  shared types, and AppHelper have no new runtime behavior since the previous
+  beta. See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
 
 ## Each time you release
 
@@ -40,7 +40,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.4.0-beta
+   .\scripts\package-release.ps1 -ReleaseVersion 0.5.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -53,15 +53,17 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.4.0-beta -m "FlockSync 0.4.0-beta"
-   git push origin v0.4.0-beta
+   git tag -a v0.5.0 -m "FlockSync 0.5.0"
+   git push origin v0.5.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.4.0-beta`.
-   - Title: `FlockSync 0.4.0-beta`.
+   - Tag: `v0.5.0`.
+   - Title: `FlockSync 0.5.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
+     For `v0.5.0`, leave it **unchecked**; this is a normal Release-channel
+     publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
    release is published, using the main addon's version and the tag's matching
@@ -75,8 +77,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.3.0-beta-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.3.0-beta-x64.exe` | Windows portable app |
+| `FlockSync-Setup-0.3.1-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.3.1-x64.exe` | Windows portable app |
 | `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
@@ -284,6 +286,24 @@ at most one chat notice. Reloads, zone changes, and metadata received during
 play do not announce updates. Stable installs ignore previews; beta installs
 see beta/stable; alpha installs see all three. Use CurseForge to manage preview
 downloads. Stale/no guild metadata does not guarantee an addon is current.
+
+## Addon regression checks (development)
+
+From the repository root with Lua 5.1 installed:
+
+```powershell
+lua5.1 .\apps\addon\test\reviewRegressions.test.lua
+lua5.1 .\apps\addon\test\localCapture.test.lua
+lua5.1 .\apps\addon\test\collectorAuthorization.test.lua
+lua5.1 .\apps\addon\test\releaseRelay.test.lua
+```
+
+The review regressions cover guild-lookup exhaustion and leaving/rejoining
+during retries, profession-summary pruning with a newer export timestamp, and
+5,000 repeated item-search refreshes with bounded, unique recency entries and
+correct eviction. Failed CHARACTER guild lookups report a skipped broadcast
+in chat, clear pending state, and allow a later broadcast attempt to retry.
+These checks use mocks; also verify UI and guild behavior in game before release.
 
 ## Live beta verification (development)
 

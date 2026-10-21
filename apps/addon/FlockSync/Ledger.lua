@@ -33,9 +33,20 @@ function ns.PruneLedger()
     end
 end
 
-local function hasEntry(list, id)
-    for _, entry in ipairs(list) do
-        if entry.id == id then
+local function isDuplicate(kind, list, incoming)
+    local incomingPrefix = kind == "ATTENDANCE" and incoming.id:match("^(A%d+)%-") or nil
+    for _, existing in ipairs(list) do
+        if existing.id == incoming.id then
+            return true
+        end
+        local dt = math.abs((existing.timestamp or 0) - (incoming.timestamp or 0))
+        if kind == "LOOT" and dt <= 45
+            and existing.itemId == incoming.itemId
+            and existing.recipientName == incoming.recipientName then
+            return true
+        elseif kind == "ATTENDANCE" and dt <= 60
+            and existing.instanceName == incoming.instanceName
+            and incomingPrefix and existing.id:match("^(A%d+)%-") == incomingPrefix then
             return true
         end
     end
@@ -66,7 +77,7 @@ function ns.MergeLedgerEntry(kind, entry)
     else
         return false
     end
-    if not valid(entry) or hasEntry(list, entry.id) then
+    if not valid(entry) or isDuplicate(kind, list, entry) then
         return false
     end
     list[#list + 1] = entry
@@ -82,6 +93,17 @@ local function record(kind, entry)
     if ns.MergeLedgerEntry(kind, entry) and IsInGuild() then
         ns.BroadcastUpdate(kind, entry)
     end
+end
+
+local function stripRealmSuffix(name)
+    local realm = GetNormalizedRealmName and GetNormalizedRealmName() or nil
+    if realm and realm ~= "" then
+        local suffix = "-" .. realm
+        if #name > #suffix and name:sub(-#suffix) == suffix then
+            return name:sub(1, #name - #suffix)
+        end
+    end
+    return name
 end
 
 local function onEncounterEnd(encounterId, encounterName, _, _, success)
@@ -128,9 +150,17 @@ local function onLoot(message, _, _, _, _, _, _, _, _, _, _, guid)
         return
     end
     local name = message:match("^(.-) receives? loot")
-    if not name or name == "You" then
-        name = UnitName("player")
+    if not name or name == "" then
+        return
+    end
+    if name == "You" then
+        name = (ns.GetPlayerFullName and ns.GetPlayerFullName()) or UnitName("player")
         guid = UnitGUID("player")
+    else
+        name = stripRealmSuffix(name)
+    end
+    if not name or name == "" then
+        return
     end
     local now = GetServerTime()
     local boss = (now - lastBoss.at) <= 600 and lastBoss.name or nil

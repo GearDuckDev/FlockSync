@@ -37,6 +37,19 @@ local CHAINS = {
     },
 }
 
+local TRACKED_QUESTS = {}
+for _, chain in ipairs(CHAINS) do
+    for _, steps in pairs(chain.steps) do
+        for _, step in ipairs(steps) do
+            TRACKED_QUESTS[step.questId] = true
+        end
+    end
+end
+
+function ns.IsAttunementQuest(questId)
+    return type(questId) == "number" and TRACKED_QUESTS[questId] == true
+end
+
 local function questDone(questId)
     if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
         return C_QuestLog.IsQuestFlaggedCompleted(questId) == true
@@ -48,7 +61,7 @@ local function questDone(questId)
 end
 
 function ns.ScanAttunements()
-    local faction = UnitFactionGroup("player")
+    local faction = UnitFactionGroup and UnitFactionGroup("player") or nil
     if faction ~= "Alliance" and faction ~= "Horde" then
         faction = "Alliance"
     end

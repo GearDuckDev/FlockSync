@@ -40,14 +40,21 @@ local function serialize(value)
     return "{" .. table.concat(fields, ",") .. "}"
 end
 
+local ESCAPES = {
+    a = "\a", b = "\b", f = "\f", n = "\n",
+    r = "\r", t = "\t", v = "\v",
+    ["\\"] = "\\", ['"'] = '"', ["\n"] = "\n",
+}
+
 local function deserialize(source)
     if type(source) ~= "string" then
         return nil
     end
     local position = 1
     local function skipSpace()
-        while source:sub(position, position):match("%s") do
-            position = position + 1
+        local _, finish = source:find("^%s+", position)
+        if finish then
+            position = finish + 1
         end
     end
     local parseValue
@@ -62,17 +69,12 @@ local function deserialize(source)
             elseif char == "\\" then
                 position = position + 1
                 local escaped = source:sub(position, position)
-                local escapes = {
-                    a = "\a", b = "\b", f = "\f", n = "\n",
-                    r = "\r", t = "\t", v = "\v",
-                    ["\\"] = "\\", ['"'] = '"', ["\n"] = "\n",
-                }
-                local decoded = escapes[escaped]
+                local decoded = ESCAPES[escaped]
                 if decoded then
                     characters[#characters + 1] = decoded
                     position = position + 1
                 elseif escaped:match("%d") then
-                    local digits = source:sub(position):match("^%d%d?%d?")
+                    local digits = source:match("^%d%d?%d?", position)
                     local byte = tonumber(digits)
                     if not byte or byte > 255 then
                         return nil
@@ -139,7 +141,7 @@ local function deserialize(source)
         elseif char == '"' then
             return parseString()
         end
-        local token = source:sub(position):match("^[%w%.%-]+")
+        local token = source:match("^[%w%.%-]+", position)
         if not token then
             return nil
         end
@@ -188,8 +190,10 @@ function ns.ChunkPayload(payload)
     return messageId, chunks
 end
 
--- sender keeps chunks from different players apart; ttl is the reassembly window.
-function ns.ReassembleChunk(chunk, sender, ttl)
+function ns.PeekChunkHeader(chunk)
+    if type(chunk) ~= "string" then
+        return nil
+    end
     local messageId, part, total, data =
         chunk:match("^(%d+n%d+):(%d+):(%d+):(.*)$")
     part, total = tonumber(part), tonumber(total)
@@ -197,19 +201,33 @@ function ns.ReassembleChunk(chunk, sender, ttl)
         or total < 1 or total > 10000 or part < 1 or part > total then
         return nil
     end
-    messageId = (sender or "") .. "/" .. messageId
+    return messageId, part, total, data
+end
+
+-- sender keeps chunks from different players apart; ttl is the reassembly window.
+function ns.ReassembleChunk(chunk, sender, ttl)
+    local messageId, part, total, data = ns.PeekChunkHeader(chunk)
+    if not messageId then
+        return nil
+    end
+    if total == 1 then
+        return data
+    end
+    local key = (sender or "") .. "/" .. messageId
     ns.messageParts = ns.messageParts or {}
-    local message = ns.messageParts[messageId]
+    local message = ns.messageParts[key]
     if not message then
         message = { total = total, received = 0, parts = {} }
-        ns.messageParts[messageId] = message
+        ns.messageParts[key] = message
         C_Timer.After(ttl or 90, function()
-            if ns.messageParts[messageId] == message then
-                ns.messageParts[messageId] = nil
+            if ns.messageParts and ns.messageParts[key] == message then
+                ns.messageParts[key] = nil
+                message.parts = nil
             end
         end)
     elseif message.total ~= total then
-        ns.messageParts[messageId] = nil
+        ns.messageParts[key] = nil
+        message.parts = nil
         return nil
     end
     if message.parts[part] == nil then
@@ -219,6 +237,8 @@ function ns.ReassembleChunk(chunk, sender, ttl)
     if message.received ~= total then
         return nil
     end
-    ns.messageParts[messageId] = nil
-    return table.concat(message.parts)
+    local assembled = table.concat(message.parts)
+    ns.messageParts[key] = nil
+    message.parts = nil
+    return assembled
 end

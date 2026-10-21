@@ -3,6 +3,7 @@ local addonName, ns = ...
 -- Invites a raid team's assigned (non-bench) members who are online. A party
 -- only holds 5, so the rest wait for the group to form and be converted.
 local pendingInvites = {}
+local invitedInBatch = {}
 
 local function isLeader()
     return UnitIsGroupLeader("player") or (IsInRaid() and UnitIsGroupAssistant("player"))
@@ -22,7 +23,10 @@ end
 
 local function inviteAll(names)
     for _, name in ipairs(names) do
-        ns.InviteCharacter(name)
+        if not alreadyGrouped(name) then
+            invitedInBatch[name] = true
+            ns.InviteCharacter(name)
+        end
     end
 end
 
@@ -32,11 +36,43 @@ local function flushPending()
     end
     if not IsInRaid() then
         convertToRaid()
-        return
+        if not IsInRaid() then
+            return
+        end
     end
     local names = pendingInvites
     pendingInvites = {}
     inviteAll(names)
+end
+
+local function queueOrInvite(names)
+    if #names == 0 then
+        return
+    end
+    local groupSize = IsInGroup() and GetNumGroupMembers() or 1
+    if IsInRaid() or groupSize + #names <= 5 then
+        inviteAll(names)
+        return
+    end
+    if IsInGroup() and not IsInRaid() then
+        convertToRaid()
+        if IsInRaid() then
+            inviteAll(names)
+            return
+        end
+    end
+    -- Fill the party now, convert once someone accepts, then invite the rest.
+    local room = math.max(0, 5 - groupSize)
+    local now = {}
+    for index, name in ipairs(names) do
+        if index <= room then
+            now[#now + 1] = name
+        else
+            pendingInvites[#pendingInvites + 1] = name
+        end
+    end
+    inviteAll(now)
+    flushPending()
 end
 
 function ns.AutoInviteRaid(raid)
@@ -44,6 +80,11 @@ function ns.AutoInviteRaid(raid)
         print("FlockSync: Only the group leader or an assistant can invite.")
         return
     end
+    if ns.RefreshGuildRosterCache then
+        ns.RefreshGuildRosterCache()
+    end
+    pendingInvites = {}
+    invitedInBatch = {}
     local names, offline = {}, 0
     for _, assignment in ipairs(raid.assignments or {}) do
         if not assignment.isBench and assignment.characterGuid ~= UnitGUID("player") then
@@ -57,27 +98,7 @@ function ns.AutoInviteRaid(raid)
     end
     print(string.format("FlockSync: Inviting %d online member(s) of %s (%d offline).",
         #names, raid.name, offline))
-    if #names == 0 then
-        return
-    end
-    local groupSize = IsInGroup() and GetNumGroupMembers() or 1
-    if IsInRaid() or groupSize + #names <= 5 then
-        inviteAll(names)
-        return
-    end
-    -- Fill the party now, convert once someone accepts, then invite the rest.
-    pendingInvites = {}
-    local room = math.max(0, 5 - groupSize)
-    local now = {}
-    for index, name in ipairs(names) do
-        if index <= room then
-            now[#now + 1] = name
-        else
-            pendingInvites[#pendingInvites + 1] = name
-        end
-    end
-    inviteAll(now)
-    flushPending()
+    queueOrInvite(names)
 end
 
 local frame = CreateFrame("Frame")

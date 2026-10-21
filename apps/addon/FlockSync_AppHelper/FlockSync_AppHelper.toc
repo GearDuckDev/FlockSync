@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: FlockSync AppHelper
 ## Author: GearDuckDev
-## Version: 0.2.1-beta
+## Version: 0.2.2
 ## SavedVariables: FlockSyncHelperDB
 
 Core.lua

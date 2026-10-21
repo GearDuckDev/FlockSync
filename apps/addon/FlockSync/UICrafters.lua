@@ -1,6 +1,9 @@
 local addonName, ns = ...
 
 local ROW_HEIGHT = 22
+local indexedEntries = {}
+local pendingItemIds = {}
+local indexDirty = true
 
 local function crafterLabel(entry)
     local name = ns.ClassColoredName(entry.characterName, entry.classId)
@@ -10,43 +13,57 @@ local function crafterLabel(entry)
     return name
 end
 
-local function resolve(entry)
-    local name, link, icon, isItem = ns.ResolveRecipeOutput(entry.itemIdOrSpellId)
-    return {
-        entry = entry,
-        name = name,
-        link = link,
-        icon = icon,
-        isItem = isItem,
-        sortName = name or ("~" .. entry.itemIdOrSpellId),
-    }
-end
-
-local function matches(result, query)
-    if query == "" then
-        return true
-    end
-    local entry = result.entry
-    return (result.name and result.name:lower():find(query, 1, true))
-        or entry.characterName:lower():find(query, 1, true)
-        or (entry.mainCharacterName and entry.mainCharacterName:lower():find(query, 1, true))
-        or tostring(entry.itemIdOrSpellId) == query
-end
-
-local function search(query)
-    local results = {}
+local function rebuildIndex()
+    indexedEntries = {}
+    pendingItemIds = {}
+    indexDirty = false
     for _, entry in ipairs(ns.Snapshot.craftersIndex) do
-        local result = resolve(entry)
-        if matches(result, query) then
-            results[#results + 1] = result
+        local id = entry.itemIdOrSpellId
+        local name, link, icon, isItem = ns.ResolveRecipeOutput(id)
+        if not name and isItem then
+            pendingItemIds[id] = true
         end
+        indexedEntries[#indexedEntries + 1] = {
+            entry = entry,
+            name = name,
+            nameLower = name and name:lower() or nil,
+            charLower = (entry.characterName or ""):lower(),
+            mainLower = entry.mainCharacterName and entry.mainCharacterName:lower() or nil,
+            idText = tostring(id),
+            link = link,
+            icon = icon,
+            isItem = isItem,
+            sortName = name or ("~" .. id),
+        }
     end
-    table.sort(results, function(a, b)
+    table.sort(indexedEntries, function(a, b)
         if a.sortName ~= b.sortName then
             return a.sortName < b.sortName
         end
         return a.entry.characterName < b.entry.characterName
     end)
+end
+
+local function matches(result, query)
+    return (result.nameLower and result.nameLower:find(query, 1, true) ~= nil)
+        or result.charLower:find(query, 1, true) ~= nil
+        or (result.mainLower and result.mainLower:find(query, 1, true) ~= nil)
+        or result.idText == query
+end
+
+local function search(query)
+    if indexDirty then
+        rebuildIndex()
+    end
+    if query == "" then
+        return indexedEntries
+    end
+    local results = {}
+    for _, result in ipairs(indexedEntries) do
+        if matches(result, query) then
+            results[#results + 1] = result
+        end
+    end
     return results
 end
 
@@ -137,11 +154,23 @@ function ns.BuildCrafterSearchPanel(parent)
         end)
     end
     panel.search:SetScript("OnTextChanged", refreshSoon)
-    ns.OnSnapshotChanged(refreshSoon)
-    ns.OnGuildRosterChanged(refreshSoon)
+    ns.OnSnapshotChanged(function()
+        indexDirty = true
+        refreshSoon()
+    end)
+    ns.OnGuildRosterChanged(function()
+        if panel:IsVisible() then
+            panel.list.Render()
+        end
+    end)
     -- Item names arrive asynchronously after the first lookup.
     panel:RegisterEvent("GET_ITEM_INFO_RECEIVED")
-    panel:SetScript("OnEvent", refreshSoon)
+    panel:SetScript("OnEvent", function(_, _, itemId)
+        if itemId == nil or pendingItemIds[itemId] then
+            indexDirty = true
+            refreshSoon()
+        end
+    end)
     panel:SetScript("OnShow", ns.RequestGuildRoster)
     ns.RequestGuildRoster()
     return panel

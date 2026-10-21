@@ -111,7 +111,18 @@ function ns.BuildLfgPanel(parent)
     ns.OnSnapshotChanged(refreshSoon)
     ns.OnGuildRosterChanged(refreshSoon)
     panel:RegisterEvent("GET_ITEM_INFO_RECEIVED")
-    panel:SetScript("OnEvent", refreshSoon)
+    panel:SetScript("OnEvent", function(_, _, itemId)
+        if itemId == nil then
+            refreshSoon()
+            return
+        end
+        for _, goal in ipairs(ns.GetGearGoals().goals) do
+            if goal.itemId == itemId then
+                refreshSoon()
+                return
+            end
+        end
+    end)
     panel:SetScript("OnShow", ns.RequestGuildRoster)
     ns.RequestGuildRoster()
     return panel

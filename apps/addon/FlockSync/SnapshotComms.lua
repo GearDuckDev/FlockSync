@@ -5,8 +5,10 @@ local addonName, ns = ...
 local PREFIX = "FLOCKSNAP"
 local SEND_INTERVAL = 1.0
 local RESEND_COOLDOWN = 120
+local REQ_COOLDOWN = 30
 local queue, sending = {}, false
 local lastSentAt, responsePending = 0, false
+local remoteTransferUntil, lastReqSeenAt = 0, 0
 
 local function sendNext()
     local chunk = table.remove(queue, 1)
@@ -14,9 +16,13 @@ local function sendNext()
         sending = false
         return
     end
-    sending = true
     C_ChatInfo.SendAddonMessage(PREFIX, chunk, "GUILD")
-    C_Timer.After(SEND_INTERVAL, sendNext)
+    if #queue > 0 then
+        sending = true
+        C_Timer.After(SEND_INTERVAL, sendNext)
+    else
+        sending = false
+    end
 end
 
 local function send(message)
@@ -89,10 +95,12 @@ end
 
 local function broadcastSnapshot()
     responsePending = false
-    if not canShare() or sending or GetServerTime() - lastSentAt < RESEND_COOLDOWN then
+    local now = GetServerTime()
+    if not canShare() or sending or now < remoteTransferUntil
+        or now - lastSentAt < RESEND_COOLDOWN then
         return
     end
-    lastSentAt = GetServerTime()
+    lastSentAt = now
     send({ k = "SNAP", d = compact(ns.GetSnapshotSource()) })
 end
 
@@ -104,7 +112,23 @@ local function handleMessage(_, prefix, chunk, _, sender)
     if prefix ~= PREFIX or isSelf(sender) or not ns.CurrentGuildName() then
         return
     end
-    local message = ns.Deserialize(ns.ReassembleChunk(chunk, sender, 600))
+    local now = GetServerTime()
+    if ns.PeekChunkHeader then
+        local _, part, total = ns.PeekChunkHeader(chunk)
+        if total and total > 1 then
+            -- Another officer is already streaming a multi-chunk SNAP; yield the channel.
+            responsePending = false
+            local finishAt = now + (total - part + 1) * SEND_INTERVAL + 5
+            if finishAt > remoteTransferUntil then
+                remoteTransferUntil = finishAt
+            end
+        end
+    end
+    local payload = ns.ReassembleChunk(chunk, sender, 600)
+    if not payload then
+        return
+    end
+    local message = ns.Deserialize(payload)
     if type(message) ~= "table" or not ns.IsFromMyGuild(message.guild) then
         return
     end
@@ -112,13 +136,20 @@ local function handleMessage(_, prefix, chunk, _, sender)
         local source = expand(message.d)
         if source and source.serverTimestamp >= ns.Snapshot.serverTimestamp then
             -- Someone already shared an equal or newer copy; skip our reply.
-            lastSentAt = GetServerTime()
+            lastSentAt = now
+            remoteTransferUntil = 0
+            responsePending = false
             ns.ApplyBroadcastSnapshot(source, message.guild)
         end
-    elseif message.k == "REQ" and type(message.t) == "number"
-        and message.t < ns.Snapshot.serverTimestamp and canShare() and not responsePending then
-        responsePending = true
-        C_Timer.After(2 + math.random() * 6, broadcastSnapshot)
+    elseif message.k == "REQ" and type(message.t) == "number" then
+        if message.t <= ns.Snapshot.serverTimestamp then
+            lastReqSeenAt = now
+        end
+        if message.t < ns.Snapshot.serverTimestamp and canShare()
+            and not responsePending and now >= remoteTransferUntil then
+            responsePending = true
+            C_Timer.After(2 + math.random() * 6, broadcastSnapshot)
+        end
     end
 end
 
@@ -140,7 +171,10 @@ frame:SetScript("OnEvent", function(_, event, ...)
         end
     end)
     C_Timer.After(15, function()
-        send({ k = "REQ", t = ns.Snapshot.serverTimestamp })
+        local now = GetServerTime()
+        if now >= remoteTransferUntil and (lastReqSeenAt == 0 or now - lastReqSeenAt >= REQ_COOLDOWN) then
+            send({ k = "REQ", t = ns.Snapshot.serverTimestamp })
+        end
     end)
     C_Timer.After(30, broadcastSnapshot)
 end)

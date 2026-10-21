@@ -138,6 +138,13 @@ function ns.BuildProfessionsPanel(parent)
     end)
 
     addLabel(panel, "Scanned Professions", 22, -44)
+    panel.clearProfessions = ns.AddPanelButton(panel, "Reset", 60, function()
+        if ns.ClearProfessions and ns.ClearProfessions() then
+            touch()
+            panel.Refresh()
+        end
+    end)
+    panel.clearProfessions:SetPoint("TOPLEFT", 168, -41)
     panel.summary = addLabel(panel, "", 22, -62, "GameFontHighlightSmall", 400)
     panel.summary:SetSpacing(2)
 
@@ -158,6 +165,9 @@ function ns.BuildProfessionsPanel(parent)
     function panel.Refresh()
         panel.accepting:SetChecked(ns.GetProfile().acceptingRequests == true)
         panel.summary:SetText(ns.ProfessionSummary())
+        if ns.ConsumePendingProfessionPrune and ns.ConsumePendingProfessionPrune() then
+            touch()
+        end
         local goals = ns.GetGearGoals().goals
         for index, row in ipairs(panel.rows) do
             local goal = goals[index]
