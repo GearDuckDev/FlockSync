@@ -191,6 +191,20 @@ not unnecessarily prompt you to update an unchanged addon or desktop app.
 Addon chat notices rely on synced release metadata and appear only at initial
 character login — not repeatedly during play or on reload.
 
+Officers with AppHelper installed also receive a separate notice when its own
+version needs updating. That notice points to the FlockSync GitHub releases for
+the officer bundle. Main addon and AppHelper versions are checked independently;
+updating FlockSync through CurseForge does not update AppHelper. This requires
+the server, desktop app, and main addon builds that support helper notices.
+
+Website **ADMIN** and **OFFICER** accounts can also act as guild data collectors
+on low-ranked alts. With the updated server, desktop app, and addons installed,
+sync once from a character in your guild, then `/reload` after the desktop app
+reports success. Other characters on that WoW account can then catch broadcasts
+in the same guild and realm without an in-game officer rank. Characters outside
+that guild do not inherit collection access. Each WoW account folder must sync
+separately; broadcasts are collected only while you are logged in.
+
 ---
 
 ## 🔒 Lightweight & Privately Hosted

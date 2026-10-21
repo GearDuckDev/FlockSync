@@ -52,7 +52,7 @@ export const apiSync = async (
   const res = await request(`${base(apiBaseUrl)}/api/sync`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, includeHelperReleases: true }),
   });
   if (!res.ok) return res;
   const parsed = ServerReturnPayloadSchema.safeParse(res.data);

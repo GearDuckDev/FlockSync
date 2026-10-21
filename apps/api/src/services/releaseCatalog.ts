@@ -72,16 +72,19 @@ export const createReleaseCatalog = (options: ReleaseCatalogOptions) => {
   };
 
   // Never await GitHub on the sync path. A cold/expired catalog arrives on a later sync.
-  const cachedAddonReleases = (onError: (error: unknown) => void): AddonReleaseCatalog | undefined => {
+  const cachedComponentReleases = (
+    component: "addon" | "helper", onError: (error: unknown) => void
+  ): AddonReleaseCatalog | undefined => {
     if (cached && cached.expires > now()) {
       const catalog: AddonReleaseCatalog = {};
       for (const channel of UpdateChannelSchema.options) {
         const candidates = cached.releases.filter((release) => {
-          const version = release.manifest?.components.addon.version ??
-            (release.tag_name.startsWith("addon-v") ? release.tag_name.slice("addon-v".length) : undefined);
+          const version = release.manifest?.components[component].version ??
+            (component === "addon" && release.tag_name.startsWith("addon-v")
+              ? release.tag_name.slice("addon-v".length) : undefined);
           return version !== undefined && getVersionChannel(version) === channel;
         });
-        const latest = selectLatestRelease(candidates, "addon", channel);
+        const latest = selectLatestRelease(candidates, component, channel);
         if (latest) catalog[channel] = latest;
       }
       return catalog;
@@ -93,5 +96,7 @@ export const createReleaseCatalog = (options: ReleaseCatalogOptions) => {
     return undefined;
   };
 
-  return { list, cachedAddonReleases };
+  const cachedAddonReleases = (onError: (error: unknown) => void) => cachedComponentReleases("addon", onError);
+  const cachedHelperReleases = (onError: (error: unknown) => void) => cachedComponentReleases("helper", onError);
+  return { list, cachedAddonReleases, cachedHelperReleases };
 };

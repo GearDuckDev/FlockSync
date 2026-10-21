@@ -23,6 +23,12 @@ const addonReleases = AddonReleaseCatalogSchema.parse({
 });
 
 test('helper serializer supports legacy payloads and explicit authorization', () => {
+  const helperReleases = { beta: { ...addonReleases.release, version: '0.2.2-beta', channel: 'beta' } };
+  const withHelper = ServerReturnPayloadSchema.parse({
+    culledCharacterGuids: [], serverTimestamp: 1, helperReleases,
+  });
+  const serialized = ServerReturnPayloadSchema.parse(readHelper(serializeServerReturnToLua(withHelper)));
+  assert.equal(serialized.helperReleases?.beta?.version, '0.2.2-beta');
   for (const flag of [undefined, true, false]) {
     const payload = ServerReturnPayloadSchema.parse({
       culledCharacterGuids: ['Player-1'], serverTimestamp: 123,
@@ -86,6 +92,7 @@ test('snapshot arrays survive Lua serialization and sync writes the helper besid
   const name = 'Duck"\\\n\r\t\0' + '123' + '\x01' + ' É';
   const payload = ServerReturnPayloadSchema.parse({
     isAuthorizedOfficer: true, culledCharacterGuids: [], serverTimestamp: 1760000000,
+    authorizedCollectorGuild: { name: 'Guild', realm: 'Test' },
     craftersIndex: [{ itemIdOrSpellId: 123, characterGuid: 'crafter', characterName: name,
       mainCharacterName: 'Main', classId: 1, level: 60 }],
     upcomingRaids: [{ id: 'raid', name, instanceName: 'Molten Core', scheduledDay: 'MON', startTime: '20:00',
@@ -103,7 +110,13 @@ test('snapshot arrays survive Lua serialization and sync writes the helper besid
   }).success, false);
   const server = createServer((request, response) => {
     assert.equal(request.url, '/api/sync');
-    request.resume();
+    const chunks: Buffer[] = [];
+    request.on('data', (chunk: Buffer) => chunks.push(chunk));
+    request.on('end', () => {
+      const sent: unknown = JSON.parse(Buffer.concat(chunks).toString());
+      assert.ok(typeof sent === 'object' && sent !== null && 'collectorGuild' in sent);
+      assert.deepEqual(sent.collectorGuild, { name: 'Guild', realm: 'Test' });
+    });
     response.setHeader('content-type', 'application/json');
     response.end(JSON.stringify(legacyResponse ? { culledCharacterGuids: [], serverTimestamp: 123 } : payload));
   });
@@ -118,6 +131,7 @@ test('snapshot arrays survive Lua serialization and sync writes the helper besid
     const file = join(folder, 'FlockSync.lua');
     await writeFile(file, `FlockSyncDB = {
       addonVersion = "test", exportedAt = 1,
+      collectorGuild = { name = "Guild", realm = "Test" },
       characters = {{ guid = "officer", name = "Officer", realm = "Test", classId = 1, level = 60,
         isActive = true, role = { primaryRole = "DPS", offSpecEnabled = false, updatedAt = 1 },
         gear = { items = {}, updatedAt = 1 }, lastSeenAt = 1 }}

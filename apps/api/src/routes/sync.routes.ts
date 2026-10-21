@@ -18,13 +18,25 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
     if (!payload.success) {
       return reply.code(400).send({ error: "Invalid officer sync payload" });
     }
+    if (payload.data.collectorGuild
+      && payload.data.collectorGuild.realm !== payload.data.officerCharacter.realm) {
+      return reply.code(400).send({ error: "Collector guild realm must match the synced character" });
+    }
 
     const result = processOfficerSync(payload.data, request.user.id);
     const addonReleases = releaseCatalog.cachedAddonReleases((error) => {
       app.log.warn({ err: error }, "Addon release metadata unavailable; sync remains successful");
     });
+    const helperReleases = payload.data.includeHelperReleases
+      ? releaseCatalog.cachedHelperReleases((error) => {
+        app.log.warn({ err: error }, "AppHelper release metadata unavailable; sync remains successful");
+      }) : undefined;
     return ServerReturnPayloadSchema.parse({
-      ...result, ...(addonReleases === undefined ? {} : { addonReleases })
+      ...result, ...(addonReleases === undefined ? {} : { addonReleases }),
+      ...(payload.data.collectorGuild === undefined ? {} : {
+        authorizedCollectorGuild: payload.data.collectorGuild
+      }),
+      ...(helperReleases === undefined ? {} : { helperReleases })
     });
   });
 

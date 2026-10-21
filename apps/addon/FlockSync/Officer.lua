@@ -55,6 +55,14 @@ function ns.GetOfficerStatusReason()
         return "Guild Rank"
     end
 
+    local helper = FlockSyncHelperDB
+    local collectorGuild = type(helper) == "table" and helper.authorizedCollectorGuild
+    if guildName and type(helper) == "table" and helper.isAuthorizedOfficer == true
+        and type(collectorGuild) == "table" and collectorGuild.name == guildName
+        and collectorGuild.realm == GetRealmName() then
+        return "Website Officer/Admin (Same Guild)"
+    end
+
     if guildName and type(FlockSyncDB) == "table"
         and type(FlockSyncDB.officerGuilds) == "table"
         and FlockSyncDB.officerGuilds[guildName] == true then

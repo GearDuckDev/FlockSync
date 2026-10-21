@@ -3,10 +3,17 @@ import { AttendanceRecordSchema, LootRecordSchema } from "./ledger.js";
 import { CharacterSchema } from "./player.js";
 import { AddonReleaseCatalogSchema } from "./releases.js";
 
+const CollectorGuildSchema = z.object({
+  name: z.string().trim().min(1).max(128),
+  realm: z.string().trim().min(1).max(128)
+}).strict();
+
 export const OfficerSyncPayloadSchema = z.object({
   addonVersion: z.string().min(1),
   officerCharacter: CharacterSchema,
   exportedAt: z.number().int().nonnegative(),
+  collectorGuild: CollectorGuildSchema.optional(),
+  includeHelperReleases: z.boolean().optional(),
   characters: z.array(CharacterSchema),
   lootHistory: z.array(LootRecordSchema).optional(),
   attendanceHistory: z.array(AttendanceRecordSchema).optional()
@@ -57,12 +64,14 @@ export type GuildGoalMatchSummary = z.infer<typeof GuildGoalMatchSummarySchema>;
 
 export const ServerReturnPayloadSchema = z.object({
   isAuthorizedOfficer: z.boolean().default(true),
+  authorizedCollectorGuild: CollectorGuildSchema.optional(),
   culledCharacterGuids: z.array(z.string()),
   serverTimestamp: z.number().int().nonnegative(),
   craftersIndex: z.array(GuildCrafterSummarySchema).optional(),
   upcomingRaids: z.array(GuildUpcomingRaidSummarySchema).optional(),
   goalMatches: z.array(GuildGoalMatchSummarySchema).optional(),
-  addonReleases: AddonReleaseCatalogSchema.optional()
+  addonReleases: AddonReleaseCatalogSchema.optional(),
+  helperReleases: AddonReleaseCatalogSchema.optional()
 }).strict();
 
 export type ServerReturnPayload = z.infer<typeof ServerReturnPayloadSchema>;

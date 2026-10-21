@@ -53,5 +53,8 @@ function ns.ScanPlayer()
         attunements = ns.ScanAttunements(),
     }
     FlockSyncDB.officerCharacter = ns.FormatCharacterLabel(name, realm)
+    local guildName = IsInGuild() and GetGuildInfo("player") or nil
+    FlockSyncDB.collectorGuild = type(guildName) == "string" and guildName ~= ""
+        and { name = guildName, realm = realm } or nil
     return character
 end

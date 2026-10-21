@@ -76,12 +76,15 @@ assert(character.gear.updatedAt == 200)
 assert(character.lastSeenAt == 200)
 assert(FlockSyncDB.exportedAt == 200)
 assert(#messages == 0, "Logout capture must not broadcast")
+assert(FlockSyncDB.collectorGuild == nil, "Guildless scans must not request a collector grant")
 
 ns.MergeCharacter({ guid = "Player-Test", gear = { updatedAt = 100, items = { { slotId = 7 } } }, lastSeenAt = 100 })
 assert(#character.gear.items == 0, "Older guild echoes must not restore removed gear")
 assert(character.lastSeenAt == 200)
 
 guilded = true
+ns.CaptureLocalScan()
+assert(FlockSyncDB.collectorGuild.name == "Guild" and FlockSyncDB.collectorGuild.realm == "Realm")
 local remote = { guid = "Other", name = "Other", realm = "Realm", gear = { updatedAt = 201, items = {} }, lastSeenAt = 201 }
 local _, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
@@ -89,6 +92,21 @@ assert(FlockSyncDB.characters.Other == nil, "Non-officers must not aggregate oth
 officer = true
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
 assert(FlockSyncDB.characters.Other.lastSeenAt == 201, "Officers must still aggregate guild broadcasts")
+load("Officer")
+FlockSyncHelperDB = {
+    isAuthorizedOfficer = true,
+    authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
+}
+assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
+remote.guid = "WebsiteCollected"
+_, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
+for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
+assert(FlockSyncDB.characters.WebsiteCollected, "Website-authorized low-rank alt must catch guild broadcasts")
+FlockSyncHelperDB.authorizedCollectorGuild.realm = "OtherRealm"
+remote.guid = "NotAuthorized"
+_, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
+for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
+assert(FlockSyncDB.characters.NotAuthorized == nil, "Mismatched collector grant must not catch broadcasts")
 onboarded, now = false, 300
 fire("PLAYER_LOGOUT")
 assert(character.lastSeenAt == 200, "Onboarding must still gate capture")

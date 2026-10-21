@@ -9,20 +9,23 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.3.4-beta` |
-| Desktop | `0.2.2-beta` |
-| API + web / server | `0.2.2-beta` |
-| Main addon | `0.3.2-beta` |
+| Combined GitHub tag | `v0.4.0-beta` |
+| Desktop | `0.3.0-beta` |
+| API + web / server | `0.3.0-beta` |
+| Main addon | `0.4.0-beta` |
 | AppHelper | `0.2.1-beta` |
-| Root/shared-types package | `0.2.1-beta` |
+| Shared types | `0.3.0-beta` |
+| Root package | `0.2.1-beta` |
 
 ### Changes in this beta
 
-- Fixed stale exported gear and last-seen timestamps when officer detection is
-  unavailable: the addon now always saves the logged-in character's own scan.
-- Capture equipment again at logout/reload so pending scans do not leave removed
-  items in SavedVariables. Other players' broadcasts remain officer-only.
-- Desktop, server, shared contracts, and AppHelper versions are unchanged.
+- Website ADMIN/OFFICER accounts can collect guild broadcasts on same-guild,
+  same-realm alts without first logging in on a native officer-ranked character.
+- AppHelper has an independent login update notice using its own component
+  version and channel, pointing officers to the GitHub officer bundle.
+- Deploy the API first, then update desktop and the main addon. AppHelper's
+  own code/version is unchanged. See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for
+  copy-ready release notes and activation instructions.
 
 ## Each time you release
 
@@ -37,7 +40,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.3.4-beta
+   .\scripts\package-release.ps1 -ReleaseVersion 0.4.0-beta
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -50,13 +53,13 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.3.4-beta -m "FlockSync 0.3.4-beta"
-   git push origin v0.3.4-beta
+   git tag -a v0.4.0-beta -m "FlockSync 0.4.0-beta"
+   git push origin v0.4.0-beta
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.3.4-beta`.
-   - Title: `FlockSync 0.3.4-beta`.
+   - Tag: `v0.4.0-beta`.
+   - Title: `FlockSync 0.4.0-beta`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
    - Attach the six files below. Publish only after all uploads finish.
@@ -71,8 +74,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.2.2-beta-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.2.2-beta-x64.exe` | Windows portable app |
+| `FlockSync-Setup-0.3.0-beta-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.3.0-beta-x64.exe` | Windows portable app |
 | `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
@@ -222,6 +225,37 @@ remains the source of the six combined-release downloads.
 WoW cannot fetch GitHub directly. The API supplies addon release metadata during
 desktop sync; AppHelper loads it and guild snapshots relay compact versions to
 members. Fresh metadata may require a subsequent sync/login.
+
+AppHelper updates are checked independently against its own installed TOC version.
+Updated desktop clients opt into helper metadata from the updated API and write
+it to AppHelper SavedVariables. The main addon checks this metadata once at
+initial login and, when AppHelper needs updating, prints its installed/latest
+versions and points to `github.com/GearDuckDev/FlockSync/releases` for the officer
+bundle. This is plain chat text, not a clickable external hyperlink. Members
+without AppHelper receive no helper notice. The helper's own alpha/beta/stable
+channel controls preview eligibility independently of the main addon. Older
+desktop clients do not receive the new response field; update API, desktop, and
+main addon to enable this feature. Stale/no metadata cannot prove it is current.
+
+### Website-authorized guild collectors
+
+Website ADMIN and OFFICER accounts can collect guild broadcasts on low-ranked
+alts without first logging in on an in-game officer. Install the main addon,
+AppHelper, and desktop app, complete addon setup, then log into the desktop app
+with the authorized website account. Log out or `/reload` on a character in the
+intended guild, let desktop sync finish, and `/reload` again to load the grant.
+The server returns a grant scoped to that synced character's guild name and
+realm. All characters sharing that WoW account's SavedVariables can collect in
+that same guild regardless of rank; other guilds, other realms, and guildless
+characters do not inherit it. Normal in-game officer detection still works.
+
+There is currently no website guild-assignment model: the guild comes from the
+synced character, not a new user-management setting. A subsequent sync replaces
+the grant (a guildless sync clears it). Each WoW account folder needs its own
+sync. Guild traffic is only caught while logged in and requires the desktop
+app for uploads. Website role checks still run on every upload; local cached
+permissions are not an alternative to API authorization. Update the API before
+the desktop app and main addon; older API builds reject the new sync field.
 
 The addon checks its saved catalog once at initial character login and prints
 at most one chat notice. Reloads, zone changes, and metadata received during

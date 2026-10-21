@@ -64,6 +64,22 @@ function ns.CompactAddonReleases()
     return compact
 end
 
+local function latestUpdate(installed, catalog)
+    local _, installedChannel = parseVersion(installed)
+    if not installedChannel then return end
+    local latest
+    for channel, entry in pairs(type(catalog) == "table" and catalog or {}) do
+        local version = type(entry) == "table" and entry.version or nil
+        local _, actualChannel = parseVersion(version)
+        if ranks[channel] and actualChannel == channel and ranks[channel] >= ranks[installedChannel]
+            and newer(version, installed)
+            and (not latest or newer(entry.version, latest)) then
+            latest = version
+        end
+    end
+    return latest
+end
+
 local checkedThisLogin = false
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -71,18 +87,20 @@ frame:SetScript("OnEvent", function(_, _, isInitialLogin)
     if not isInitialLogin or checkedThisLogin then return end
     checkedThisLogin = true
     local installed = ns.GetAddonVersion()
-    local _, installedChannel = parseVersion(installed)
-    if not installedChannel then return end
-    local latest
-    for channel, entry in pairs(ns.CompactAddonReleases()) do
-        if ranks[channel] >= ranks[installedChannel] and newer(entry.version, installed)
-            and (not latest or newer(entry.version, latest)) then
-            latest = entry.version
-        end
-    end
+    local latest = latestUpdate(installed, ns.CompactAddonReleases())
     if latest then
         print("|cff33ccffFlockSync:|r v" .. latest
             .. " is available (installed: v" .. installed
             .. "). Update through CurseForge; select Alpha or Beta there for preview builds.")
+    end
+    -- Only a loaded helper identifies an officer-component installation.
+    if type(FlockSyncHelperDB) ~= "table" then return end
+    local metadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    local helperVersion = metadata and metadata("FlockSync_AppHelper", "Version")
+    local helperLatest = latestUpdate(helperVersion, FlockSyncHelperDB.helperReleases)
+    if helperLatest then
+        print("|cff33ccffFlockSync AppHelper:|r v" .. helperLatest
+            .. " is available (installed: v" .. helperVersion
+            .. "). Download the officer bundle from the FlockSync GitHub: github.com/GearDuckDev/FlockSync/releases")
     end
 end)

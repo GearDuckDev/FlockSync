@@ -26,6 +26,7 @@ ignore:
   - CURSEFORGE.md
   - README.md
   - RELEASES.md
+  - RELEASE-NOTES.md
   - docker-compose.yml
   - Dockerfile.api
   - Dockerfile.web

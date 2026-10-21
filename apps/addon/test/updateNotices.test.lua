@@ -70,6 +70,35 @@ installed = "0.2.0"
 frames[1].callback(nil, "PLAYER_ENTERING_WORLD", false, true)
 assert(#output == 0, "UI reload must not trigger a check")
 
+local realAddOns = C_AddOns
+local helperInstalled = "0.2.1-beta"
+C_AddOns = { GetAddOnMetadata = function(name, key)
+    assert(name == "FlockSync_AppHelper" and key == "Version")
+    return helperInstalled
+end }
+FlockSyncHelperDB = { helperReleases = catalog(nil, "0.2.2-beta", "0.3.0-alpha") }
+login("0.3.2-beta", catalog(nil, "0.3.2-beta", nil))
+assert(#output == 1 and output[1]:find("FlockSync AppHelper:", 1, true))
+assert(output[1]:find("v0.2.2-beta", 1, true), "Helper compares its own version")
+assert(output[1]:find("github.com/GearDuckDev/FlockSync/releases", 1, true))
+frames[1].callback(nil, "PLAYER_ENTERING_WORLD", true)
+frames[1].callback(nil, "PLAYER_ENTERING_WORLD", false, true)
+assert(#output == 1, "Helper notice must occur once, not on reload")
+login("0.3.1-beta", catalog(nil, "0.3.2-beta", nil))
+assert(#output == 2, "Main addon and helper must independently notify when both are outdated")
+helperInstalled = "0.2.2-beta"
+login("0.3.2-beta", catalog(nil, "0.3.2-beta", nil))
+assert(#output == 0, "Current helper must stay quiet even with an alpha available")
+helperInstalled = "0.2.0"
+login("0.3.2-beta", catalog(nil, "0.3.2-beta", nil))
+assert(#output == 0, "Stable helper must ignore beta and alpha")
+helperInstalled = "0.2.0-alpha"
+login("0.3.2-beta", catalog(nil, "0.3.2-beta", nil))
+assert(#output == 1 and output[1]:find("v0.3.0-alpha", 1, true))
+FlockSyncHelperDB = nil
+login("0.3.2-beta", catalog(nil, "0.3.2-beta", nil))
+assert(#output == 0, "Members without AppHelper must never see helper notices")
+C_AddOns = realAddOns
 CreateFrame, print = realCreateFrame, realPrint
 FlockSyncDB = nil
 print("Addon update notices: passed")

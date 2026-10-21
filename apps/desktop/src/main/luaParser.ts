@@ -79,6 +79,7 @@ export const parseFlockSyncLua = (source: string): ParseResult => {
     addonVersion: db.addonVersion,
     officerCharacter: resolveOfficer(db.officerCharacter, characters),
     exportedAt: db.exportedAt,
+    ...(db.collectorGuild === undefined ? {} : { collectorGuild: db.collectorGuild }),
     characters,
     ...normalizeLedger(db.guildLedger),
   });

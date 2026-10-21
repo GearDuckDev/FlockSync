@@ -62,6 +62,25 @@ try {
   assert.equal(cold.statusCode, 200);
   assert.equal(cold.json().addonReleases, undefined);
   assert.equal(requests, 1);
+  assert.equal(cold.json().authorizedCollectorGuild, undefined, "Legacy desktops must not receive a new field");
+  const collectorGuild = { name: "Guild", realm: "Test" };
+  for (const role of ["ADMIN", "OFFICER", "MEMBER"]) {
+    const grant = await call("/api/sync", role, {
+      method: "POST",
+      payload: { addonVersion: "test", officerCharacter: character, characters: [],
+        exportedAt: 1, collectorGuild }
+    });
+    assert.equal(grant.statusCode, role === "MEMBER" ? 403 : 200);
+    if (role !== "MEMBER") {
+      assert.deepEqual(ServerReturnPayloadSchema.parse(grant.json()).authorizedCollectorGuild, collectorGuild);
+    }
+  }
+  const invalidGuild = await call("/api/sync", "ADMIN", {
+    method: "POST",
+    payload: { addonVersion: "test", officerCharacter: character, characters: [], exportedAt: 1,
+      collectorGuild: { name: "Guild", realm: "OtherRealm" } }
+  });
+  assert.equal(invalidGuild.statusCode, 400);
   failFetch(new Error("GitHub offline"));
   await tick();
   const unavailable = await sync();

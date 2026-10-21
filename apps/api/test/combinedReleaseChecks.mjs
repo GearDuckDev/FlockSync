@@ -50,6 +50,9 @@ test("combined releases load after pagination with one deadline and cache indepe
   const addons = catalog.cachedAddonReleases(assert.fail);
   assert.deepEqual(Object.keys(addons), ["beta"]);
   assert.equal(addons.beta.version, "0.3.1-beta");
+  const helpers = catalog.cachedHelperReleases(assert.fail);
+  assert.deepEqual(Object.keys(helpers), ["beta"]);
+  assert.equal(helpers.beta.version, "0.2.1-beta", "Helper version must not follow the main addon");
   assert.strictEqual(await catalog.list(), list);
   assert.equal(requests.length, 3);
 });

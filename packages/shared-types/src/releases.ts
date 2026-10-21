@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const UpdateChannelSchema = z.enum(["release", "beta", "alpha"]);
 export type UpdateChannel = z.infer<typeof UpdateChannelSchema>;
-export const ReleaseComponentSchema = z.enum(["desktop", "server", "addon"]);
+export const ReleaseComponentSchema = z.enum(["desktop", "server", "addon", "helper"]);
 export type ReleaseComponent = z.infer<typeof ReleaseComponentSchema>;
 export const ReleaseVersionSchema = z.string().regex(
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(alpha|beta)(?:\.(0|[1-9]\d*))?)?$/
