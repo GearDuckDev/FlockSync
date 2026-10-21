@@ -12,6 +12,14 @@ const base = (url: string): string => url.trim().replace(/\/+$/, '');
 
 const request = async (url: string, init: RequestInit): Promise<ApiResult<unknown>> => {
   try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return { ok: false, error: 'Set a valid HTTP or HTTPS API URL in settings before logging in or syncing.' };
+    }
+  } catch {
+    return { ok: false, error: 'Set a valid HTTP or HTTPS API URL in settings before logging in or syncing.' };
+  }
+  try {
     const res = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
     const body: unknown = await res.json().catch(() => null);
     if (!res.ok) {

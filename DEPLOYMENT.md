@@ -276,6 +276,13 @@ omitted snapshot fields, the API is still serving a legacy response. An older
 desktop may instead report "Unexpected sync response from server" when the new
 API returns fields its strict validator does not recognize.
 
+If desktop sync reports `Failed to parse URL from /api/sync`, set the full
+server origin (for example `https://flocksync.gearduckdev.com`, without `/api`)
+in desktop settings and save. Older clients could clear that previously
+documented hostname when reloading configuration; install a corrected desktop
+build to retain it. Sync watches only `FlockSync.lua`; unrelated addon saves,
+temporary files, and AppHelper writes are excluded from file watching.
+
 ## 3. Addon releases
 
 From the repo root in PowerShell:

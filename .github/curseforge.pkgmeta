@@ -1,0 +1,37 @@
+package-as: FlockSync
+enable-nolib-creation: no
+
+ignore:
+  - .github
+  - .vscode
+  - .curseforge-release
+  - .dockerignore
+  - .env
+  - .env.production
+  - .env.example
+  - .gitattributes
+  - .gitignore
+  - apps/api
+  - apps/desktop
+  - apps/web
+  - apps/addon/FlockSync_AppHelper
+  - apps/addon/test
+  - deploy
+  - packages
+  - scripts
+  - node_modules
+  - release
+  - data
+  - DEPLOYMENT.md
+  - README.md
+  - RELEASES.md
+  - docker-compose.yml
+  - Dockerfile.api
+  - Dockerfile.web
+  - package.json
+  - pnpm-lock.yaml
+  - pnpm-workspace.yaml
+  - tsconfig.base.json
+
+move-folders:
+  FlockSync/apps/addon/FlockSync: FlockSync

@@ -1,0 +1,128 @@
+name: Package or publish CurseForge addon
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing combined release tag to package (for example v0.3.2-beta)
+        required: true
+        type: string
+      publish:
+        description: Upload to CurseForge project 1756960 (otherwise preview only)
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curseforge-main-addon
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out workflow tools
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select release and read addon version
+        id: addon
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
+            echo "::error::Use an existing combined version tag, such as v0.3.2-beta."
+            exit 1
+          fi
+          cp .github/curseforge.pkgmeta "$RUNNER_TEMP/flocksync-curseforge.pkgmeta"
+          git checkout --detach "refs/tags/$RELEASE_TAG"
+          version=$(sed -n 's/^## Version: //p' apps/addon/FlockSync/FlockSync.toc | tr -d '\r')
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
+            echo "::error::The main addon TOC must contain one supported version."
+            exit 1
+          fi
+          channel() {
+            case "$1" in
+              *-alpha*) echo alpha ;;
+              *-beta*) echo beta ;;
+              *) echo release ;;
+            esac
+          }
+          if [[ "$(channel "$version")" != "$(channel "$RELEASE_TAG")" ]]; then
+            echo "::error::Tag and addon must use the same release channel for BigWigs publishing."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Main addon: $version; bundle: $RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Require upload credential when publishing
+        if: inputs.publish
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -z "$CF_API_TOKEN" ]]; then
+            echo "::error::Add the CF_API_TOKEN repository Actions secret first."
+            exit 1
+          fi
+
+      - name: Package main addon only (no upload)
+        uses: BigWigsMods/packager@v2
+        with:
+          args: >-
+            -t .
+            -r "${{ github.workspace }}/.curseforge-release"
+            -m "${{ runner.temp }}/flocksync-curseforge.pkgmeta"
+            -p 1756960
+            -n "FlockSync-${{ steps.addon.outputs.version }}:${{ steps.addon.outputs.version }}"
+            -d
+
+      - name: Verify archive contents before publishing
+        env:
+          ADDON_VERSION: ${{ steps.addon.outputs.version }}
+        shell: python
+        run: |
+          import os
+          import pathlib
+          import zipfile
+
+          root = pathlib.Path(".curseforge-release")
+          archive = root / f"FlockSync-{os.environ['ADDON_VERSION']}.zip"
+          with zipfile.ZipFile(archive) as package:
+              names = package.namelist()
+              assert "FlockSync/FlockSync.toc" in names, "Missing main addon TOC"
+              assert all(name.startswith("FlockSync/") for name in names), "Unexpected top-level folder"
+              allowed = {path.name for path in pathlib.Path("apps/addon/FlockSync").iterdir() if path.is_file()}
+              allowed.add("LICENSE")
+              allowed.update(path.name for path in (root / "FlockSync").glob("CHANGELOG*"))
+              assert all(name == "FlockSync/" or name.removeprefix("FlockSync/") in allowed for name in names), \
+                  "Archive includes unexpected files or nested directories"
+              toc = package.read("FlockSync/FlockSync.toc").decode()
+              assert f"## Version: {os.environ['ADDON_VERSION']}" in toc, "Incorrect addon version"
+
+      - name: Upload verified archive to CurseForge
+        if: inputs.publish
+        uses: BigWigsMods/packager@v2
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        with:
+          args: >-
+            -t .
+            -r "${{ github.workspace }}/.curseforge-release"
+            -m "${{ runner.temp }}/flocksync-curseforge.pkgmeta"
+            -p 1756960
+            -n "FlockSync-${{ steps.addon.outputs.version }}:${{ steps.addon.outputs.version }}"
+            -o -c
+
+      - name: Save packaged addon for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlockSync-CurseForge-${{ steps.addon.outputs.version }}
+          path: .curseforge-release/*.zip
+          if-no-files-found: error

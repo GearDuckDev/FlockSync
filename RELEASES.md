@@ -9,8 +9,8 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.3.2-beta` |
-| Desktop | `0.2.1-beta` |
+| Combined GitHub tag | `v0.3.3-beta` |
+| Desktop | `0.2.2-beta` |
 | API + web / server | `0.2.2-beta` |
 | Main addon | `0.3.1-beta` |
 | AppHelper | `0.2.1-beta` |
@@ -18,15 +18,13 @@ installed version with their own manifest entry, never with the bundle tag.
 
 ### Changes in this beta
 
-- Fixed pre-update backups after the API has stopped, while keeping source
-  database connections read-only.
-- Server upgrades now start missing/stopped Cloudflare tunnel containers and
-  pass the configured tunnel token correctly.
-- Deployment uses `.env` automatically, so plain `docker compose` commands work.
-  Existing installations must rename `.env.production` to `.env` without
-  overwriting existing settings.
-- Added live update and deployment regression coverage. Desktop runtime, shared
-  contracts, and both addons are unchanged, so their versions remain unchanged.
+- Fixed desktop configuration clearing the previously documented server URL,
+  which caused sync to fail with `Failed to parse URL from /api/sync`.
+- Invalid server URLs now produce an actionable settings error.
+- Excluded unrelated addon files and temporary files from desktop file watching,
+  avoiding watcher errors caused by other addons' locked saves.
+- Added a manual CurseForge packaging/publishing workflow for the main addon.
+  Server runtime, shared contracts, and both addons are unchanged.
 
 ## Each time you release
 
@@ -41,7 +39,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.3.2-beta
+   .\scripts\package-release.ps1 -ReleaseVersion 0.3.3-beta
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -54,13 +52,13 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.3.2-beta -m "FlockSync 0.3.2-beta"
-   git push origin v0.3.2-beta
+   git tag -a v0.3.3-beta -m "FlockSync 0.3.3-beta"
+   git push origin v0.3.3-beta
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.3.2-beta`.
-   - Title: `FlockSync 0.3.2-beta`.
+   - Tag: `v0.3.3-beta`.
+   - Title: `FlockSync 0.3.3-beta`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
    - Attach the six files below. Publish only after all uploads finish.
@@ -75,8 +73,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.2.1-beta-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.2.1-beta-x64.exe` | Windows portable app |
+| `FlockSync-Setup-0.2.2-beta-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.2.2-beta-x64.exe` | Windows portable app |
 | `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
@@ -89,14 +87,14 @@ databases, SavedVariables, credentials, or machine-local settings.
 
 ## Why unchanged components do not notify
 
-For example, this `v0.3.2-beta` bundle contains:
+For example, this `v0.3.3-beta` bundle contains:
 
-- desktop `0.2.1-beta` (unchanged);
-- server `0.2.2-beta` (updated);
+- desktop `0.2.2-beta` (updated);
+- server `0.2.2-beta` (unchanged);
 - addon `0.3.1-beta` (unchanged).
 
-Desktop users already on `0.2.1-beta` and addon users on `0.3.1-beta` receive no
-update notice. Servers on `0.2.1-beta` receive a notice on Beta/Alpha channels.
+Server users already on `0.2.2-beta` and addon users on `0.3.1-beta` receive no
+update notice. Desktop users on `0.2.1-beta` receive a notice on Beta/Alpha channels.
 Rebuilding an unchanged component
 does not itself increment its version. **If behavior changed, increment its
 component version**; checkers compare versions, not source code or file hashes.
@@ -163,6 +161,59 @@ Never use `docker compose down -v` as an upgrade step. Verify login and sync.
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for setup and restore guidance.
 
 ## Addon reminders
+
+### CurseForge: one main addon for everyone
+
+CurseForge project **1756960** distributes **FlockSync**, the main addon used by
+both members and officers. It is not a separate member-only codebase: guild
+permissions and the account's recognized guilds determine catcher status.
+Officers additionally need **FlockSync AppHelper** and the desktop app. For now,
+download the officer bundle from GitHub for those extra files. Do not upload the
+member ZIP and officer bundle as competing files on the same CurseForge project;
+the client does not offer a reliable member/officer edition selector.
+An independent, optional AppHelper CurseForge project can be added later, with
+its own project ID, version, and upload workflow.
+
+Suggested project description:
+
+> All guild members install FlockSync. Officers collecting guild data also need
+> FlockSync AppHelper and the Windows desktop app from our GitHub release.
+> Regular members do not need AppHelper, the desktop app, or a server account.
+> For officer setup, download FlockSync-Addon-Bundle.zip from GitHub; it includes
+> the same main FlockSync addon plus AppHelper. Do not nest the extracted folders.
+
+### Set up the BigWigs action once
+
+1. Generate a CurseForge upload API token in your author account. It must have
+   permission to upload to project 1756960; it is not a Cloudflare token.
+2. In GitHub, open **Settings -> Secrets and variables -> Actions -> New
+   repository secret**, name it **CF_API_TOKEN**, and paste the token privately.
+   Never put it in source, an issue, a workflow input, or release notes.
+3. Commit/push `.github/workflows/curseforge.yml` to the default branch.
+4. Open **Actions -> Package or publish CurseForge addon -> Run workflow**.
+   Enter an existing combined release tag. Leave **publish** unchecked first.
+5. Download the workflow artifact, then inspect the inner addon ZIP. It must
+   contain `FlockSync/FlockSync.toc` and the main addon Lua files, without
+   AppHelper, API/web/desktop code, database files, or environment configuration.
+6. Run again with the same tag and **publish** checked to upload to CurseForge.
+   Verify the file, game version, release type, and moderation status there.
+
+The workflow is manual on purpose: server-only releases must not automatically
+re-upload an unchanged main addon. The package label comes from the main
+addon's TOC, not the overall bundle tag. For example, bundle `v0.3.2-beta`
+packages main addon `0.3.1-beta`; use that for its first CurseForge upload only
+if that addon version has not already been uploaded. Thereafter publish only
+when the main addon version changes. The tag and addon must share the same
+alpha/beta/stable channel because BigWigs derives upload type from the Git tag.
+
+BigWigs detects Forever from Interface `16001`; do not substitute a retail or
+Classic interface just to make an upload pass. If CurseForge does not offer
+the matching game version for your pending project, resolve that with
+CurseForge rather than mislabeling compatibility. Upload acceptance does not
+guarantee public listing or client availability while moderation is pending.
+No `GH_API_TOKEN` is supplied: this action does not create another GitHub Release
+or modify the combined release assets. The existing PowerShell release packager
+remains the source of the six combined-release downloads.
 
 WoW cannot fetch GitHub directly. The API supplies addon release metadata during
 desktop sync; AppHelper loads it and guild snapshots relay compact versions to

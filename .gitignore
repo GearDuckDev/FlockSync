@@ -16,3 +16,4 @@ release/
 data/
 FlockSync_Pi_Deploy.zip
 .pi_staging/
+.curseforge-release/

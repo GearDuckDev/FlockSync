@@ -30,6 +30,7 @@ export class SyncWatcher {
       try {
         const watcher = chokidar.watch(dirs, {
           depth: 0,
+          ignored: (file, stats) => stats !== undefined && !stats.isDirectory() && !isFlockSyncFile(file),
           ignoreInitial: true,
           awaitWriteFinish: { stabilityThreshold: 800, pollInterval: 100 },
         });

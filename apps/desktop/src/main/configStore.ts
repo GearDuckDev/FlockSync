@@ -7,13 +7,9 @@ import { DEFAULT_API_URL, DEFAULT_WOW_PATH, type AppConfig, type AppSettings } f
 
 export const DEFAULT_GITHUB_REPO = 'GearDuckDev/FlockSync';
 const GITHUB_REPO_PATTERN = /^[\w.-]+\/[\w.-]+$/;
-const LEGACY_DEFAULT_API_URL = 'https://flocksync.gearduckdev.com';
 
 const StoredSchema = z.object({
-  apiBaseUrl: z
-    .string()
-    .transform((url) => (url === LEGACY_DEFAULT_API_URL ? DEFAULT_API_URL : url))
-    .default(DEFAULT_API_URL),
+  apiBaseUrl: z.string().default(DEFAULT_API_URL),
   wowPath: z.string().default(DEFAULT_WOW_PATH),
   token: z.string().nullable().default(null),
   user: AuthUserSchema.nullable().default(null),
