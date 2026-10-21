@@ -29,6 +29,7 @@ end
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("PLAYER_LOGOUT")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("PLAYER_LEVEL_UP")
 frame:RegisterEvent("UPDATE_INSTANCE_INFO")
@@ -45,6 +46,9 @@ frame:SetScript("OnEvent", function(_, event)
         scheduleScan()
         -- Delay so the loading screen is gone and guild/unit data is ready.
         C_Timer.After(3, ns.ShowStartupWindow)
+    elseif event == "PLAYER_LOGOUT" then
+        -- Flush pending equipment changes before logout/reload writes SavedVariables.
+        ns.CaptureLocalScan()
     elseif event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_LIST_UPDATE" then
         scanProfessionsSoon("tradeskill")
     elseif event == "CRAFT_SHOW" then

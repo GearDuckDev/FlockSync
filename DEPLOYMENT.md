@@ -283,6 +283,17 @@ documented hostname when reloading configuration; install a corrected desktop
 build to retain it. Sync watches only `FlockSync.lua`; unrelated addon saves,
 temporary files, and AppHelper writes are excluded from file watching.
 
+### Gear and last-seen freshness
+
+The addon saves the logged-in character's own scan regardless of catcher status.
+Only officers aggregate other players' guild broadcasts. Equipment changes
+schedule a scan, and logout or `/reload` captures the player again before WoW
+writes SavedVariables. The desktop cannot read unsaved in-game state.
+Allow the resulting desktop sync to finish, then use **Refresh** on the web
+dashboard (it does not currently refresh roster data automatically).
+Last seen is the character's game scan time, not the desktop upload time;
+uploading an unchanged file must not make an offline character look recently seen.
+
 ## 3. Addon releases
 
 From the repo root in PowerShell:

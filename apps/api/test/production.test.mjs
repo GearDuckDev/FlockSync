@@ -10,6 +10,7 @@ import Database from "better-sqlite3";
 import { migrateDatabase } from "../dist/db/migrate.js";
 import { checkGuildSnapshot } from "./snapshotChecks.mjs";
 import { checkStaleCharacters } from "./staleChecks.mjs";
+import { checkGearSync } from "./gearSyncChecks.mjs";
 
 test("migrations initialize fresh DBs, adopt legacy rows, and are idempotent", async () => {
   const baseline = await readFile(new URL("../drizzle/0000_production_baseline.sql", import.meta.url), "utf8");
@@ -112,6 +113,7 @@ test("built server boots an empty DB, seeds once, and serves authenticated route
       assert.equal((await sync.json()).isAuthorizedOfficer, true);
       await checkGuildSnapshot(origin, token, character);
       await checkStaleCharacters(origin, token, character);
+      await checkGearSync(origin, token, character);
       const cleanup = await fetch(`${origin}/api/roster/${character.guid}`, {
         method: "DELETE", headers: { authorization: `Bearer ${token}` }
       });

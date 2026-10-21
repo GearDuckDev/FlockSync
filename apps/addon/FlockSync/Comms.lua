@@ -81,15 +81,21 @@ local function canAggregate()
     return ns.IsPlayerOfficer()
 end
 
--- Scans the player, aggregates locally when officer, then broadcasts if guilded.
-function ns.PublishLocalScan()
+function ns.CaptureLocalScan()
     local character = ns.ScanPlayer()
     if not character then
         return nil
     end
-    if canAggregate() then
-        ns.MergeCharacter(character)
-        FlockSyncDB.exportedAt = GetServerTime()
+    -- Keep our own export fresh even when guild/officer information is unavailable.
+    ns.MergeCharacter(character)
+    FlockSyncDB.exportedAt = character.lastSeenAt
+    return character
+end
+
+function ns.PublishLocalScan()
+    local character = ns.CaptureLocalScan()
+    if not character then
+        return nil
     end
     if IsInGuild() then
         ns.BroadcastUpdate("CHARACTER", character)
