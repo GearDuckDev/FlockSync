@@ -11,7 +11,7 @@ $excludedNames = @("node_modules", "dist", "out", ".git")
 $rootFiles = @(
     "package.json", "pnpm-workspace.yaml", "pnpm-lock.yaml", "tsconfig.base.json",
     "Dockerfile.api", "Dockerfile.web", "docker-compose.yml",
-    ".dockerignore", ".env.production.example"
+    ".dockerignore", ".env.example"
 )
 $sourceFolders = @("apps\api", "apps\web", "packages\shared-types", "deploy")
 

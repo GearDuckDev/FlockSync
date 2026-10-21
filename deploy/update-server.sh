@@ -5,13 +5,14 @@ if [ "$#" -ne 0 ]; then
     echo "Usage: sh deploy/update-server.sh (from the deployed project directory)" >&2
     exit 1
 fi
-if [ ! -f docker-compose.yml ] || [ ! -f .env.production ]; then
-    echo "Run from the deployed project directory with docker-compose.yml and .env.production present." >&2
+if [ ! -f docker-compose.yml ] || [ ! -f .env ]; then
+    echo "Run from the deployed project directory with docker-compose.yml and .env present." >&2
+    echo "Existing installations: rename .env.production to .env without overwriting an existing .env." >&2
     exit 1
 fi
 
 compose() {
-    docker compose --env-file .env.production "$@"
+    docker compose --env-file .env "$@"
 }
 
 compose config --quiet
@@ -24,6 +25,6 @@ if ! compose run --rm --no-deps -e BACKUP_ONCE=1 -e BACKUP_REASON=pre-update db-
 fi
 echo "Backup verified. Building the selected server source."
 compose build api web
-compose up -d --no-build api web db-backup
+compose up -d --no-build api web db-backup cloudflared
 compose ps
-echo "Server update applied. Check API/web health and login before resuming use."
+echo "Server update applied. Check API/web health, cloudflared logs, and public login before resuming use."

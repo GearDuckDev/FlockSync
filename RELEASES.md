@@ -9,12 +9,24 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.3.1-beta` |
+| Combined GitHub tag | `v0.3.2-beta` |
 | Desktop | `0.2.1-beta` |
-| API + web / server | `0.2.1-beta` |
+| API + web / server | `0.2.2-beta` |
 | Main addon | `0.3.1-beta` |
 | AppHelper | `0.2.1-beta` |
 | Root/shared-types package | `0.2.1-beta` |
+
+### Changes in this beta
+
+- Fixed pre-update backups after the API has stopped, while keeping source
+  database connections read-only.
+- Server upgrades now start missing/stopped Cloudflare tunnel containers and
+  pass the configured tunnel token correctly.
+- Deployment uses `.env` automatically, so plain `docker compose` commands work.
+  Existing installations must rename `.env.production` to `.env` without
+  overwriting existing settings.
+- Added live update and deployment regression coverage. Desktop runtime, shared
+  contracts, and both addons are unchanged, so their versions remain unchanged.
 
 ## Each time you release
 
@@ -29,7 +41,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.3.1-beta
+   .\scripts\package-release.ps1 -ReleaseVersion 0.3.2-beta
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -42,13 +54,13 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.3.1-beta -m "FlockSync 0.3.1-beta"
-   git push origin v0.3.1-beta
+   git tag -a v0.3.2-beta -m "FlockSync 0.3.2-beta"
+   git push origin v0.3.2-beta
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.3.1-beta`.
-   - Title: `FlockSync 0.3.1-beta`.
+   - Tag: `v0.3.2-beta`.
+   - Title: `FlockSync 0.3.2-beta`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
    - Attach the six files below. Publish only after all uploads finish.
@@ -77,14 +89,15 @@ databases, SavedVariables, credentials, or machine-local settings.
 
 ## Why unchanged components do not notify
 
-For example, a later `v0.3.2-beta` bundle might contain:
+For example, this `v0.3.2-beta` bundle contains:
 
 - desktop `0.2.1-beta` (unchanged);
-- server `0.2.1-beta` (unchanged);
-- addon `0.3.2-beta` (updated).
+- server `0.2.2-beta` (updated);
+- addon `0.3.1-beta` (unchanged).
 
-Desktop and server users already on `0.2.1-beta` receive no update notice.
-Addon users on `0.3.1-beta` receive a notice. Rebuilding an unchanged component
+Desktop users already on `0.2.1-beta` and addon users on `0.3.1-beta` receive no
+update notice. Servers on `0.2.1-beta` receive a notice on Beta/Alpha channels.
+Rebuilding an unchanged component
 does not itself increment its version. **If behavior changed, increment its
 component version**; checkers compare versions, not source code or file hashes.
 The manifest is generated, not a hand-maintained list.
@@ -122,7 +135,7 @@ service. Configure desktop `githubRepo` in its user-data `config.json` and API
 
 ## Server installation and automatic backup
 
-Preserve `.env.production` and the `data` directory while extracting/selecting
+Preserve `.env` and the `data` directory while extracting/selecting
 the new source. Confirm `NAS_BACKUP_PATH` is configured and its directory
 already exists and is writable; mount the NAS first if applicable.
 
@@ -130,14 +143,21 @@ From the deployed project directory on the Pi:
 
 ```sh
 sh deploy/update-server.sh
-docker compose --env-file .env.production ps
-docker compose --env-file .env.production logs --tail 100 api web
+docker compose ps
+docker compose logs --tail 100 api web
+docker compose logs --tail 100 cloudflared
 ```
 
 The script creates and verifies a uniquely named SQLite backup at the chosen
 destination **before rebuilding or restarting API/web**. Backup failure aborts
 the update. Pre-update backups remain until manually removed. Direct Docker
 commands bypass this guard. Keep a separate secure copy of configuration.
+The script also starts missing/stopped backup and Cloudflare tunnel containers.
+There is no need to take the whole stack down. Verify tunnel logs and public login.
+New installations copy `.env.example` to `.env` and configure it before starting.
+Existing installations rename `.env.production` to `.env` without overwriting
+an existing file; remove any old `COMPOSE_ENV_FILES=.env.production` override.
+Compose now loads `.env` automatically, including for plain `docker compose down`.
 The ZIP contains source, not prebuilt images; Docker must be running.
 Never use `docker compose down -v` as an upgrade step. Verify login and sync.
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for setup and restore guidance.

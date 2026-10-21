@@ -25,7 +25,7 @@ backup_once() {
     fi
     destination="/backups/flocksync-${stamp}.db"
     echo "Starting SQLite online backup: $destination"
-    if ! sqlite3 /data/flocksync.db ".timeout 30000" ".backup '$partial'"; then
+    if ! sqlite3 -readonly /data/flocksync.db ".timeout 30000" ".backup '$partial'"; then
         echo "SQLite backup failed; existing backups retained" >&2
         rm -f "$partial"
         return 1

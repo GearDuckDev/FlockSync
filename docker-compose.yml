@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-    env_file: .env.production
+    env_file: .env
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
@@ -24,17 +24,21 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env}
     depends_on:
-      - web
+      web:
+        condition: service_healthy
   db-backup:
     build:
       context: .
       dockerfile: deploy/Dockerfile.backup
     volumes:
-      - ./data/sqlite:/data:ro
+      # SQLite needs writable WAL coordination files even for a read-only connection.
+      - ./data/sqlite:/data
       - type: bind
-        source: ${NAS_BACKUP_PATH:?Set NAS_BACKUP_PATH in .env.production to an existing backup directory}
+        source: ${NAS_BACKUP_PATH:?Set NAS_BACKUP_PATH in .env to an existing backup directory}
         target: /backups
         bind:
           create_host_path: false

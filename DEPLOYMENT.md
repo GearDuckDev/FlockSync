@@ -17,16 +17,24 @@ Images build natively on ARM64 (Pi) or AMD64 (PC), including better-sqlite3.
 On the Pi (Linux terminal, from the repository):
 
 ```sh
-cp .env.production.example .env.production
+cp .env.example .env
 openssl rand -hex 32
 ```
 
-Edit `.env.production`: replace `JWT_SECRET` with the generated value and choose
+Edit `.env`: replace `JWT_SECRET` with the generated value and choose
 a unique admin email and password (16+ characters). Never commit this file.
 Set `CLOUDFLARE_TUNNEL_TOKEN` using the tunnel setup below. Backup cron runs
 daily at midnight UTC.
 An admin is seeded only when the users table is empty. Changing the seed
 password in the environment later does not reset an existing account.
+
+Existing installations using `.env.production`: rename it to `.env` before
+using the updated Compose configuration. Use `mv -i .env.production .env` and do
+not overwrite an existing `.env`; reconcile settings manually if both exist.
+Remove any old `COMPOSE_ENV_FILES=.env.production` setting from `.env` or your
+shell environment. Keep your existing secrets and NAS path; do not replace them
+with the example values. The root deployment `.env` is separate from the API's
+local development `apps/api/.env`.
 
 ### Mount the NAS
 
@@ -62,10 +70,10 @@ published by the stack.
 ```sh
 mkdir -p data/sqlite
 sudo chown 1000:1000 data/sqlite
-docker compose --env-file .env.production up -d --build
-docker compose --env-file .env.production ps
-docker compose --env-file .env.production logs --tail=100 api db-backup cloudflared
-docker compose --env-file .env.production exec web wget -qO- http://localhost/health
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=100 api db-backup cloudflared
+docker compose exec web wget -qO- http://localhost/health
 ```
 
 The API runs as UID 1000 and needs write access to `data/sqlite`. It is not
@@ -85,7 +93,7 @@ Use a domain managed by Cloudflare for your public hostname.
 1. Go to the **Cloudflare Zero Trust Dashboard -> Networks -> Tunnels**.
 2. Create a new Cloudflared tunnel, for example **FlockSync**.
 3. Copy its **Tunnel Token** and set `CLOUDFLARE_TUNNEL_TOKEN` in
-   `.env.production`. Keep the token private; do not paste the entire
+   `.env`. Keep the token private; do not paste the entire
    Cloudflare installation command or commit the token.
 4. In the tunnel's **Public Hostname** configuration, route
    `flocksync.gearduckdev.com` to **HTTP** service **`http://web:80`**. This is the
@@ -93,12 +101,13 @@ Use a domain managed by Cloudflare for your public hostname.
 5. On the Pi, from the extracted project folder, start the stack:
 
    ```sh
-   docker compose --env-file .env.production up -d
+   docker compose up -d
    ```
 
    Include `--build` on first deployment or when updating source code.
-   Use `--env-file .env.production` so Compose can substitute the tunnel token
-   and NAS path; plain `docker compose up -d` does not automatically load it.
+   Compose automatically loads the deployment directory's `.env` for the tunnel
+   token and NAS path. Plain `docker compose down` works from this directory too;
+   no `--env-file` flag is needed.
 
 Confirm the tunnel is healthy in Cloudflare and visit
 `https://flocksync.gearduckdev.com/health`. The web and API containers have no
@@ -131,7 +140,7 @@ automatically on a newer, fresh login; manual web culls clear the flag and stay
 sticky. Redeploy the API to apply it (it runs automatically on startup).
 
 For every server upgrade, select/extract the new source while preserving
-`.env.production` and `data`, then run from that deployed project directory:
+`.env` and `data`, then run from that deployed project directory:
 
 ```sh
 sh deploy/update-server.sh
@@ -139,11 +148,18 @@ sh deploy/update-server.sh
 
 The script builds backup tooling, runs a one-shot SQLite backup in the configured
 `NAS_BACKUP_PATH`, verifies it, and only then builds/recreates API and web containers.
+It also starts the backup service and Cloudflare tunnel, including when they
+were previously stopped or removed. The tunnel waits for healthy web and receives
+`CLOUDFLARE_TUNNEL_TOKEN` as its `TUNNEL_TOKEN` environment variable.
+An unchanged running tunnel is left running; a whole-stack shutdown is not needed.
+Check `docker compose logs --tail 100 cloudflared`
+and the public hostname after the update; container startup alone does not prove
+Cloudflare accepted the token or established a connection.
 Backup failure aborts the upgrade without rebuilding or restarting API/web.
 This guard applies when using the script; direct Docker commands bypass it.
 The script does not download a release or change tags for you.
 
-`NAS_BACKUP_PATH` must be set in `.env.production`, and that directory must
+`NAS_BACKUP_PATH` must be set in `.env`, and that directory must
 already exist. Compose refuses to silently create a missing destination or use
 a fallback. Mount the NAS first if that is your chosen destination; verify the
 mount is actually live before upgrading. A local trial directory must be
@@ -153,6 +169,10 @@ created manually, for example `mkdir -p data/backups`.
 
 The Alpine sidecar runs once at startup, then daily at midnight UTC via cron. SQLite's
 online `.backup` API takes a consistent snapshot while WAL writes continue.
+The source directory is mounted writable so SQLite can create WAL/shared-memory
+coordination files even after the API has stopped. The backup command opens the
+source database with `-readonly`; it does not change application records. Do not
+make this directory mount read-only or delete WAL/shared-memory files manually.
 It verifies `PRAGMA quick_check`, renames the temporary file only on success,
 and then deletes daily backups older than 30 days. Successful daily runs publish
 `flocksync-YYYYMMDD.db`; rerunning on the same day replaces that day's backup
@@ -240,7 +260,7 @@ Building desktop source does not update an already packaged/running executable,
 and an existing Pi ZIP does not update itself after source changes.
 
 1. Regenerate the Pi ZIP with `.\scripts\package-pi-deploy.ps1`, copy and extract
-   it on the Pi, preserving `.env.production` and `data`.
+   it on the Pi, preserving `.env` and `data`.
 2. Run `sh deploy/update-server.sh` to back up and verify SQLite before updating.
 3. Build a fresh desktop executable using `pnpm --filter @flocksync/desktop package:win`.
    Close the old desktop app completely and start the new executable.
@@ -298,16 +318,16 @@ On the development machine, package the current deployment sources:
 
 Copy `release\FlockSync_Pi_Deploy.zip` to the Pi. There, from the directory
 where you keep the deployment, extract it and redeploy while preserving
-`data/sqlite`, `.env.production`, and the mounted NAS share:
+`data/sqlite`, `.env`, and the mounted NAS share:
 
 ```sh
 unzip -o FlockSync_Pi_Deploy.zip
 cd FlockSync
-docker compose --env-file .env.production up -d --build
-docker compose --env-file .env.production ps
+sh deploy/update-server.sh
+docker compose ps
 ```
 
-Keep the existing `.env.production` and `data/sqlite` outside the overwritten
+Keep the existing `.env` and `data/sqlite` outside the overwritten
 source archive; the ZIP intentionally excludes local secrets and database files.
 The configured tunnel hostname remains `flocksync.gearduckdev.com`.
 
