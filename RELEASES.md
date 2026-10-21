@@ -9,22 +9,20 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.3.3-beta` |
+| Combined GitHub tag | `v0.3.4-beta` |
 | Desktop | `0.2.2-beta` |
 | API + web / server | `0.2.2-beta` |
-| Main addon | `0.3.1-beta` |
+| Main addon | `0.3.2-beta` |
 | AppHelper | `0.2.1-beta` |
 | Root/shared-types package | `0.2.1-beta` |
 
 ### Changes in this beta
 
-- Fixed desktop configuration clearing the previously documented server URL,
-  which caused sync to fail with `Failed to parse URL from /api/sync`.
-- Invalid server URLs now produce an actionable settings error.
-- Excluded unrelated addon files and temporary files from desktop file watching,
-  avoiding watcher errors caused by other addons' locked saves.
-- Added a manual CurseForge packaging/publishing workflow for the main addon.
-  Server runtime, shared contracts, and both addons are unchanged.
+- Fixed stale exported gear and last-seen timestamps when officer detection is
+  unavailable: the addon now always saves the logged-in character's own scan.
+- Capture equipment again at logout/reload so pending scans do not leave removed
+  items in SavedVariables. Other players' broadcasts remain officer-only.
+- Desktop, server, shared contracts, and AppHelper versions are unchanged.
 
 ## Each time you release
 
@@ -39,7 +37,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.3.3-beta
+   .\scripts\package-release.ps1 -ReleaseVersion 0.3.4-beta
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -52,13 +50,13 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.3.3-beta -m "FlockSync 0.3.3-beta"
-   git push origin v0.3.3-beta
+   git tag -a v0.3.4-beta -m "FlockSync 0.3.4-beta"
+   git push origin v0.3.4-beta
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.3.3-beta`.
-   - Title: `FlockSync 0.3.3-beta`.
+   - Tag: `v0.3.4-beta`.
+   - Title: `FlockSync 0.3.4-beta`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
    - Attach the six files below. Publish only after all uploads finish.
@@ -87,14 +85,14 @@ databases, SavedVariables, credentials, or machine-local settings.
 
 ## Why unchanged components do not notify
 
-For example, this `v0.3.3-beta` bundle contains:
+For example, this `v0.3.4-beta` bundle contains:
 
-- desktop `0.2.2-beta` (updated);
+- desktop `0.2.2-beta` (unchanged);
 - server `0.2.2-beta` (unchanged);
-- addon `0.3.1-beta` (unchanged).
+- addon `0.3.2-beta` (updated).
 
-Server users already on `0.2.2-beta` and addon users on `0.3.1-beta` receive no
-update notice. Desktop users on `0.2.1-beta` receive a notice on Beta/Alpha channels.
+Server and desktop users already on `0.2.2-beta` receive no update notice.
+Addon users on `0.3.1-beta` can receive a notice through the synced release catalog.
 Rebuilding an unchanged component
 does not itself increment its version. **If behavior changed, increment its
 component version**; checkers compare versions, not source code or file hashes.
