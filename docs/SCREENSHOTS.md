@@ -2,20 +2,23 @@
 
 ## What was captured
 
-**16 PNG screenshots:** 14 web views at 1440 x 1050 and two desktop views at
-1000 x 800. These capture the existing built React interfaces in Chromium /
+**24 PNG screenshots:** eight developer-supplied in-game addon captures,
+14 web views at 1440 x 1050, and two desktop views at 1000 x 800.
+The web/desktop images capture the existing built React interfaces in Chromium /
 Electron, not redesigned mockups. The web and desktop components are 0.4.0 in
 the FlockSync 0.6.0 release set; addon versions remain unchanged.
 
-Every image carries a **DEMO DATA** caption. Characters, account details,
+Every web/desktop image carries a **DEMO DATA** caption. Characters, account details,
 availability, quests, equipment, loot, and tasks are fictional fixtures.
 Lineups and simplified attunement steps demonstrate layout, not actual encounter
 requirements or quest-chain accuracy. Desktop watcher/activity responses are
 simulated; the screenshot is not evidence of a real guild sync.
 
-Captures used isolated temporary profiles. No live account, real game directory,
+Web/desktop captures used isolated temporary profiles. No live account, real game directory,
 production server, or private guild information was used. External requests
-were blocked. The original addon/example guild artwork was not added to themes.
+were blocked. The example guild artwork was not added to themes.
+The addon captures are a separate, user-supplied set with visible character names;
+review permission to publish those names before posting.
 
 ## Gallery
 
@@ -24,6 +27,14 @@ long pages may continue below the visible area.
 
 | Image | Suggested caption |
 | --- | --- |
+| [Addon walkthrough](./screenshots/addon-walkthrough.png) | First-time setup introduces sharing and guild features. |
+| [Addon roles and main](./screenshots/addon-role-options.png) | Choose roles/main and see same-guild desktop-linked collection status. |
+| [Addon crafter search](./screenshots/addon-crafter-search.png) | Recipe results with in-game Whisper controls. |
+| [Addon professions/goals](./screenshots/addon-professions-goals.png) | Captured professions and an item goal with a note. |
+| [Addon tooltip](./screenshots/addon-tooltip.png) | Added guild goal and crafter lines on an item tooltip. |
+| [Addon raid schedule](./screenshots/addon-raid-schedule.png) | Test lineup snapshot, Not Scheduled status, and officer invite control. |
+| [Addon LFG Matcher](./screenshots/addon-lfg-matcher.png) | Matching view with no current matches; not a populated group example. |
+| [Addon display options](./screenshots/addon-display-options.png) | Minimap, tooltip, feature, and walkthrough controls. |
 | [Web roster](./screenshots/web-roster.png) | Keep mains, alts, roles, and availability together. |
 | [Character gear](./screenshots/web-gear.png) | Inspect a character's synced equipment. |
 | [Team Builder](./screenshots/web-team-builder.png) | Arrange groups and review role/class coverage. |
@@ -43,52 +54,64 @@ long pages may continue below the visible area.
 
 ## Recommended public selections
 
-**Discord:** use web roster, Team Builder, expanded attunements, and desktop
-sync/settings as a four-image introduction. Add crafters/themes in a follow-up.
+**Discord:** use addon crafter search, addon tooltip, web roster, and desktop
+sync/settings as a four-image introduction. Add roles, Team Builder,
+attunements, and themes in a follow-up.
 Copy the announcement from [DISCORD.md](./DISCORD.md), and attach the PNGs as
 files; Discord does not render local Markdown image paths.
 
-**CurseForge:** lead with genuine addon captures once available. Companion
+**CurseForge:** lead with the addon walkthrough or crafter-search capture. Companion
 screenshots should have titles beginning **Web dashboard** or **Windows
 companion** so they are not mistaken for addon UI. Suggested companion images:
 roster, expanded attunements, and desktop sync/settings.
 
-Use [CURSEFORGE.md](../CURSEFORGE.md) as the copy-ready description. Its inline
-images use public raw GitHub URLs and will work only after these exact files
-are committed/pushed to `main` in a publicly readable repository. Preview the
-description in the site's editor; upload PNGs to the project's image gallery
-separately and replace inline URLs with hosted image URLs if necessary.
+## Where to put images for CurseForge
+
+### Option A: use the GitHub URLs already in the description
+
+1. Keep all PNGs in this repository's `docs/screenshots` directory. The role image
+   is named `addon-role-options.png` (the duplicate `.png` extension was removed).
+2. Commit/push the images and updated Markdown to the publicly readable `main`
+   branch. Local files alone cannot appear in a CurseForge description.
+3. Open an image URL in a logged-out/private browser. It must display the image
+   without authentication, for example:
+   `https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-crafter-search.png`
+4. Copy [CURSEFORGE.md](../CURSEFORGE.md) into the project's description editor
+   in Markdown/source mode if offered. If using a visual editor, use its image
+   insertion control with the same direct image URL.
+5. Preview before saving. Confirm both addon and companion images render.
+
+The existing syntax is ready to use:
+
+```markdown
+![In-game guild crafter search](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-crafter-search.png)
+```
+
+Do not use a local Windows path, GitHub `/blob/` page, or ZIP attachment URL as
+the image source. A description needs a public direct image URL.
+
+### Option B: host the images on CurseForge
+
+1. Open your CurseForge project's management area and its Images/gallery
+   management section (the exact navigation label may vary).
+2. Upload selected PNGs from `docs/screenshots`, giving each a descriptive title.
+   Addon images should lead; prefix companion titles with Web dashboard or
+   Windows companion.
+3. Gallery uploads are separate from inline description images. Insert the
+   uploaded image through the description editor, or obtain its public direct
+   image URL and replace the matching raw GitHub URL in the Markdown.
+4. Preview and save. Verify the public project page while logged out.
+
 No text, images, or messages have been uploaded or posted for you.
 
-## Addon captures still needed
+## Optional stronger addon shots
 
-A running, logged-in WoW Forever client was not available to this capture
-workflow. **No genuine addon screenshots were produced.** Browser-rendered Lua
-recreations would misrepresent the in-game UI and were not substituted.
-
-Take the following in WoW using the normal screenshot key (usually Print Screen).
-Do not use Alt+Z: that hides the UI you are trying to show.
-
-| Suggested file | How to get the shot |
-| --- | --- |
-| `addon-walkthrough.png` | On a test profile, open the first-time walkthrough. Reset it only if you intend to redo setup. |
-| `addon-role-options.png` | `/fs role`; show role/main selection and the collection-status explanation. |
-| `addon-raid-schedule.png` | `/fs raid` after a real synced guild snapshot; show an assignment and bench state where available. |
-| `addon-crafter-search.png` | `/fs craft`; search an actually synced recipe and show the whisper control. |
-| `addon-professions-goals.png` | `/fs prof` after opening profession windows; show captured professions and chosen gear goals. |
-| `addon-lfg-matcher.png` | `/fs`, then LFG Matcher; capture real matching guild goals if available. |
-| `addon-tooltip.png` | Hover a real matching item while tooltips are enabled; show the added crafter/goal lines. |
-| `addon-display-options.png` | `/fs options`, Display & Features; show minimap/tooltips/feature controls. |
-
-Use a clear scene and consistent resolution/UI scale. Close whispers and
-sensitive chat; hide or redact real account names and private roster details.
-Obtain permission before publishing other players' identifying information.
-Keep enough game context to establish that these really are in-game captures.
-Do not stage false successful invites, grants, or update notices.
-
-Place approved PNGs beside the current screenshots and add only existing files
-to the README/CurseForge copy. A member-facing addon overview should be the first
-CurseForge image once genuine captures are available.
+All eight requested addon views are now present. The current raid capture
+shows a test lineup and **Not Scheduled**, and LFG shows **no matches**.
+For richer follow-ups, capture a real assigned/bench state and populated goal
+matches when available. These are optional replacements, not missing files.
+Review visible character names before publishing; do not stage false successful
+invites or grants. Current captions do not claim those actions occurred.
 
 ## Scope and release safety
 

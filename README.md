@@ -17,9 +17,18 @@ Confirm your server's rules before using the addon and desktop bridge.
 
 ## See it in action
 
-These are real application screens with **fictional demonstration data**, not
-live guild information. Desktop watcher/sync responses are simulated.
-Web/desktop screenshots are not in-game addon screenshots.
+The addon images below are developer-supplied in-game captures. Web and desktop
+images use **fictional demonstration data**; desktop watcher/sync responses are
+simulated. The two sets are labeled separately.
+
+### Addon: find a guild crafter
+![In-game crafter search with recipe results and Whisper controls](./docs/screenshots/addon-crafter-search.png)
+
+### Addon: roles, main character, and collection
+![In-game role/main options and same-guild collector status](./docs/screenshots/addon-role-options.png)
+
+### Addon: useful item tooltips
+![In-game item tooltip showing guild gear-goal and crafter information](./docs/screenshots/addon-tooltip.png)
 
 ### Web: roster and linked characters
 ![Web roster showing mains, alts, roles, and availability using demo data](./docs/screenshots/web-roster.png)
@@ -31,8 +40,8 @@ Web/desktop screenshots are not in-game addon screenshots.
 ![Desktop companion showing simulated sync activity and startup preferences](./docs/screenshots/desktop-sync-settings.png)
 
 The [full gallery](./docs/SCREENSHOTS.md) also covers gear, crafters, goals,
-attunements, attendance, tasks, administration, and themes. Genuine in-game
-captures are still pending; the gallery includes a shot checklist.
+attunements, attendance, tasks, administration, and themes, plus all eight
+in-game captures and CurseForge image-hosting instructions.
 
 ## Which download do I need?
 

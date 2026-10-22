@@ -81,9 +81,39 @@ Collectors only catch broadcasts while logged in.
 In-game officer invite tools remain subject to WoW's normal group and leadership
 restrictions. Dashboard planning is not unattended gameplay automation.
 
+## Screenshots: in-game addon
+
+Actual in-game captures supplied by the developer. Character names and sample
+guild data are visible; the raid screenshot shows a test lineup, not encounter
+size guidance.
+
+### First-time setup
+![In-game FlockSync welcome walkthrough](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-walkthrough.png)
+
+### Roles, main character, and collector status
+![In-game role and main-character settings with same-guild desktop-linked collector status](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-role-options.png)
+
+### Guild crafter search
+![In-game crafter search showing recipe results and Whisper buttons](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-crafter-search.png)
+
+### Professions and gear goals
+![In-game scanned professions and an item goal with a custom note](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-professions-goals.png)
+
+### Crafting and goal tooltips
+![In-game item tooltip with FlockSync guild goal and crafter annotations](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-tooltip.png)
+
+### Raid schedule
+![In-game test raid snapshot showing Not Scheduled and the officer auto-invite control](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-raid-schedule.png)
+
+### Goal matching
+![In-game LFG Matcher showing its no-matches state](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-lfg-matcher.png)
+
+### Display and feature controls
+![In-game display options for minimap, tooltips, feature tabs, and walkthrough reset](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-display-options.png)
+
 ## Screenshots: web and desktop companions
 
-The following are real application screens with **fictional demo data**.
+The following companion screenshots use **fictional demo data**.
 Desktop watcher/sync responses are simulated. These are **not in-game addon
 screenshots**, and example lineups/attunement steps are not encounter guides.
 
