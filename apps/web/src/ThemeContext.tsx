@@ -3,6 +3,7 @@ import { DEFAULT_THEME, type Theme, type ThemeState } from '@flocksync/shared-ty
 import { useAuth } from './AuthContext';
 import { fetchThemes, saveTheme, themeImageUrl } from './lib/themes';
 import { ApiError } from './lib/api';
+import { themeColorStyle } from './lib/themeColors';
 
 interface ThemeContextValue {
   state: ThemeState;
@@ -55,7 +56,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }): Reac
   const image = themeImageUrl(effective);
   return (
     <ThemeContext.Provider value={{ state, loading, error, save }}>
-      <div className="relative isolate min-h-screen">
+      <div className="flocksync-theme relative isolate min-h-screen" style={themeColorStyle(effective)}>
         {image && <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 flex items-center justify-center">
           <img src={image} alt="" className="max-h-[80vh] max-w-[85vw] object-contain" style={{ opacity: effective.opacity }} />
         </div>}

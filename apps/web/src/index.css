@@ -3,3 +3,22 @@
 body {
   font-family: "Segoe UI", system-ui, sans-serif;
 }
+
+.flocksync-theme {
+  background-color: var(--theme-background);
+  color: var(--theme-text);
+}
+
+:where(.flocksync-theme) :where([class^="bg-slate-"], [class*=" bg-slate-"]),
+:where(.flocksync-theme) :where([class*="hover:bg-slate-"]):hover {
+  --color-slate-100: var(--theme-ui-text-100);
+  --color-slate-200: var(--theme-ui-text-200);
+  --color-slate-300: var(--theme-ui-text-300);
+  --color-slate-400: var(--theme-ui-text-400);
+  --color-slate-500: var(--theme-ui-text-500);
+  color: var(--color-slate-100);
+}
+
+:where(.flocksync-theme) :where(button[class*="bg-indigo-"]) {
+  color: white;
+}

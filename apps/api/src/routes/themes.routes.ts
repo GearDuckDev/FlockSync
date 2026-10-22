@@ -9,7 +9,7 @@ export const themesRoutes: FastifyPluginAsync = async (app) => {
   app.put("/themes/default", { preHandler: [app.authenticate, app.requireAdmin] }, async (request, reply) => {
     const parsed = ThemeSchema.safeParse(request.body);
     if (!parsed.success || !validThemeImage(parsed.data)) {
-      return reply.code(400).send({ error: "Invalid theme. Use a PNG/JPEG image and opacity from 0 to 40%." });
+      return reply.code(400).send({ error: "Invalid theme. Use six-digit hex colors, a PNG/JPEG image and opacity from 0 to 40%." });
     }
     saveDefaultTheme(parsed.data);
     return getThemes(request.user.id);
@@ -18,7 +18,7 @@ export const themesRoutes: FastifyPluginAsync = async (app) => {
   app.put("/themes/me", { preHandler: app.authenticate }, async (request, reply) => {
     const parsed = ThemeSchema.nullable().safeParse(request.body);
     if (!parsed.success || (parsed.data !== null && !validThemeImage(parsed.data))) {
-      return reply.code(400).send({ error: "Invalid theme. Use a PNG/JPEG image and opacity from 0 to 40%." });
+      return reply.code(400).send({ error: "Invalid theme. Use six-digit hex colors, a PNG/JPEG image and opacity from 0 to 40%." });
     }
     saveUserTheme(request.user.id, parsed.data);
     return getThemes(request.user.id);

@@ -82,6 +82,8 @@ Collectors only catch broadcasts while logged in.
 - 📋 **Loot, attendance, and tasks:** review recorded activity and officer follow-up.
 - 🎨 **Themes:** optional Alliance/Horde/World of Warcraft or custom PNG/JPEG
   backgrounds, opacity controls, admin defaults, and personal overrides.
+  Custom UI and page background colors are linked by default, with a toggle
+  for separate choices and a live preview before saving.
   The initial background is **None**.
 
 In-game officer invite tools remain subject to WoW's normal group and leadership

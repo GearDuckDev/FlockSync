@@ -70,7 +70,7 @@ export const Dashboard = (): React.JSX.Element => {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${activeTab === t.id ? 'border-indigo-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${activeTab === t.id ? 'border-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
           >
             {t.label}
           </button>

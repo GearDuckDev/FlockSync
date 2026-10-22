@@ -98,7 +98,8 @@ test("themes enforce permissions, preserve personal overrides, validate images, 
       email: "theme-officer@example.com", password: "secret1"
     })).body;
     const alliance = { image: "alliance", opacity: 0.12 };
-    const horde = { image: "horde", opacity: 0.25 };
+    const horde = { image: "horde", opacity: 0.25, uiColor: "#123456", backgroundColor: "#abcdef", separateColors: false };
+    const warcraft = { image: "warcraft", opacity: 0.1, uiColor: "#ffffff", backgroundColor: "#123456", separateColors: true };
     assert.equal((await call("GET", "/themes")).status, 401);
     assert.equal((await call("PUT", "/themes/me", undefined, alliance)).status, 401);
     assert.deepEqual((await call("GET", "/themes", member.token)).body, {
@@ -110,12 +111,15 @@ test("themes enforce permissions, preserve personal overrides, validate images, 
     assert.equal((await call("PUT", "/themes/default", admin.token, alliance)).status, 200);
     assert.deepEqual((await call("GET", "/themes", member.token)).body.defaultTheme, alliance);
     assert.equal((await call("PUT", "/themes/me", member.token, horde)).status, 200);
-    assert.equal((await call("PUT", "/themes/default", admin.token, { image: "warcraft", opacity: 0.1 })).status, 200);
+    assert.equal((await call("PUT", "/themes/default", admin.token, warcraft)).status, 200);
     assert.deepEqual((await call("GET", "/themes", member.token)).body.userTheme, horde);
     assert.equal((await call("GET", "/themes", officer.token)).body.userTheme, null);
     for (const invalid of [
       { image: "bad", opacity: 0.1 }, { image: "priory", opacity: 0.1 },
       { image: "horde", opacity: -1 },
+      { image: "horde", opacity: 0.1, uiColor: "red" },
+      { image: "horde", opacity: 0.1, backgroundColor: "#fff" },
+      { image: "horde", opacity: 0.1, separateColors: "true" },
       { image: "horde", opacity: 0.41 }, { image: "custom", opacity: 0.1 },
       { image: "alliance", opacity: 0.1, userId: admin.user.id },
       { image: "alliance", opacity: 0.1, customImage: "data:image/png;base64,YQ==" },
@@ -128,7 +132,7 @@ test("themes enforce permissions, preserve personal overrides, validate images, 
       assert.equal((await call("PUT", "/themes/me", member.token, invalid)).status, 400);
     }
     const custom = {
-      image: "custom", opacity: 0.18,
+      image: "custom", opacity: 0.18, uiColor: "#654321", backgroundColor: "#fedcba", separateColors: true,
       customImage: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf1kAAAAASUVORK5CYII="
     };
     assert.equal((await call("PUT", "/themes/me", member.token, {
@@ -138,7 +142,7 @@ test("themes enforce permissions, preserve personal overrides, validate images, 
     await stop();
     await start();
     assert.deepEqual((await call("GET", "/themes", member.token)).body, {
-      defaultTheme: { image: "warcraft", opacity: 0.1 }, userTheme: custom
+      defaultTheme: warcraft, userTheme: custom
     });
     assert.equal((await call("PUT", "/themes/me", member.token, null)).status, 200);
     assert.equal((await call("GET", "/themes", member.token)).body.userTheme, null);

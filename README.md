@@ -85,7 +85,7 @@ Item search is a bounded local cache, not a complete game-item database.
 | Loot & Attendance | Recorded loot and 30/60/90-day attendance, counting mains and alts as one player |
 | Officer Tasks | Character-linked task board for officers/admins |
 | Admin Settings | Account roles and server update notices |
-| Theme Settings | Optional backgrounds, custom uploads, admin defaults, and personal overrides |
+| Theme Settings | Custom UI/page colors, optional backgrounds, custom uploads, admin defaults, and personal overrides |
 
 **Themes start at None.** Bundled options are Alliance, Horde, and World of
 Warcraft; the example guild image is not included. PNG/JPEG uploads accept up
@@ -93,6 +93,11 @@ to 5 MB, resize to at most 1024 pixels per side, and must fit the encoded storag
 limit. Opacity is adjustable from 0% to 40%. Defaults and personal overrides are
 stored in SQLite; **Use server default** removes a personal override. Server
 default changes appear on browser focus or within a minute.
+UI and page background colors are linked by default. Enable **Separate UI and
+background colors** to choose a different color behind the emblem. The live
+preview shows panel/control shades and the page background before saving.
+Neutral text adjusts to light or dark surfaces; action and status colors are
+preserved. Existing saved themes keep their original colors until customized.
 
 ### On Windows
 - Sign in to your guild's server and select the WoW client folder.
@@ -214,7 +219,7 @@ Web API configuration uses `VITE_API_BASE_URL` (production `/api`, development
 | `apps/addon` | Lua 5.1 main addon and AppHelper |
 
 Validate with `pnpm run typecheck` and `pnpm build`. Package with
-`.\scripts\package-release.ps1 -ReleaseVersion 0.6.0`; see
+`.\scripts\package-release.ps1 -ReleaseVersion 0.6.1`; see
 [RELEASES.md](./RELEASES.md) for tests, all six downloads, and publishing rules.
 Update checks compare component versions, not the overall release tag.
 

@@ -110,5 +110,5 @@ export type {
   ServerUpdateStatus, GitHubRelease, ReleaseManifest
 } from "./releases.js";
 export { loadReleaseManifests, RELEASE_MANIFEST_ASSET } from "./releaseManifests.js";
-export { ThemeImageSchema, ThemeSchema, ThemeStateSchema, DEFAULT_THEME } from "./themes.js";
+export { ThemeImageSchema, ThemeColorSchema, ThemeSchema, ThemeStateSchema, DEFAULT_THEME, DEFAULT_THEME_COLOR } from "./themes.js";
 export type { Theme, ThemeState } from "./themes.js";

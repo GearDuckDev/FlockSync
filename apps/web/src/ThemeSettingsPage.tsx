@@ -20,6 +20,7 @@ export const ThemeSettingsPage = (): React.JSX.Element => {
       <p className="text-sm text-slate-400">
         {state.userTheme ? 'Using your personal theme.' : 'Following the server default.'} Personal themes follow your website account across browsers.
         Server changes appear on next focus or within a minute. Backgrounds are decorative and capped at 40% opacity for readability.
+        UI and background colors are linked by default; enable the separate-colors toggle to choose them independently.
       </p>
       {error && <p role="alert" className="text-sm text-red-300">Theme settings unavailable: {error}</p>}
       <ThemeEditor title="Your theme" theme={state.userTheme ?? state.defaultTheme} disabled={loading || error !== null}
