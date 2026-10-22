@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, nativeImage, shell } from 'electron';
 import { join } from 'node:path';
 import { registerIpc, resumeWatcher } from './ipc';
 import { registerAppIpc } from './appIpc';
@@ -12,6 +12,7 @@ import {
 } from './appSettings';
 import { checkForUpdates, resetUpdateChannel, startUpdater, stopUpdater } from './updater';
 import { createTray, destroyTray, hasTray, notifyFromTray, refreshTrayMenu } from './tray';
+import { TRAY_ICON_256 } from './trayIcon';
 
 let mainWindow: BrowserWindow | null = null;
 // Set by tray Quit / OS shutdown so the close-to-tray handler lets the window close.
@@ -25,6 +26,7 @@ const createWindow = (showOnReady: boolean): BrowserWindow => {
     minWidth: 720,
     minHeight: 560,
     show: false,
+    icon: nativeImage.createFromDataURL(TRAY_ICON_256),
     backgroundColor: '#14161c',
     autoHideMenuBar: true,
     webPreferences: {

@@ -9,23 +9,25 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.5.0` |
-| Desktop | `0.3.1` |
-| API + web / server | `0.3.1` |
+| Combined GitHub tag | `v0.6.0` |
+| Desktop | `0.4.0` |
+| API + web / server | `0.4.0` |
 | Main addon | `0.5.0` |
 | AppHelper | `0.2.2` |
-| Shared types | `0.3.1` |
+| Shared types | `0.4.0` |
 | Root package | `0.2.2` |
 
 ### Changes in this release
 
-- Reduced redundant character broadcasts, snapshot traffic, and repeated UI lookups.
-- Improved profession cleanup/reset, loot filtering, raid invites, and tooltip behavior.
-- Fixed guild retry lockups, stale profession pruning timestamps, and unbounded
-  item-search recency bookkeeping.
-- All components were version-bumped at the user's request. Desktop, API/web,
-  shared types, and AppHelper have no new runtime behavior since the previous
-  beta. See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
+- Optional desktop start-minimized-to-tray preference and refreshed app branding.
+- Attunements group alts beneath their main and start collapsed, while preserving
+  individual progress and main-only completion counts.
+- Web Theme Settings with Alliance/Horde/World of Warcraft emblems, custom
+  PNG/JPEG uploads, opacity controls, admin defaults, and personal overrides.
+  The initial default is None; the example guild image is not bundled.
+- Desktop, API/web, and shared types advance to 0.4.0. Main addon 0.5.0,
+  AppHelper 0.2.2, and root metadata 0.2.2 are unchanged.
+  See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
 
 ## Each time you release
 
@@ -40,7 +42,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.5.0
+   .\scripts\package-release.ps1 -ReleaseVersion 0.6.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -53,16 +55,16 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.5.0 -m "FlockSync 0.5.0"
-   git push origin v0.5.0
+   git tag -a v0.6.0 -m "FlockSync 0.6.0"
+   git push origin v0.6.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.5.0`.
-   - Title: `FlockSync 0.5.0`.
+   - Tag: `v0.6.0`.
+   - Title: `FlockSync 0.6.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.5.0`, leave it **unchecked**; this is a normal Release-channel
+     For `v0.6.0`, leave it **unchecked**; this is a normal Release-channel
      publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
@@ -77,8 +79,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.3.1-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.3.1-x64.exe` | Windows portable app |
+| `FlockSync-Setup-0.4.0-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.4.0-x64.exe` | Windows portable app |
 | `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |

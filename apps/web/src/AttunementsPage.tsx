@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Character } from '@flocksync/shared-types';
 import type { DashboardData } from './hooks/useDashboardData';
 import { buildChainViews } from './lib/attunements';
-import { ClassBadge } from './components/Badges';
+import { AttunementFamilyRow } from './components/AttunementFamilyRow';
 
 interface Props {
   data: DashboardData;
@@ -33,7 +33,7 @@ export const AttunementsPage = ({ data, canManage, onCreateTask }: Props): React
               <div className="mt-1 h-2 w-full max-w-md overflow-hidden rounded-full bg-slate-800">
                 <div className="h-full bg-emerald-500" style={{ width: `${total === 0 ? 0 : (attuned / total) * 100}%` }} />
               </div>
-              <p className="mt-1 text-xs text-slate-400">{attuned} / {total} characters attuned</p>
+              <p className="mt-1 text-xs text-slate-400">{attuned} / {total} mains attuned · Alts stay under their main</p>
             </div>
             <ul className="grid gap-3 lg:grid-cols-2">
               {chain.groups.map((g) => (
@@ -42,20 +42,11 @@ export const AttunementsPage = ({ data, canManage, onCreateTask }: Props): React
                     {g.label} <span className="font-normal text-slate-500">· {g.members.length}</span>
                   </div>
                   <ul className="space-y-1">
-                    {g.members.map((c) => (
-                      <li key={c.guid} className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">{c.name}</span>
-                        <ClassBadge character={c} />
-                        <span className="text-xs text-slate-500">Lvl {c.level}</span>
-                        {canManage && !g.attuned && (
-                          <button
-                            onClick={() => onCreateTask(c, `Help ${c.name} with ${chain.name}: ${g.label}`)}
-                            className="ml-auto rounded-md border border-slate-700 px-2 py-0.5 text-xs hover:bg-slate-800"
-                          >
-                            Create task
-                          </button>
-                        )}
-                      </li>
+                    {g.members.map((family) => (
+                      <AttunementFamilyRow
+                        key={family.key} family={family} chainName={chain.name}
+                        canManage={canManage} onCreateTask={onCreateTask}
+                      />
                     ))}
                   </ul>
                 </li>

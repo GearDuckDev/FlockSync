@@ -27,6 +27,7 @@ export const registerAppIpc = (): void => {
     if (!parsed.success) return settingsState();
     const patch: Partial<AppSettingsState['settings']> = {};
     if (parsed.data.minimizeToTray !== undefined) patch.minimizeToTray = parsed.data.minimizeToTray;
+    if (parsed.data.startMinimized !== undefined) patch.startMinimized = parsed.data.startMinimized;
     if (parsed.data.startOnBoot !== undefined) patch.startOnBoot = parsed.data.startOnBoot;
     if (parsed.data.updateChannel !== undefined) patch.updateChannel = parsed.data.updateChannel;
     saveAppSettings(patch);

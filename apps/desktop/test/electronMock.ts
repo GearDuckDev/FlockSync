@@ -15,6 +15,12 @@ export const app = {
   getVersion: (): string => '0.1.0-alpha',
   getPath: (): string => fixtureRoot,
   isPackaged: false,
+  setLoginItemSettings: (_settings: { openAtLogin: boolean; path: string; args: string[] }): void => {},
+};
+export const shell = {
+  openExternal: async (_url: string): Promise<void> => {
+    throw new Error('Unexpected external URL request');
+  },
 };
 const defaultFetchImplementation = async (): Promise<Response> => {
   throw new Error('Unexpected GitHub request');

@@ -44,8 +44,14 @@ also the live [FlockSync dashboard](https://flocksync.gearduckdev.com).
 tray, where syncing continues. Right-click the tray icon for *Open FlockSync*,
 *Sync Now*, *Check for Updates...*, the *Run on Windows Startup* and
 *Minimize to Tray on Close* toggles, and *Quit FlockSync*. Double-click the
-icon to reopen the window. By default the app starts with Windows, quietly in
-the tray. Both toggles are also under **App Settings** on the dashboard, next to
+icon to reopen the window. **Start Minimized to Tray** controls whether the next
+launch opens only in the tray, including launches at Windows startup; it is
+separate from both **Run on Windows Startup** and close-to-tray behavior.
+It defaults off, so the window opens unless you enable it. If the tray icon
+cannot be created, the window opens regardless. An explicit `--hidden` launch
+argument still overrides the preference. Older Windows startup entries carrying
+that argument are rewritten without it when the updated app runs.
+These toggles are also under **App Settings** on the dashboard, next to
 **Check for Updates** and the current version. The app checks GitHub Releases
 15 seconds after launch and every 6 hours. When a newer version exists, a banner
 offers **Download on GitHub** or **Remind Me Later**, which mutes automatic
@@ -60,7 +66,7 @@ aborting if backup fails. Docker deployment remains administrator-initiated.
 For publishing tags, packaging, and release uploads, see
 [RELEASES.md](./RELEASES.md). Publish one combined release with all downloads
 and the generated component-version manifest. From the repository root, use
-`.\scripts\package-release.ps1 -ReleaseVersion 0.5.0` for this Release-channel build.
+`.\scripts\package-release.ps1 -ReleaseVersion 0.6.0` for this Release-channel build.
 Checkers compare their own component version, so an unchanged component does
 not announce an update when the overall release tag changes.
 The addon only announces cached updates once on
@@ -106,6 +112,39 @@ WoW only writes SavedVariables on `/reload` or logout, so run `/reload` in game 
 | Attunements | Progress per attunement chain, with players grouped by the step they are stuck on |
 | Loot & Attendance | Paginated loot history and 30/60/90-day attendance per player (Main plus alts) |
 | Officer Tasks | Open / In progress / Completed board, optionally linked to a character (officers only) |
+| Theme Settings | Faded background emblems, custom uploads, personal overrides, and administrator-set server defaults |
+
+**Attunements:** step sections and the completion summary count mains, not
+individual alts. Linked active alts remain indented beneath their main, with
+their own completed/total step counts even when progress matches the main.
+Alts start collapsed. Use the chevron beside a main to expand or collapse them. Missing main
+progress is shown explicitly rather than inferred from an alt; an inactive main
+can remain as the parent of active alts. This changes presentation only, not
+each character's stored attunement progress.
+
+**Dashboard themes:** open **Theme Settings** to choose Alliance, Horde, World
+of Warcraft, no emblem, or your own PNG/JPEG. The
+default is **None** (no background emblem) until an administrator or user
+explicitly saves a different choice. The opacity
+slider ranges from 0% (invisible) to 40%, with a 12% starting value. Images are
+decorative, stay behind the dashboard, and do not intercept clicks. Click
+**Save theme** to apply a personal override, or **Use server default** to follow
+the administrator's theme again. Administrators have a separate **Server default
+theme** editor for everyone without an override. This is a server-wide default
+(the deployment has no separate guild settings entity); it does not overwrite
+individual preferences. Default changes appear when the browser regains focus
+or within a minute.
+
+Uploads accept PNG/JPEG files up to 5 MB, resize to at most 1024 pixels per side,
+and must fit a 750,000-character encoded image limit after conversion. SVG and
+external image URLs are not accepted. Defaults, personal settings, and uploaded
+images are stored in SQLite and included in normal database backups. Deploy
+the API and web together; the API applies the additive theme-table migration
+automatically at startup.
+
+The bundled theme images live in `apps/web/public/themes`. The original brand
+artwork is in `assets/branding/FlockSync.jpg`; its generated PNG/ICO derivatives
+brand the web favicon and desktop window, tray, installer, and portable app.
 
 **In-game windows:** *Features* (`/fs`, minimap left-click) holds the daily-use tabs *Raid Schedule*, *Crafter Search*, *LFG Matcher* and *Professions & Goals*; disabled features hide their tab. *Options* (`/fs options`, minimap right-click) holds *Role & Main* (with Force Scan and the Local Test Officer Mode checkbox, which asks for confirmation), *Availability & Lockouts* and *Display & Features* (minimap/tooltip/feature toggles and **Reset First-Time Walkthrough**). A first-time walkthrough must be finished before anything is scanned or broadcast.
 

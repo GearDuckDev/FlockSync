@@ -18,6 +18,7 @@ ignore:
   - apps/addon/test
   - deploy
   - packages
+  - assets
   - scripts
   - node_modules
   - release

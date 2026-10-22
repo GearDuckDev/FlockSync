@@ -10,6 +10,7 @@ files:
 asar: true
 npmRebuild: false
 win:
+  icon: resources\flocksync.ico
   target:
     - target: nsis
       arch: [x64]

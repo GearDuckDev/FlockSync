@@ -36,7 +36,7 @@ export const AppSettingsCard = (): React.JSX.Element => {
     });
   }, []);
 
-  const toggle = async (key: 'startOnBoot' | 'minimizeToTray', value: boolean): Promise<void> => {
+  const toggle = async (key: 'startOnBoot' | 'startMinimized' | 'minimizeToTray', value: boolean): Promise<void> => {
     if (!settings) return;
     setSettings({ ...settings, [key]: value });
     const next = await window.flocksync.saveAppSettings({ ...settings, [key]: value });
@@ -74,6 +74,15 @@ export const AppSettingsCard = (): React.JSX.Element => {
           onChange={(e) => void toggle('startOnBoot', e.target.checked)}
         />
         Launch on Windows startup
+      </label>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={settings?.startMinimized ?? false}
+          disabled={!settings}
+          onChange={(e) => void toggle('startMinimized', e.target.checked)}
+        />
+        Start minimized to system tray (next launch)
       </label>
       <label className="check">
         <input

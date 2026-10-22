@@ -30,6 +30,7 @@ export type LoginResult = { ok: true; user: AuthUser } | { ok: false; error: str
 
 export interface AppSettings {
   minimizeToTray: boolean;
+  startMinimized: boolean;
   startOnBoot: boolean;
   updateChannel: UpdateChannel;
 }

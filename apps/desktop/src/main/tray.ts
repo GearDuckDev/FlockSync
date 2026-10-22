@@ -35,6 +35,12 @@ const buildMenu = (a: TrayActions): Menu => {
       click: (item) => a.saveSettings({ startOnBoot: item.checked }),
     },
     {
+      label: 'Start Minimized to Tray',
+      type: 'checkbox',
+      checked: settings.startMinimized,
+      click: (item) => a.saveSettings({ startMinimized: item.checked }),
+    },
+    {
       label: 'Minimize to Tray on Close',
       type: 'checkbox',
       checked: settings.minimizeToTray,

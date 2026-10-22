@@ -16,8 +16,9 @@ import { ServerUpdates } from './components/admin/ServerUpdates';
 import { ServerUpdateBanner } from './components/ServerUpdateBanner';
 import { UsernameModal } from './components/UsernameModal';
 import { CreateTaskModal, type TaskDraft } from './components/tasks/CreateTaskModal';
+import { ThemeSettingsPage } from './ThemeSettingsPage';
 
-type Tab = 'roster' | 'teams' | 'recruitment' | 'crafters' | 'goals' | 'attunements' | 'ledger' | 'tasks' | 'admin';
+type Tab = 'roster' | 'teams' | 'recruitment' | 'crafters' | 'goals' | 'attunements' | 'ledger' | 'tasks' | 'admin' | 'theme';
 
 type Access = 'officer' | 'admin';
 
@@ -31,6 +32,7 @@ const TABS: { id: Tab; label: string; access?: Access }[] = [
   { id: 'ledger', label: 'Loot & Attendance' },
   { id: 'tasks', label: 'Officer Tasks', access: 'officer' },
   { id: 'admin', label: 'Admin Settings', access: 'admin' },
+  { id: 'theme', label: 'Theme Settings' },
 ];
 
 export const Dashboard = (): React.JSX.Element => {
@@ -63,7 +65,7 @@ export const Dashboard = (): React.JSX.Element => {
         </div>
       </header>
       <ServerUpdateBanner />
-      <nav className="flex gap-1 border-b border-slate-800">
+      <nav className="flex flex-wrap gap-1 border-b border-slate-800">
         {TABS.filter((t) => canSee(t.access)).map((t) => (
           <button
             key={t.id}
@@ -82,6 +84,7 @@ export const Dashboard = (): React.JSX.Element => {
       {activeTab === 'goals' && <GearGoalsPage data={data} />}
       {activeTab === 'attunements' && <AttunementsPage data={data} canManage={canManage} onCreateTask={startTask} />}
       {activeTab === 'ledger' && <LootAttendancePage data={data} />}
+      {activeTab === 'theme' && <ThemeSettingsPage />}
       {activeTab === 'tasks' && <OfficerTasksPage data={data} />}
       {activeTab === 'admin' && <div className="space-y-5"><ServerUpdates /><AdminUsersPage /></div>}
       {editingUsername && user && <UsernameModal target={user}

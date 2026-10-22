@@ -11,6 +11,7 @@ import { tasksRoutes } from "./routes/tasks.routes.js";
 import { syncRoutes } from "./routes/sync.routes.js";
 import { usersRoutes } from "./routes/users.routes.js";
 import { updatesRoutes } from "./routes/updates.routes.js";
+import { themesRoutes } from "./routes/themes.routes.js";
 
 export const buildServer = async () => {
   const app = Fastify({ logger: true });
@@ -29,6 +30,7 @@ export const buildServer = async () => {
   await app.register(tasksRoutes, { prefix: "/api" });
   await app.register(usersRoutes, { prefix: "/api" });
   await app.register(updatesRoutes, { prefix: "/api" });
+  await app.register(themesRoutes, { prefix: "/api" });
   return app;
 };
 

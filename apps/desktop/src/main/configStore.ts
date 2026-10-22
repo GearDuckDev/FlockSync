@@ -14,6 +14,7 @@ const StoredSchema = z.object({
   token: z.string().nullable().default(null),
   user: AuthUserSchema.nullable().default(null),
   minimizeToTray: z.boolean().catch(true).default(true),
+  startMinimized: z.boolean().catch(false).default(false),
   startOnBoot: z.boolean().catch(true).default(true),
   updateChannel: UpdateChannelSchema.catch('release').default('release'),
   githubRepo: z.string().regex(GITHUB_REPO_PATTERN).catch(DEFAULT_GITHUB_REPO).default(DEFAULT_GITHUB_REPO),
@@ -49,6 +50,7 @@ export const toAppConfig = (s: Stored): AppConfig => ({ apiBaseUrl: s.apiBaseUrl
 
 export const toAppSettings = (s: Stored): AppSettings => ({
   minimizeToTray: s.minimizeToTray,
+  startMinimized: s.startMinimized,
   startOnBoot: s.startOnBoot,
   updateChannel: s.updateChannel,
 });

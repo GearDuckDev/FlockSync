@@ -11,19 +11,9 @@ const listeners = new Set<SettingsListener>();
 const loginItemPath = (): string => process.env['PORTABLE_EXECUTABLE_FILE'] ?? process.execPath;
 
 export const isLaunchedHidden = (): boolean => {
-  if (process.argv.includes(HIDDEN_LAUNCH_ARG)) return true;
-  try {
-    const login = app.getLoginItemSettings({ path: loginItemPath(), args: [HIDDEN_LAUNCH_ARG] });
-    return login.wasOpenedAtLogin === true;
-  } catch {
-    return false;
-  }
+  return loadStored().startMinimized || process.argv.includes(HIDDEN_LAUNCH_ARG);
 };
 
-/**
- * Electron 44 removed the macOS-only openAsHidden option (Windows never supported it),
- * so login launches pass --hidden and the app boots quietly into the tray.
- */
 export const applyStartOnBoot = (enabled: boolean): void => {
   if (!app.isPackaged) {
     console.info(`[startup] dev build: skipping login item registration (startOnBoot=${String(enabled)})`);
@@ -33,7 +23,7 @@ export const applyStartOnBoot = (enabled: boolean): void => {
     app.setLoginItemSettings({
       openAtLogin: enabled,
       path: loginItemPath(),
-      args: [HIDDEN_LAUNCH_ARG],
+      args: [],
     });
   } catch (err) {
     console.error('[startup] failed to update login item settings', err);

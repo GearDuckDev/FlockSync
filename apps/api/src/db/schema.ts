@@ -14,6 +14,16 @@ export const users = sqliteTable("users", {
   createdAt: integer("created_at").notNull()
 });
 
+export const themeDefaults = sqliteTable("theme_defaults", {
+  id: text("id").primaryKey(),
+  themeJson: text("theme_json").notNull()
+});
+
+export const userThemes = sqliteTable("user_themes", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  themeJson: text("theme_json").notNull()
+});
+
 export const characters = sqliteTable("characters", {
   guid: text("guid").primaryKey(),
   name: text("name").notNull(),
