@@ -9,23 +9,27 @@ crafters, and keep mains and alts together.
 Built for **WoW Forever (Interface 16001)** by **GearDuckDev**.
 **Release-channel, still pre-1.0**: features continue to evolve.
 
-## Members: install the addon and play
+***
+
+## 📦 Which download do I need?
+
+### 🦅 Regular guild members — install the addon and play
 
 **Install FlockSync from this CurseForge page.** Regular members do **not** need
 the desktop app, AppHelper, or a website account to broadcast character data.
 
-- **First-time walkthrough:** choose your main, primary/off-spec role, and features.
-- **Raid Schedule:** view returned assignments, groups, roles, and standby placement.
-- **Crafter Search:** find synced guild recipes and contact crafters in game.
-- **Gear goals and matching:** record wanted items and find guildmates with matching goals.
-- **Item tooltips:** see relevant guild crafting and gear-goal information.
-- **Configurable UI:** manage feature tabs, tooltips, and the minimap button.
+- 🚦 **First-time walkthrough:** choose your main, primary/off-spec role, and features.
+- 📅 **Raid Schedule:** view returned assignments, groups, roles, and standby placement.
+- 🛠️ **Crafter Search:** find synced guild recipes and contact crafters in game.
+- 🎯 **Gear goals and matching:** record wanted items and find guildmates with matching goals.
+- 🎒 **Item tooltips:** see relevant guild crafting and gear-goal information.
+- ⚙️ **Configurable UI:** manage feature tabs, tooltips, and the minimap button.
 
 Your guild needs an active collector and configured server for shared dashboard
 and server-returned information. Shared addon views use the latest received
 snapshot, not a continuous live website connection.
 
-## Officers: connect the guild
+### 👑 Officers — connect the guild
 
 You need **three components**:
 
@@ -41,7 +45,9 @@ Get **FlockSync-Addon-Bundle.zip** and choose either the Windows **Setup** or
 If CurseForge manages FlockSync, extract only **FlockSync_AppHelper** from the
 GitHub bundle alongside it.
 
-### Officer setup
+***
+
+## 👑 Officer Setup
 1. Exit WoW before replacing addon files. Preserve SavedVariables when updating.
 2. Confirm both paths exist, without an extra ZIP-named folder:
    ```text
@@ -64,71 +70,77 @@ guild and realm after loading a synced grant. Each WoW account folder needs its
 own sync. Unrelated guilds, realms, and guildless characters do not inherit it.
 Collectors only catch broadcasts while logged in.
 
-### Your companion and dashboard
-- **Windows tray:** keep syncing in the background, with separate toggles for
+### 🖥️ Your companion and dashboard
+- 🪟 **Windows tray:** keep syncing in the background, with separate toggles for
   Windows startup, start-minimized, and close-to-tray behavior.
-- **Roster and gear:** keep mains/alts linked and inspect synced equipment.
-- **Team Builder:** plan raid, dungeon, and PvP lineups, groups, bench, and role targets.
-- **Availability:** see weekly coverage and recruitment gaps.
-- **Attunements:** group alts beneath their main, initially collapsed, with
+- 🎒 **Roster and gear:** keep mains/alts linked and inspect synced equipment.
+- 🛡️ **Team Builder:** plan raid, dungeon, and PvP lineups, groups, bench, and role targets.
+- 📅 **Availability:** see weekly coverage and recruitment gaps.
+- 🗝️ **Attunements:** group alts beneath their main, initially collapsed, with
   individual progress visible when expanded.
-- **Crafters and goals:** browse guild recipes and shared gear targets.
-- **Loot, attendance, and tasks:** review recorded activity and officer follow-up.
-- **Themes:** optional Alliance/Horde/World of Warcraft or custom PNG/JPEG
+- 🛠️ **Crafters and goals:** browse guild recipes and shared gear targets.
+- 📋 **Loot, attendance, and tasks:** review recorded activity and officer follow-up.
+- 🎨 **Themes:** optional Alliance/Horde/World of Warcraft or custom PNG/JPEG
   backgrounds, opacity controls, admin defaults, and personal overrides.
   The initial background is **None**.
 
 In-game officer invite tools remain subject to WoW's normal group and leadership
 restrictions. Dashboard planning is not unattended gameplay automation.
 
-## Screenshots: in-game addon
+***
+
+## 📸 Screenshots: in-game addon
 
 Actual in-game captures supplied by the developer. Character names and sample
 guild data are visible; the raid screenshot shows a test lineup, not encounter
 size guidance.
 
-### First-time setup
+### 🚦 First-time setup
 ![In-game FlockSync welcome walkthrough](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-walkthrough.png)
 
-### Roles, main character, and collector status
+### 🦅 Roles, main character, and collector status
 ![In-game role and main-character settings with same-guild desktop-linked collector status](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-role-options.png)
 
-### Guild crafter search
+### 🛠️ Guild crafter search
 ![In-game crafter search showing recipe results and Whisper buttons](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-crafter-search.png)
 
-### Professions and gear goals
+### 🎯 Professions and gear goals
 ![In-game scanned professions and an item goal with a custom note](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-professions-goals.png)
 
-### Crafting and goal tooltips
+### 🎒 Crafting and goal tooltips
 ![In-game item tooltip with FlockSync guild goal and crafter annotations](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-tooltip.png)
 
-### Raid schedule
+### 📅 Raid schedule
 ![In-game test raid snapshot showing Not Scheduled and the officer auto-invite control](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-raid-schedule.png)
 
-### Goal matching
+### 🤝 Goal matching
 ![In-game LFG Matcher showing its no-matches state](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-lfg-matcher.png)
 
-### Display and feature controls
+### ⚙️ Display and feature controls
 ![In-game display options for minimap, tooltips, feature tabs, and walkthrough reset](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/addon-display-options.png)
 
-## Screenshots: web and desktop companions
+***
+
+## 🖥️ Screenshots: web and desktop companions
 
 The following companion screenshots use **fictional demo data**.
 Desktop watcher/sync responses are simulated. These are **not in-game addon
 screenshots**, and example lineups/attunement steps are not encounter guides.
 
-### Web roster
+### 🎒 Web roster
 ![Web dashboard roster with demo mains and alts](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/web-roster.png)
 
-### Web attunements
+### 🗝️ Web attunements
 ![Web attunements with individual alt progress beneath the main](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/web-attunements-expanded.png)
 
-### Windows companion
+### 🪟 Windows companion
 ![Windows companion showing simulated sync and startup settings](https://raw.githubusercontent.com/GearDuckDev/FlockSync/main/docs/screenshots/desktop-sync-settings.png)
 
 [Browse the full screenshot gallery](https://github.com/GearDuckDev/FlockSync/blob/main/docs/SCREENSHOTS.md).
 
-## How syncing works
+***
+
+## 🔄 How Synchronization Works
 
 **Guild addon messages -> collector SavedVariables -> desktop -> guild server
 -> AppHelper -> addon**
@@ -141,7 +153,9 @@ loaded on a subsequent login/reload. Old files are not treated as fresh scans.
 Open profession windows to capture recipes. Item-name search uses a local
 encountered-item cache, not a complete game database.
 
-## Slash commands
+***
+
+## 💬 Slash Commands
 
 | Command | Action |
 | --- | --- |
@@ -158,7 +172,9 @@ Left-click the minimap icon for Features, right-click for Options, or drag it
 to reposition. `/fs debug officer` is a local test override, **not** normal
 officer setup or server authorization.
 
-## Downloads, updates, and hosting
+***
+
+## 📥 Downloads, Updates, and Hosting
 
 - CurseForge updates **FlockSync only**; AppHelper and desktop downloads live on GitHub.
 - Main addon and AppHelper versions are checked independently. Helper chat notices
@@ -174,7 +190,15 @@ officer setup or server authorization.
 [Installation and hosting](https://github.com/GearDuckDev/FlockSync/blob/main/DEPLOYMENT.md) |
 [Documentation](https://github.com/GearDuckDev/FlockSync)
 
+***
+
+## 🔒 Lightweight & Privately Hosted
+
+- Throttled, hidden guild addon messages.
+- No desktop application required for regular members.
+- Guild-controlled server deployment and backups.
+- Publicly visible source; **proprietary, not open source**. Use and hosting
+  are subject to the repository license.
+
 No claim of official server approval or ban immunity is made; confirm your
-server's rules, including the desktop file bridge. Source is publicly visible,
-but FlockSync is **proprietary, not open source**; use and hosting are subject
-to the repository license.
+server's rules, including the desktop file bridge.
