@@ -1,352 +1,226 @@
 # FlockSync
 
-**FlockSync is a guild management and synchronization platform for WoW Forever (Interface 16001)**, by GearDuckDev. In-game addons collect player data, officer addons aggregate it, a desktop app syncs it to the API, and the web dashboard provides guild-wide roster and planning tools.
+**Your guild's characters, raid plans, and crafting knowledge in one place.**
 
-**Live production web dashboard:** [https://flocksync.gearduckdev.com](https://flocksync.gearduckdev.com)
+FlockSync connects a **WoW Forever addon**, a **Windows desktop sync companion**,
+and a **guild-hosted web dashboard**. Members share their character data in game;
+officers collect it and bring roster management and planning onto the web.
+Built by **GearDuckDev** for **WoW Forever, Interface 16001**.
 
-## Getting started for guild members
+**Release-channel, still pre-1.0.** Features continue to evolve. This project does
+not claim official server endorsement or guarantee that its use is ban-safe.
+Confirm your server's rules before using the addon and desktop bridge.
 
-1. Download `FlockSync-Raider-Only.zip` from the guild-provided release.
-2. Extract the `FlockSync` folder into your WoW Forever installation's
-   `Interface\AddOns` directory. Ensure the resulting path is
-   `Interface\AddOns\FlockSync\FlockSync.toc`.
-3. Log in to your character. The **first-time walkthrough** opens automatically
-   (or with `/fs`): it explains what is shared, lets you turn off tooltips or
-   individual features, and sets your primary/off-spec role and Main. Nothing is
-   scanned or broadcast until you click **Finish**, which sends your first update.
-4. Later changes live in **Options** (`/fs options` or right-click the minimap
-   button): role, availability, display/feature toggles and **Force Scan & Broadcast**.
-5. Use `/reload` or log out to write SavedVariables so the officer's desktop
-   client can sync the latest character data.
+[Downloads](https://github.com/GearDuckDev/FlockSync/releases) |
+[Server setup](./DEPLOYMENT.md) | [Release notes](./RELEASE-NOTES.md) |
+[Screenshot gallery](./docs/SCREENSHOTS.md)
 
-Raiders only need the main `FlockSync` addon; they do not need the desktop app
-or `FlockSync_AppHelper`.
+## See it in action
 
-## Getting started for guild officers
+These are real application screens with **fictional demonstration data**, not
+live guild information. Desktop watcher/sync responses are simulated.
+Web/desktop screenshots are not in-game addon screenshots.
 
-1. Install the officer desktop sync client using `FlockSync-Setup.exe`, or run
-   the portable executable from the guild-provided release.
-2. Enter the API Server URL provided by your guild administrator. For the
-   GearDuckDev-hosted service, use `https://flocksync.gearduckdev.com`; for a
-   self-hosted guild server, use that server's URL.
-3. Log in with your officer credentials. (If you self-registered on the
-   dashboard, ask an admin to promote your account to `OFFICER` first.)
-4. Select your World of Warcraft installation directory if it was not
-   automatically detected.
-5. Install both `FlockSync` and `FlockSync_AppHelper` from the Officer Addon
-   Bundle. The desktop client runs in the background and watches WoW's
-   SavedVariables. It syncs changes whenever `/reload` or logout writes them.
+### Web: roster and linked characters
+![Web roster showing mains, alts, roles, and availability using demo data](./docs/screenshots/web-roster.png)
 
-Keep the desktop client running and logged in while playing. The API URL is
-also the live [FlockSync dashboard](https://flocksync.gearduckdev.com).
+### Web: plan the lineup
+![Web Team Builder showing an illustrative lineup and role coverage](./docs/screenshots/web-team-builder.png)
 
-**Tray, startup and updates:** closing the window hides FlockSync to the system
-tray, where syncing continues. Right-click the tray icon for *Open FlockSync*,
-*Sync Now*, *Check for Updates...*, the *Run on Windows Startup* and
-*Minimize to Tray on Close* toggles, and *Quit FlockSync*. Double-click the
-icon to reopen the window. **Start Minimized to Tray** controls whether the next
-launch opens only in the tray, including launches at Windows startup; it is
-separate from both **Run on Windows Startup** and close-to-tray behavior.
-It defaults off, so the window opens unless you enable it. If the tray icon
-cannot be created, the window opens regardless. An explicit `--hidden` launch
-argument still overrides the preference. Older Windows startup entries carrying
-that argument are rewritten without it when the updated app runs.
-These toggles are also under **App Settings** on the dashboard, next to
-**Check for Updates** and the current version. The app checks GitHub Releases
-15 seconds after launch and every 6 hours. When a newer version exists, a banner
-offers **Download on GitHub** or **Remind Me Later**, which mutes automatic
-checks until the next launch. Manual checks always run. App Settings lets you
-choose Release (default), Beta, or Alpha updates. Administrators can check for
-server updates on the same channels in the web dashboard's Admin Settings.
-Every signed-in user sees a small amber banner at the top-right when an update
-is available. Deploy server updates with `sh deploy/update-server.sh`: it first
-creates and verifies a SQLite backup in the configured `NAS_BACKUP_PATH`,
-aborting if backup fails. Docker deployment remains administrator-initiated.
+### Desktop: save, sync, and stay in the tray
+![Desktop companion showing simulated sync activity and startup preferences](./docs/screenshots/desktop-sync-settings.png)
 
-For publishing tags, packaging, and release uploads, see
-[RELEASES.md](./RELEASES.md). Publish one combined release with all downloads
-and the generated component-version manifest. From the repository root, use
-`.\scripts\package-release.ps1 -ReleaseVersion 0.6.0` for this Release-channel build.
-Checkers compare their own component version, so an unchanged component does
-not announce an update when the overall release tag changes.
-The addon only announces cached updates once on
-initial login (not reloads or zone changes); stable installs ignore previews.
-Alpha/beta addon users manage their downloads in CurseForge. Release metadata
-arrives through desktop sync and guild snapshots, not an in-game web request.
+The [full gallery](./docs/SCREENSHOTS.md) also covers gear, crafters, goals,
+attunements, attendance, tasks, administration, and themes. Genuine in-game
+captures are still pending; the gallery includes a shot checklist.
 
-## How it works
+## Which download do I need?
 
-```
-Players' FlockSync addon ──(hidden GUILD addon messages)──▶ Officer's FlockSync addon
-                                                                  │ writes FlockSync.lua (SavedVariables, on /reload or logout)
-                                                                  ▼
-                                                  Desktop app (Electron, watches the file)
-                                                                  │ POST /api/sync  (JWT)
-                                                                  ▼
-                                                  API (Fastify + SQLite)  ◀── Web dashboard (React)
-                                                                  │ returns culled characters
-                                                                  ▼
-                              Desktop app writes FlockSync_AppHelper.lua ──▶ applied in game on /reload
-```
-
-1. **Addon (`FlockSync`)** scans the logged-in character: gear, role/off-spec, availability, raid lockouts, professions and recipes, gear goals and attunement progress. It broadcasts the data to the guild over a hidden addon channel, chunked to stay under the 255-byte limit.
-2. **Officers** (guild rank at or above the threshold) merge everything they receive into `FlockSyncDB`. Officers also record boss-kill attendance and epic raid loot.
-3. **Desktop app** watches `WTF/Account/*/SavedVariables/FlockSync.lua`, parses it, validates it, and posts it to the API. It writes the server's reply to `FlockSync_AppHelper.lua`.
-4. **`FlockSync_AppHelper`** addon ingests that reply on `/reload` (e.g. characters culled on the web).
-5. **API** stores everything in SQLite. Newer data wins: a record is only overwritten when its epoch timestamp is greater than the stored one.
-6. **Web dashboard** reads from the API.
-
-WoW only writes SavedVariables on `/reload` or logout, so run `/reload` in game before expecting new data to sync.
-
-## Features
-
-**Web dashboard tabs**
-
-| Tab | What it does |
+| You are... | Install |
 | --- | --- |
-| Roster & Gear | Players grouped under a custom alias with their Main marked and alts beneath. Gear drawer with Wowhead tooltips, lockout and availability badges, cull/restore, permanent delete, create task |
-| Team Builder | Raid (10/20/40), Dungeon (any number of 5-man parties) and PvP lineups with role targets, class and buff coverage, and main/alt conflict guard |
-| Availability & Recruitment | Weekly availability heatmap by role, and plain-English recruitment gaps |
-| Crafter Directory | Search recipes, professions or item IDs and see who can craft them tonight |
-| Gear Goals | Dungeon matcher grouping players who want the same item or run |
-| Attunements | Progress per attunement chain, with players grouped by the step they are stuck on |
-| Loot & Attendance | Paginated loot history and 30/60/90-day attendance per player (Main plus alts) |
-| Officer Tasks | Open / In progress / Completed board, optionally linked to a character (officers only) |
-| Theme Settings | Faded background emblems, custom uploads, personal overrides, and administrator-set server defaults |
+| A guild member | **FlockSync** from CurseForge or `FlockSync-Raider-Only.zip` |
+| An officer/admin collecting data | **FlockSync + AppHelper** from `FlockSync-Addon-Bundle.zip`, plus one Windows desktop download |
+| Hosting the guild server | `FlockSync_Pi_Deploy.zip`; follow [DEPLOYMENT.md](./DEPLOYMENT.md) |
 
-**Attunements:** step sections and the completion summary count mains, not
-individual alts. Linked active alts remain indented beneath their main, with
-their own completed/total step counts even when progress matches the main.
-Alts start collapsed. Use the chevron beside a main to expand or collapse them. Missing main
-progress is shown explicitly rather than inferred from an alt; an inactive main
-can remain as the parent of active alts. This changes presentation only, not
-each character's stored attunement progress.
+Regular members do **not** need AppHelper, the desktop app, or a website account
+to broadcast their character data. The guild needs an active collector and a
+configured server for dashboard and server-returned information.
 
-**Dashboard themes:** open **Theme Settings** to choose Alliance, Horde, World
-of Warcraft, no emblem, or your own PNG/JPEG. The
-default is **None** (no background emblem) until an administrator or user
-explicitly saves a different choice. The opacity
-slider ranges from 0% (invisible) to 40%, with a 12% starting value. Images are
-decorative, stay behind the dashboard, and do not intercept clicks. Click
-**Save theme** to apply a personal override, or **Use server default** to follow
-the administrator's theme again. Administrators have a separate **Server default
-theme** editor for everyone without an override. This is a server-wide default
-(the deployment has no separate guild settings entity); it does not overwrite
-individual preferences. Default changes appear when the browser regains focus
-or within a minute.
+There is **one main addon**, not separate member/officer editions. CurseForge
+updates the main addon only. Officers using CurseForge can extract just
+`FlockSync_AppHelper` from the GitHub bundle alongside their managed installation.
 
-Uploads accept PNG/JPEG files up to 5 MB, resize to at most 1024 pixels per side,
-and must fit a 750,000-character encoded image limit after conversion. SVG and
-external image URLs are not accepted. Defaults, personal settings, and uploaded
-images are stored in SQLite and included in normal database backups. Deploy
-the API and web together; the API applies the additive theme-table migration
-automatically at startup.
+## What you can do
 
-The bundled theme images live in `apps/web/public/themes`. The original brand
-artwork is in `assets/branding/FlockSync.jpg`; its generated PNG/ICO derivatives
-brand the web favicon and desktop window, tray, installer, and portable app.
+### In game
+- Complete a first-time walkthrough to choose your role, main, and feature toggles.
+- Share gear, roles/off-spec, availability, lockouts, professions, goals, and attunements.
+- View returned raid assignments and standby placement.
+- Search guild crafters, see relevant crafting/goal tooltip lines, and find matching goals.
+- Use officer invite tools, subject to WoW's normal group/leadership restrictions.
+- Open Features with `/fs`; open Options with `/fs options` or minimap right-click.
 
-**In-game windows:** *Features* (`/fs`, minimap left-click) holds the daily-use tabs *Raid Schedule*, *Crafter Search*, *LFG Matcher* and *Professions & Goals*; disabled features hide their tab. *Options* (`/fs options`, minimap right-click) holds *Role & Main* (with Force Scan and the Local Test Officer Mode checkbox, which asks for confirmation), *Availability & Lockouts* and *Display & Features* (minimap/tooltip/feature toggles and **Reset First-Time Walkthrough**). A first-time walkthrough must be finished before anything is scanned or broadcast.
+Shared views depend on the last received snapshot, not a continuous website
+connection. Profession recipes require opening each profession window in game.
+Item search is a bounded local cache, not a complete game-item database.
 
-### Adding gear goals in game
-
-In *Professions & Goals*, drag an item onto a slot, enter an item ID/link, or
-type at least two letters of an item name and click a suggestion underneath.
-Suggestions filter as you type and show up to six matches, with item IDs to
-distinguish items with identical names.
-
-The name search uses a local cache of up to 2,000 encountered items from your
-equipment, bags (when the client exposes `C_Container`), tracked guild gear,
-saved goals and raid loot. This cache persists between sessions. It is **not a
-complete item database**: WoW addons cannot search game files directly. For an
-item that has never been encountered, use its ID or link instead. Search is
-debounced and does not brute-force IDs, make network requests, or poll each frame.
-
-## Requirements
-
-For Docker hosting, NAS backups, Windows executables and addon release archives,
-see [DEPLOYMENT.md](./DEPLOYMENT.md).
-
-- Windows, WoW Forever client (Interface 16001)
-- Node.js 20 or newer
-- [pnpm](https://pnpm.io/)
-- For hosting: any machine that can run the API (designed for a Raspberry Pi 5 in Docker)
-
-## Repository layout
-
-| Path | Description |
+### On the web
+| Tab | Purpose |
 | --- | --- |
-| `packages/shared-types` | Zod schemas and TypeScript types shared by every app |
-| `apps/api` | Fastify + Drizzle + SQLite (WAL) REST API with JWT auth |
-| `apps/desktop` | Electron sync client (login, WoW path setting, Lua parser, file watcher) |
-| `apps/web` | React + Vite + Tailwind dashboard |
-| `apps/addon/FlockSync` | Main addon |
-| `apps/addon/FlockSync_AppHelper` | Bridge addon that receives server updates |
-| `scripts/link-addons.ps1` | Junctions the addons into the WoW AddOns folder |
+| Roster & Gear | Mains/alts, aliases, gear inspection, roles, availability, and officer cull/restore/delete controls |
+| Team Builder | Raid, dungeon, and PvP lineups; groups, bench, role targets, class/utility coverage, and same-player conflict checks |
+| Availability & Recruitment | Weekly availability by role and lineup recruitment gaps |
+| Crafter Directory | Search synced recipes, professions, and item IDs |
+| Gear Goals | Find players chasing the same item or sharing run-note keywords |
+| Attunements | Group by the main's step; expand initially collapsed alts to see their individual progress |
+| Loot & Attendance | Recorded loot and 30/60/90-day attendance, counting mains and alts as one player |
+| Officer Tasks | Character-linked task board for officers/admins |
+| Admin Settings | Account roles and server update notices |
+| Theme Settings | Optional backgrounds, custom uploads, admin defaults, and personal overrides |
 
-## Setup
+**Themes start at None.** Bundled options are Alliance, Horde, and World of
+Warcraft; the example guild image is not included. PNG/JPEG uploads accept up
+to 5 MB, resize to at most 1024 pixels per side, and must fit the encoded storage
+limit. Opacity is adjustable from 0% to 40%. Defaults and personal overrides are
+stored in SQLite; **Use server default** removes a personal override. Server
+default changes appear on browser focus or within a minute.
 
-Run everything from the repo root.
+### On Windows
+- Sign in to your guild's server and select the WoW client folder.
+- Watch FlockSync SavedVariables and sync when WoW writes them.
+- Keep syncing in the tray after closing the window.
+- Independently choose Windows startup, start-minimized, and close-to-tray behavior.
+- Check Release/Beta/Alpha updates and open the matching GitHub download.
+
+Start-minimized defaults **off** and applies next launch. If the tray cannot be
+created, the window opens instead. An explicit `--hidden` launch argument still
+hides it; old Windows startup entries are rewritten without that argument.
+
+## Member setup
+1. Exit WoW, install the main addon, and confirm
+   `Interface\AddOns\FlockSync\FlockSync.toc` exists without an extra nested folder.
+2. Log in and finish the walkthrough. Nothing is scanned/broadcast before Finish.
+3. Set your main, role, availability, and optional goals. Open profession windows
+   to capture recipes, and keep the addon enabled while playing.
+4. Use `/fs` for shared information. Your guild's collector must receive your
+   broadcasts before uploading them; your own `/reload` does not save another
+   player's collected copy.
+
+## Officer / collector setup
+1. Install both addon folders from the officer bundle. Preserve SavedVariables
+   when upgrading. Use either the Windows installer or portable app, not both.
+2. Ask your guild administrator for the **full server URL** and an **OFFICER or
+   ADMIN** website account. Enter the URL without `/api`. Self-registration
+   creates a MEMBER account; an administrator must promote it before collection.
+3. Select the WoW client folder containing `Interface` and `WTF`, not AddOns.
+4. Complete addon setup and play on a character in the intended guild. Native
+   guild permissions can recognize a collector. Website-authorized collection
+   additionally requires a successful sync and loading the returned guild grant.
+5. Log out to save collected data, wait for desktop success, then log back in to
+   load the helper return. `/reload` also saves/loads, but logout -> sync -> login
+   is the clearest return-file sequence.
+6. Refresh the dashboard. Same-account low-ranked alts can collect in the
+   authorized guild and realm; other guilds/realms/guildless characters cannot.
+   Each WoW account folder needs its own sync. A guildless sync clears the grant.
+
+Collectors only catch broadcasts while logged in; the app cannot retrieve
+messages sent while offline. AppHelper installation and local test overrides
+do not replace server authentication or grant website permissions.
+
+The GearDuckDev-hosted dashboard is
+[flocksync.gearduckdev.com](https://flocksync.gearduckdev.com). Other guilds should
+use the server address supplied by their own administrator.
+
+## How synchronization works
+
+```text
+Member addon --guild addon messages--> Collector addon
+                                         |
+                                  logout or /reload
+                                         v
+                                  SavedVariables
+                                         |
+                                  Windows desktop
+                                         v
+                                  API + SQLite <--> Web
+                                         |
+                                  AppHelper return file
+                                         v
+                                  next login /reload
+```
+
+Only FlockSync SavedVariables are parsed. Character records use epoch-based
+newer-data conflict resolution; last-seen reflects scans, not re-upload time.
+Guild messages are chunked/throttled, and snapshot data can be relayed to members
+without a desktop app. Cached in-game snapshots are informational, not an
+authorization source. WoW does not fetch GitHub or your API directly.
+
+## Commands
+| Command | Opens / does |
+| --- | --- |
+| `/fs` | Features window |
+| `/fs options` (`config`, `setup`) | Options |
+| `/fs role` (`main`) | Role & Main |
+| `/fs raid` (`schedule`) | Raid Schedule |
+| `/fs craft` | Crafter Search |
+| `/fs prof` | Professions & Goals |
+| `/fs minimap` | Toggle minimap icon |
+| `/fs help` | Command help |
+| `/fs debug officer` / `/fs debug officer off` | Session-only local test override; not normal setup |
+
+Minimap left-click opens Features; right-click opens Options; drag to reposition.
+Display toggles hide UI, not character-data sharing after onboarding.
+
+## Hosting and development
+
+Production: follow [DEPLOYMENT.md](./DEPLOYMENT.md) for Docker, Cloudflare,
+SQLite backups, and restores. Preserve `.env` and `data` during upgrades. Run
+`sh deploy/update-server.sh` to verify a backup before rebuilding/restarting.
+Never use `docker compose down -v` as an upgrade step. Deploy API/web together.
+
+Development requires Node.js 20+, pnpm, and Windows for desktop/addon linking.
+Copy `apps/api/.env.example` to `apps/api/.env` and configure its required
+database path, JWT secret, and initial-admin credentials before starting.
 
 ```powershell
 pnpm install
+pnpm dev:api
+# Separate terminals:
+pnpm dev:web
+pnpm dev:desktop
 ```
 
-Create `apps/api/.env` (see `apps/api/.env.example`):
+The API applies migrations at startup. For local addon edits, run
+`.\scripts\link-addons.ps1` (optional `-WowAddonsPath` overrides the default).
+Web API configuration uses `VITE_API_BASE_URL` (production `/api`, development
+`http://localhost:3001/api`); legacy `VITE_API_URL` is also supported.
+`VITE_WOWHEAD_PATH` defaults to `forever`.
 
-| Variable | Purpose |
+| Path | Responsibility |
 | --- | --- |
-| `PORT`, `HOST` | Where the API listens (default port 3001) |
-| `DATABASE_URL` | Path to the SQLite file |
-| `JWT_SECRET` | Long random secret for signing tokens |
-| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | Admin account created on first start |
+| `packages/shared-types` | Shared TypeScript/Zod contracts |
+| `apps/api` | Fastify, Drizzle, SQLite WAL, JWT authentication |
+| `apps/web` | React, Vite, Tailwind dashboard |
+| `apps/desktop` | Electron sync companion |
+| `apps/addon` | Lua 5.1 main addon and AppHelper |
 
-Then create the database and link the addons into WoW:
+Validate with `pnpm run typecheck` and `pnpm build`. Package with
+`.\scripts\package-release.ps1 -ReleaseVersion 0.6.0`; see
+[RELEASES.md](./RELEASES.md) for tests, all six downloads, and publishing rules.
+Update checks compare component versions, not the overall release tag.
 
-```powershell
-pnpm --filter @flocksync/api db:push
-.\scripts\link-addons.ps1
-# custom WoW location:
-.\scripts\link-addons.ps1 -WowAddonsPath "D:\WoW\_classic_beta_\Interface\AddOns"
-```
+## Permissions, privacy, and troubleshooting
 
-The web app reads `VITE_API_BASE_URL` (production default `/api`, development
-default `http://localhost:3001/api`) and `VITE_WOWHEAD_PATH` (default `forever`).
-The legacy `VITE_API_URL` origin setting is also supported.
-
-## Running
-
-Use one terminal per app:
-
-```powershell
-pnpm dev:api       # http://localhost:3001
-pnpm dev:web       # http://localhost:5173
-pnpm dev:desktop   # Electron sync client
-```
-
-Typical loop: start the apps, play, `/reload` in game, let the desktop app sync, then click **Refresh** on the web dashboard.
-
-## Development commands
-
-```powershell
-pnpm --filter @flocksync/shared-types build
-pnpm --filter @flocksync/api typecheck
-pnpm --filter @flocksync/desktop typecheck
-pnpm --filter @flocksync/web typecheck
-pnpm --filter @flocksync/web build
-pnpm build                                  # every workspace
-pnpm run typecheck                          # every workspace
-pnpm --filter @flocksync/api db:push        # apply schema changes
-pnpm --filter @flocksync/desktop package:win # installer + portable executable
-.\scripts\package-addons.ps1                # officer + raider addon archives
-```
-
-If `db:push` prompts about new NOT NULL columns, add the columns with `ALTER TABLE` first and re-run it.
-
-## In-game commands
-
-| Command | Action |
-| --- | --- |
-| `/fs` | Open/close the Features window |
-| `/fs options` (`config`, `setup`) | Open the Options window |
-| `/fs role` (`main`) | Options → Role & Main |
-| `/fs raid` (`schedule`) | Features → Raid Schedule |
-| `/fs craft` | Features → Crafter Search |
-| `/fs prof` | Features → Professions & Goals |
-| `/fs minimap` | Show/hide the minimap button |
-| `/fs help` | List commands in chat |
-| `/fs debug officer` | Force Officer Mode for this session only (`/fs debug officer off` to clear) |
-| `/reload` | Write data to disk so the desktop app can sync it |
-
-Until the walkthrough is finished, every `/fs` command and minimap click opens it.
-Opening a disabled feature's tab prints a hint and shows the first enabled tab.
-
-**Minimap button:** left-click opens/closes Features, right-click opens/closes
-Options, and dragging moves it around the minimap edge. Its angle is saved in
-`FlockSyncDB.minimap.minimapPos`; visibility follows `FlockSyncDB.config.showMinimap`
-(mirrored to `minimap.hide`).
-
-**Settings** (`FlockSyncDB.config`, account-wide): `hasCompletedOnboarding`,
-`showMinimap`, `showTooltips`, `enableSchedule`, `enableCrafterSearch` and
-`enableLfgMatcher`. Turning off tooltips or a feature only hides it in game;
-your character data is still broadcast once onboarding is complete.
-
-**Addon messages:** character/ledger broadcasts (prefix `FLOCKSYNC`) are queued and
-sent one message every 0.5 seconds. Every message carries the sender's guild
-name; receivers drop messages from other guilds and everything received while
-unguilded. Cached snapshot relays are hidden on characters in a different guild.
-
-**Inactive characters:** when an officer logs in, characters unseen for 30+ days
-are marked inactive (tracked in `FlockSyncDB.staleCharacters`) and the server
-removes them from the Team Builder on the next sync. They return automatically
-when they log in again. Manual culls from the web stay inactive until reactivated.
-Reactivating a 30+ day idle character on the web lasts only until the next sync.
-
-## Guild snapshots returned to the desktop
-
-Officer sync replies include `craftersIndex` (one entry per accepting crafter/recipe),
-`upcomingRaids` (weekly RAID teams with named assignments and benches), and
-`goalMatches` (gear goals grouped by item ID). Inactive characters are excluded,
-and duplicate recipes/goals per character are collapsed. Saved teams recur weekly,
-so all RAID teams occur within the next 14 days; there is currently no dated-event
-or team active/inactive field. Dungeon and PvP teams are not included.
-Bench entries have `isBench: true` and group/slot indexes of `0`.
-
-The desktop writes these optional arrays as nested Lua 5.1 tables in
-`FlockSync_AppHelper.lua` beside the synced account's `FlockSync.lua`.
-Old replies without snapshots remain supported. The data is available on the
-next `/reload` or login.
-
-### In-game snapshot features
-
-- **Tooltips:** item tooltips gain `FlockSync Goal:` (guildmates with the item as a
-  Gear Goal) and `FlockSync Crafter:` (accepting crafters) lines. Crafter lookups
-  match crafted item IDs; enchant recipes are spell IDs and only appear in search.
-- **Features window tabs** (each is built the first time it is opened):
-  - *Raid Schedule* — weekly raid teams with your status
-    (`ASSIGNED: Group X (Role)`, `STANDBY / BENCH`, or `NOT SCHEDULED`). Officers get
-    **Auto-Invite Assigned Team**, which invites online non-bench assignees and
-    converts the party to a raid once someone joins.
-  - *Crafter Search* — filter by item/enchant or crafter name, with **Whisper**.
-  - *LFG Matcher* — online guildmates who share your Gear Goals, with **Invite**.
-- Tooltip lines and each tab can be turned off under Options → Display & Features.
-- **Members without the desktop app:** a PC with desktop-linked helper data relays
-  the snapshot over guild addon messages (prefix `FLOCKSNAP`, 1 chunk/second) about
-  30 seconds after login and whenever a member asks for a newer copy. Members cache
-  it in `FlockSyncDB.guildSnapshot`; only newer, non-future timestamps replace it.
-  Any guild member running the addon could send a crafted relay, so treat the
-  in-game snapshot as informational.
-
-## Roles and security
-
-Officer detection in game accepts a session-only `/fs debug officer` override,
-the saved `forceOfficerMode` development override (off by default), native
-officer-note permission, or the configured guild-rank threshold. When a
-character is recognized through native permission or guild rank, the addon
-remembers that guild for the WoW account. Other characters in that account can
-act as data catchers only while they are in that same guild. Options → Role &
-Main shows why the mode is active. The **Officer Mode (Local Test)** checkbox
-requires confirmation before enabling the saved override.
-
-When an Officer/Admin signs into the desktop client or saves a WoW path, the
-client initializes missing helper files and updates existing helper files to
-set `isAuthorizedOfficer = true`, preserving culls and cached snapshot data.
-That flag supports same-guild account recognition; it does not authorize a
-different guild. Restart WoW or `/reload` to load the helper change. The guild
-recognition persists in account SavedVariables. The local testing override and
-helper flag are not API access controls. API authentication and Officer/Admin
-authorization are still required to sync.
-
-- Roles are `MEMBER`, `OFFICER` and `ADMIN`. Writes (sync, raid teams, tasks, aliases, cull/delete) require Officer or Admin.
-- Anyone can create an account from the dashboard's **Create account** tab. Self-registered accounts are always `MEMBER` (read-only roster, lineups, ledger; no Officer Tasks).
-- Admins manage accounts in **Admin Settings**: add users with any role, promote/demote, or delete. The root admin (the first account, seeded from `INITIAL_ADMIN_EMAIL`) cannot be demoted or deleted, admins cannot change or delete their own account, and the last admin cannot be demoted.
-- Every authenticated request re-reads the account from the database, so role changes and deletions take effect immediately for existing logins (including the desktop client).
-- Users can change their own username using **Account** in the dashboard header. The root/main admin can also **Rename** any account in **Admin Settings**; other admins cannot rename someone else's account. Usernames must be 2-32 characters and unique (case-insensitive). Renaming does not change email, password, role or character data.
-- All request bodies are validated with Zod. Database access uses parameterized Drizzle queries only.
-- Secrets come from environment variables, never from source.
-
-## Troubleshooting
-
-- **Port 3001 busy:** `Get-NetTCPConnection -LocalPort 3001`, then `Stop-Process -Id <PID>`.
-- **Data missing on the web:** `/reload` in game, check the desktop app synced, then Refresh.
-- **Quest or attunement data looks wrong:** attunement quest IDs in `apps/addon/FlockSync/Attunements.lua` should be verified against the Forever client.
+- Website roles are MEMBER, OFFICER, and ADMIN. Accounts are rechecked on each
+  authenticated request. Server sync and management writes require authorization.
+- Admin Settings manages accounts; Account changes your own username. The root
+  admin has additional protections. In-game overrides are not API access controls.
+- Secrets come from environment configuration. Keep databases, credentials,
+  SavedVariables, and real account information out of public screenshots.
+- Missing data? Finish onboarding, let a collector receive updates, save the
+  collector's file, check desktop sync, then Refresh. Open profession windows
+  before expecting recipes. Characters idle for 30+ days can become inactive;
+  manual culls remain until restored.
+- Attunement quest mappings should be verified against the Forever client.
+- This is a public-source, **proprietary** project, not an open-source license.
+  See [LICENSE](./LICENSE) for use, hosting, and redistribution terms.

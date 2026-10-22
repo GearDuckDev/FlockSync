@@ -19,6 +19,7 @@ ignore:
   - deploy
   - packages
   - assets
+  - docs
   - scripts
   - node_modules
   - release
