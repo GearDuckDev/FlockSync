@@ -287,8 +287,14 @@ temporary files, and AppHelper writes are excluded from file watching.
 
 The addon saves the logged-in character's own scan regardless of catcher status.
 Only officers aggregate other players' guild broadcasts. Equipment changes
-schedule a scan, and logout or `/reload` captures the player again before WoW
-writes SavedVariables. The desktop cannot read unsaved in-game state.
+capture the affected slot immediately and schedule a broadcast. Logout or
+`/reload` captures character metadata while preserving the last valid equipment
+snapshot, since inventory APIs may be unavailable during character teardown.
+WoW itself writes SavedVariables on reload/logout; addons cannot force a disk
+write during normal play. The desktop cannot read unsaved in-game state.
+While running and signed in, it automatically syncs changed/replaced
+`FlockSync.lua` files after writes settle, including reload, logout, and
+character-switch saves. It does not need a manual Sync click for those saves.
 Allow the resulting desktop sync to finish, then use **Refresh** on the web
 dashboard (it does not currently refresh roster data automatically).
 Last seen is the character's game scan time, not the desktop upload time;
@@ -302,6 +308,10 @@ scan the affected character again in game, log out, wait for successful sync,
 and refresh the dashboard. Each affected character needs a fresh scan (collected
 by an online catcher for other guild members); a web refresh cannot recover gear
 already overwritten by an earlier sync.
+
+When changing characters, gear remains attached to each character's own profile.
+Incomplete item-cache results do not replace valid gear. An explicitly reported
+unequip still removes that slot, including removal of the final equipped item.
 
 ## 3. Addon releases
 

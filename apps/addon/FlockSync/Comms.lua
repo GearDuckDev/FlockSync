@@ -180,13 +180,19 @@ local function canAggregate()
     return ns.IsPlayerOfficer()
 end
 
-function ns.CaptureLocalScan()
-    local character = ns.ScanPlayer()
+function ns.CaptureLocalScan(preserveGear)
+    local character = ns.ScanPlayer(preserveGear)
     if not character then
         return nil
     end
     -- Keep our own export fresh even when guild/officer information is unavailable.
     ns.MergeCharacter(character)
+    local saved = FlockSyncDB.characters[character.guid]
+    -- Local equipment events can share a server second; the latest local
+    -- capture wins here without relaxing timestamps for guild/server merges.
+    if saved and character.gear.updatedAt >= saved.gear.updatedAt then
+        saved.gear = character.gear
+    end
     FlockSyncDB.exportedAt = character.lastSeenAt
     return character
 end

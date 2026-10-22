@@ -49,8 +49,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
             C_Timer.After(3, ns.ShowStartupWindow)
         end
     elseif event == "PLAYER_LOGOUT" then
-        -- Flush pending equipment changes before logout/reload writes SavedVariables.
-        ns.CaptureLocalScan()
+        -- WoW writes this table on reload/logout; inventory APIs may be gone.
+        ns.CaptureLocalScan(true)
+    elseif event == "PLAYER_EQUIPMENT_CHANGED" then
+        -- Capture now so logout cannot outrun the delayed broadcast.
+        ns.CaptureEquipmentChange(arg1, arg2)
+        ns.CaptureLocalScan(true)
+        scheduleScan()
     elseif event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_LIST_UPDATE" then
         scanProfessionsSoon("tradeskill")
     elseif event == "CRAFT_SHOW" then
@@ -59,7 +64,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         if arg1 == nil or not ns.IsAttunementQuest or ns.IsAttunementQuest(arg1) then
             scheduleScan()
         end
-    elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "PLAYER_LEVEL_UP"
+    elseif event == "PLAYER_LEVEL_UP"
         or event == "UPDATE_INSTANCE_INFO" then
         scheduleScan()
     end

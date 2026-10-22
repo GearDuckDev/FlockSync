@@ -219,7 +219,7 @@ Web API configuration uses `VITE_API_BASE_URL` (production `/api`, development
 | `apps/addon` | Lua 5.1 main addon and AppHelper |
 
 Validate with `pnpm run typecheck` and `pnpm build`. Package with
-`.\scripts\package-release.ps1 -ReleaseVersion 0.7.0`; see
+`.\scripts\package-release.ps1 -ReleaseVersion 0.7.1`; see
 [RELEASES.md](./RELEASES.md) for tests, all six downloads, and publishing rules.
 Update checks compare component versions, not the overall release tag.
 
