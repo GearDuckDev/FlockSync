@@ -25,6 +25,11 @@ export const checkGearSync = async (origin, token, officer) => {
   };
   await sync(initial);
   assert.deepEqual((await read()).gear.items, [pants]);
+  assert.deepEqual((await read()).gear.items, [pants], "Refreshing the roster must not remove saved equipment");
+  await sync({ ...initial, gear: { updatedAt: epoch, items: [] } });
+  assert.deepEqual((await read()).gear.items, [pants], "Equal-timestamp sync must not clear saved equipment");
+  await sync({ ...initial, gear: { updatedAt: epoch - 1, items: [] } });
+  assert.deepEqual((await read()).gear.items, [pants], "Older sync must not clear saved equipment");
   await sync({ ...initial, lastSeenAt: epoch + 1, gear: { updatedAt: epoch + 1, items: [] } });
   let saved = await read();
   assert.deepEqual(saved.gear.items, [], "Unequipping must replace gear, not merge old slots");

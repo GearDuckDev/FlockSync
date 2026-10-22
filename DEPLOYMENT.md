@@ -294,6 +294,15 @@ dashboard (it does not currently refresh roster data automatically).
 Last seen is the character's game scan time, not the desktop upload time;
 uploading an unchanged file must not make an offline character look recently seen.
 
+The desktop accepts both positional and explicitly indexed Lua equipment tables.
+Missing or malformed equipment lists fail sync validation instead of being
+uploaded as empty gear; a genuinely empty table still records unequipped items.
+If an older desktop build uploaded empty gear, install a corrected desktop build,
+scan the affected character again in game, log out, wait for successful sync,
+and refresh the dashboard. Each affected character needs a fresh scan (collected
+by an online catcher for other guild members); a web refresh cannot recover gear
+already overwritten by an earlier sync.
+
 ## 3. Addon releases
 
 From the repo root in PowerShell:

@@ -42,10 +42,12 @@ const toCharacter = (raw: unknown): unknown => {
   const { role, gear } = character;
   if (isRecord(role)) character.role = pick(role, ['primaryRole', 'offSpecEnabled', 'offSpecRole', 'updatedAt']);
   if (isRecord(gear)) {
-    const items = Array.isArray(gear.items) ? gear.items : [];
+    const items = isRecord(gear.items) ? Object.values(gear.items) : gear.items;
     character.gear = {
       updatedAt: gear.updatedAt,
-      items: items.map((i) => (isRecord(i) ? pick(i, ['slotId', 'itemLink', 'itemId']) : i)),
+      items: Array.isArray(items)
+        ? items.map((i) => (isRecord(i) ? pick(i, ['slotId', 'itemLink', 'itemId']) : i))
+        : items,
     };
   }
   return character;

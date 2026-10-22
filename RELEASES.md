@@ -9,8 +9,8 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.6.1` |
-| Desktop | `0.4.0` |
+| Combined GitHub tag | `v0.7.0` |
+| Desktop | `0.5.0` |
 | API + web / server | `0.4.1` |
 | Main addon | `0.5.0` |
 | AppHelper | `0.2.2` |
@@ -19,14 +19,12 @@ installed version with their own manifest entry, never with the bundle tag.
 
 ### Changes in this release
 
-- Web Theme Settings now include custom UI and page background colors, linked
-  by default with a toggle for independent choices and a live preview.
-- Color settings persist in personal themes and admin defaults alongside
-  existing emblems, uploads, and opacity settings. Legacy themes keep their
-  original appearance until customized; no migration or reset is needed.
-- API/web and shared types advance to 0.4.1, using the requested 0.0.1 increment.
-  Desktop 0.4.0, main addon 0.5.0, AppHelper 0.2.2, and root metadata 0.2.2
-  are unchanged.
+- Desktop sync now preserves equipment saved in explicitly indexed Lua tables
+  instead of uploading an empty list that appears as lost gear on web refresh.
+- Missing or malformed equipment lists fail validation; real unequips still sync.
+- Overall release advances to 0.7.0 and desktop to 0.5.0 using the requested
+  minor increment. API/web and shared types 0.4.1, main addon 0.5.0,
+  AppHelper 0.2.2, and root metadata 0.2.2 are unchanged.
   See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
 
 ## Each time you release
@@ -42,7 +40,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.6.1
+   .\scripts\package-release.ps1 -ReleaseVersion 0.7.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -55,16 +53,16 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.6.1 -m "FlockSync 0.6.1"
-   git push origin v0.6.1
+   git tag -a v0.7.0 -m "FlockSync 0.7.0"
+   git push origin v0.7.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.6.1`.
-   - Title: `FlockSync 0.6.1`.
+   - Tag: `v0.7.0`.
+   - Title: `FlockSync 0.7.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.6.1`, leave it **unchecked**; this is a normal Release-channel
+     For `v0.7.0`, leave it **unchecked**; this is a normal Release-channel
      publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
@@ -79,8 +77,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.4.0-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.4.0-x64.exe` | Windows portable app |
+| `FlockSync-Setup-0.5.0-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.5.0-x64.exe` | Windows portable app |
 | `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
