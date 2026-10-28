@@ -27,6 +27,11 @@ export const groupRoster = (roster: Character[]): RosterGroup[] => {
     else orphans.push({ main: alt, alts: [], orphan: true });
   }
 
+  for (const group of groups.values()) {
+    group.alts.sort((a, b) => b.lastSeenAt - a.lastSeenAt
+      || b.level - a.level || a.name.localeCompare(b.name));
+  }
+
   const byName = (a: RosterGroup, b: RosterGroup): number => a.main.name.localeCompare(b.main.name);
   return [...groups.values()].sort(byName).concat(orphans.sort(byName));
 };

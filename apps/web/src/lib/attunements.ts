@@ -78,7 +78,8 @@ export const buildChainViews = (roster: Character[]): ChainView[] => {
         key: human.key, main, orphan: human.group.orphan,
         alts: active.filter((character) => human.group.orphan || character.guid !== mainCharacter.guid)
           .map((character) => progress(character, character.attunements?.find((chain) => chain.chainId === view.chainId)))
-          .sort((a, b) => a.character.name.localeCompare(b.character.name)),
+          .sort((a, b) => b.character.level - a.character.level
+            || a.character.name.localeCompare(b.character.name)),
       });
     }
     view.groups.sort((a, b) => Number(a.key === 'unknown') - Number(b.key === 'unknown')

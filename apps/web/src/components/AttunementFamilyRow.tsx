@@ -42,22 +42,24 @@ export const AttunementFamilyRow = ({ family, ...rest }: Props): React.JSX.Eleme
   return (
     <li className="space-y-2">
       <div className="flex items-start gap-2">
-        {family.alts.length > 0 && (
-          <button
-            type="button"
-            aria-expanded={expanded}
-            aria-controls={id}
-            aria-label={`${expanded ? 'Collapse' : 'Expand'} alts for ${mainName}`}
-            onClick={() => setExpanded((value) => !value)}
-            className="mt-0.5 rounded text-slate-400 hover:text-white focus-visible:outline"
-          >
-            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </button>
-        )}
         <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-bold uppercase text-amber-300">
-            Main{family.alts.length > 0 ? ` · ${family.alts.length} alt(s)` : ''}
-          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-bold uppercase text-amber-300">
+              Main{family.alts.length > 0 ? ` · ${family.alts.length} alt(s)` : ''}
+            </span>
+            {family.alts.length > 0 && (
+              <button
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={id}
+                aria-label={`${expanded ? 'Collapse' : 'Expand'} alts for ${mainName}`}
+                onClick={() => setExpanded((value) => !value)}
+                className="rounded text-slate-400 hover:text-white focus-visible:outline"
+              >
+                {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
+            )}
+          </div>
           {family.orphan
             ? <p className="text-sm">{mainName} <span className="text-xs text-slate-500">(not on roster)</span></p>
             : <ProgressRow entry={family.main} {...rest} />}

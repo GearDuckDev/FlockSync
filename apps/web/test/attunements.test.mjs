@@ -29,9 +29,9 @@ const character = (guid, completed, extra = {}) => ({
 test('alts stay under main step, with individual progress including equal steps', () => {
   const roster = [
     character('Main', 1),
-    character('AltZero', 0, { mainCharacterGuid: 'Main' }),
-    character('AltSame', 1, { mainCharacterName: 'main' }),
-    character('AltDone', 3, { mainCharacterGuid: 'Main' }),
+    character('AltZero', 0, { mainCharacterGuid: 'Main', level: 50 }),
+    character('AltSame', 1, { mainCharacterName: 'main', level: 40 }),
+    character('AltDone', 3, { mainCharacterGuid: 'Main', level: 60 }),
     character('OtherMain', 3),
   ];
   const [view] = buildChainViews(roster);
@@ -40,7 +40,7 @@ test('alts stay under main step, with individual progress including equal steps'
   assert.equal(family.main.character.guid, 'Main');
   assert.equal(family.main.completed, 1);
   assert.deepEqual(family.alts.map((alt) => [alt.character.guid, alt.completed, alt.total]), [
-    ['AltDone', 3, 3], ['AltSame', 1, 3], ['AltZero', 0, 3],
+    ['AltDone', 3, 3], ['AltZero', 0, 3], ['AltSame', 1, 3],
   ]);
   assert.equal(view.groups.reduce((n, group) => n + group.members.length, 0), 2, 'Counts represent mains, not alts');
   assert.equal(view.groups.find((group) => group.attuned).members.length, 1);
