@@ -49,7 +49,7 @@ in-game captures and CurseForge image-hosting instructions.
 | --- | --- |
 | A guild member | **FlockSync** from CurseForge or `FlockSync-Raider-Only.zip` |
 | An officer/admin collecting data | **FlockSync + AppHelper** from `FlockSync-Addon-Bundle.zip`, plus one Windows desktop download |
-| Hosting the guild server | `FlockSync_Pi_Deploy.zip`; follow [DEPLOYMENT.md](./DEPLOYMENT.md) |
+| Hosting the guild server | `FlockSync_Remote_Server_Deploy.zip`; follow [DEPLOYMENT.md](./DEPLOYMENT.md) |
 
 Regular members do **not** need AppHelper, the desktop app, or a website account
 to broadcast their character data. The guild needs an active collector and a
@@ -87,6 +87,37 @@ Item search is a bounded local cache, not a complete game-item database.
 | Admin Settings | Account roles, database backup/restore, persistent backup folders, guild-data wipe, and server update notices |
 | Theme Settings | Custom UI/page colors, optional backgrounds, custom uploads, admin defaults, and personal overrides |
 
+The dashboard header shows the guild name from the latest timestamped collector
+sync. Guild identity is stored in SQLite and included in subsequent backups:
+restore brings back that snapshot's guild name, while wipe clears it until a new
+collector sync. Older backups have no guild identity; sync a collector and refresh
+the dashboard to populate it.
+
+### Database administration
+
+Admin Settings supports working **backup, restore, and guild-data wipe** controls.
+The operator successfully tested restore and wipe in a smaller private
+environment; this is user-reported validation, not certification of every
+deployment or live WoW scenario.
+
+- **Create backup:** save a verified online SQLite snapshot to the configured
+  backup storage destination, optionally downloading a second copy to your device.
+- **Restore backup:** choose the newest or another server snapshot (with local
+  date/time displayed), or upload a custom backup up to 128 MB. A pre-restore
+  safety backup is saved first. Restoring replaces accounts and application
+  records, so the restored credentials may be required.
+- **Wipe guild data:** type the confirmation, save a `final` backup, then clear
+  guild records and themes while retaining accounts and the backup-folder setting.
+  The reset marker reaches updated addons through collector/AppHelper sync and
+  guild snapshots; the API rejects pre-reset data.
+- **Backup folder:** browse/create subfolders on the server's mounted backup storage volume.
+  The setting persists across updates and also directs scheduled/pre-update
+  backups. This is not a Windows PC folder picker.
+
+Keep independent backups and preserve `.env` and `data` during updates. Follow
+[DEPLOYMENT.md](./DEPLOYMENT.md) for backup storage permissions, restore safety, and the
+logout -> desktop sync -> login sequence after a reset.
+
 **Themes start at None.** Bundled options are Alliance, Horde, and World of
 Warcraft; the example guild image is not included. PNG/JPEG uploads accept up
 to 5 MB, resize to at most 1024 pixels per side, and must fit the encoded storage
@@ -101,6 +132,8 @@ preserved. Existing saved themes keep their original colors until customized.
 
 ### On Windows
 - Sign in to your guild's server and select the WoW client folder.
+- Fresh installs default to `C:\Program Files (x86)\World of Warcraft\_forever_`.
+  You can change this location; saved custom or older client paths remain unchanged.
 - Watch FlockSync SavedVariables and sync when WoW writes them.
 - Keep syncing in the tray after closing the window.
 - Independently choose Windows startup, start-minimized, and close-to-tray behavior.

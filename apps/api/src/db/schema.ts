@@ -14,6 +14,13 @@ export const users = sqliteTable("users", {
   createdAt: integer("created_at").notNull()
 });
 
+export const guildIdentity = sqliteTable("guild_identity", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  realm: text("realm").notNull(),
+  updatedAt: integer("updated_at").notNull()
+});
+
 export const themeDefaults = sqliteTable("theme_defaults", {
   id: text("id").primaryKey(),
   themeJson: text("theme_json").notNull()

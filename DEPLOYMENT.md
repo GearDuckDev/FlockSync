@@ -1,20 +1,22 @@
 # Production deployment
 
-## 1. Raspberry Pi 5 and Synology
+## 1. Remote server and backup storage
 
 To prepare a clean source archive on Windows, run
-`.\scripts\package-pi-deploy.ps1` from the repository root. Transfer
-`release\FlockSync_Pi_Deploy.zip` to the Pi and extract it; the top-level folder is
+`.\scripts\package-remote-server-deploy.ps1` from the repository root. Transfer
+`release\FlockSync_Remote_Server_Deploy.zip` to the remote server and extract it; the top-level folder is
 `FlockSync`. The archive includes the pnpm lockfile but excludes dependencies,
 build outputs, database files, local environment secrets and symlinks/junctions.
 The script removes its temporary staging directory after packaging.
 
-Use a **64-bit** Raspberry Pi OS / Debian installation, Docker Engine and the
-Docker Compose plugin. Keep the repository and live SQLite data on the Pi's
-NVMe drive. Do **not** put the live database on NFS/SMB; only backups go there.
-Images build natively on ARM64 (Pi) or AMD64 (PC), including better-sqlite3.
+Use a **64-bit** Linux installation, Docker Engine and the
+Docker Compose plugin. ARM64 and AMD64 hosts are supported, including virtual
+machines and physical servers. Keep the repository and live SQLite data on a
+local persistent disk (SSD recommended). Do **not** put the live database on
+NFS/SMB; only backups go there. Images build natively for either architecture,
+including better-sqlite3.
 
-On the Pi (Linux terminal, from the repository):
+On the remote server (Linux terminal, from the repository):
 
 ```sh
 cp .env.example .env
@@ -32,34 +34,42 @@ Existing installations using `.env.production`: rename it to `.env` before
 using the updated Compose configuration. Use `mv -i .env.production .env` and do
 not overwrite an existing `.env`; reconcile settings manually if both exist.
 Remove any old `COMPOSE_ENV_FILES=.env.production` setting from `.env` or your
-shell environment. Keep your existing secrets and NAS path; do not replace them
+shell environment. Keep your existing secrets and backup storage path; do not replace them
 with the example values. The root deployment `.env` is separate from the API's
 local development `apps/api/.env`.
 
-### Mount the NAS
+### Configure backup storage
 
-Enable NFS on the Synology shared folder and grant the Pi's LAN IP access.
-Install `nfs-common` on the Pi, then adapt this example to your server/export:
+Backup storage can be a mounted network share, an attached disk, or an existing
+local directory. `NAS_BACKUP_PATH` remains the configuration key for compatibility;
+it is not restricted to network storage. Existing installations must keep their actual
+configured path: the new example path below does not require renaming or moving
+any existing mount or backup.
+
+For NFS storage, enable an export on the storage host and grant the application
+server's LAN IP access. On Debian/Ubuntu, install `nfs-common`, then adapt this
+example to your storage host's actual export:
 
 ```sh
 sudo apt-get update && sudo apt-get install -y nfs-common
-sudo mkdir -p /mnt/synology/flocksync_backups
-sudo mount -t nfs 192.168.1.20:/volume1/flocksync_backups /mnt/synology/flocksync_backups
-mountpoint /mnt/synology/flocksync_backups
+sudo mkdir -p /mnt/backup-storage/flocksync_backups
+sudo mount -t nfs 192.168.1.20:/exports/flocksync_backups /mnt/backup-storage/flocksync_backups
+mountpoint /mnt/backup-storage/flocksync_backups
 ```
 
 For boot persistence, add the real export to `/etc/fstab`, for example:
 
 ```fstab
-192.168.1.20:/volume1/flocksync_backups /mnt/synology/flocksync_backups nfs defaults,_netdev 0 0
+192.168.1.20:/exports/flocksync_backups /mnt/backup-storage/flocksync_backups nfs defaults,_netdev 0 0
 ```
 
-Set `NAS_BACKUP_PATH=/mnt/synology/flocksync_backups`. Ensure the backup
-container can write there; Synology root-squash mappings and export permissions
-must allow it. Test creating a file through the mounted share. Never store NAS
-credentials in the repository. Configure service startup ordering so the NAS is
-mounted **before** Compose; otherwise backups can land on the Pi's mountpoint
-directory instead. For a trial without NAS, set `NAS_BACKUP_PATH=./data/backups`
+Set `NAS_BACKUP_PATH=/mnt/backup-storage/flocksync_backups`. Ensure the backup
+container and the API user can read/write there; storage-host root-squash mappings
+and export permissions must allow it. Test creating a file as the API user too.
+Never store storage credentials in the repository. Configure service startup
+ordering so network storage is mounted **before** Compose; otherwise backups can
+land on the remote server's mountpoint directory instead. For local backup
+storage, set `NAS_BACKUP_PATH=./data/backups`
 and create it with `mkdir -p data/backups` before starting Compose.
 
 ### Start the stack
@@ -97,8 +107,8 @@ Use a domain managed by Cloudflare for your public hostname.
    Cloudflare installation command or commit the token.
 4. In the tunnel's **Public Hostname** configuration, route
    `flocksync.gearduckdev.com` to **HTTP** service **`http://web:80`**. This is the
-   internal Docker service, not `localhost` or the Pi's IP address.
-5. On the Pi, from the extracted project folder, start the stack:
+   internal Docker service, not `localhost` or the remote server's IP address.
+5. On the remote server, from the extracted project folder, start the stack:
 
    ```sh
    docker compose up -d
@@ -106,12 +116,12 @@ Use a domain managed by Cloudflare for your public hostname.
 
    Include `--build` on first deployment or when updating source code.
    Compose automatically loads the deployment directory's `.env` for the tunnel
-   token and NAS path. Plain `docker compose down` works from this directory too;
+   token and backup storage path. Plain `docker compose down` works from this directory too;
    no `--env-file` flag is needed.
 
 Confirm the tunnel is healthy in Cloudflare and visit
 `https://flocksync.gearduckdev.com/health`. The web and API containers have no
-published host ports, so direct access at the Pi's IP/port no longer works.
+published host ports, so direct access at the remote server's IP/port no longer works.
 Remove any old `WEB_PORT` setting; it is no longer used.
 
 FlockSync's JWT login and Officer/Admin authorization still apply. If you add
@@ -161,7 +171,7 @@ The script does not download a release or change tags for you.
 
 `NAS_BACKUP_PATH` must be set in `.env`, and that directory must
 already exist. Compose refuses to silently create a missing destination or use
-a fallback. Mount the NAS first if that is your chosen destination; verify the
+a fallback. Mount the backup storage first if that is your chosen destination; verify the
 mount is actually live before upgrading. A local trial directory must be
 created manually, for example `mkdir -p data/backups`.
 
@@ -177,7 +187,7 @@ It verifies `PRAGMA quick_check`, renames the temporary file only on success,
 and then deletes daily backups older than 30 days. Successful daily runs publish
 `flocksync-YYYYMMDD.db`; rerunning on the same day replaces that day's backup
 only after validation. Failed backups log an error and leave existing backups
-untouched; cron retries at the next daily run. Inspect logs and NAS contents regularly.
+untouched; cron retries at the next daily run. Inspect logs and backup storage contents regularly.
 
 Pre-update backups are published as
 `flocksync-pre-update-<UTC timestamp>-<unique suffix>.db` and are not overwritten
@@ -188,12 +198,18 @@ production environment file: keep a separate secure configuration backup.
 ### Admin backup, restore and wipe controls
 
 Admins can manage the live database in **Admin Settings** without stopping the
-stack. Server backups are written beneath the mounted `NAS_BACKUP_PATH`; choose
+stack. Backup, restore, and wipe are implemented; the operator reported successful
+restore/wipe tests in a smaller private environment. Guild identity from collector
+syncs is stored in SQLite and shown in the dashboard header. New backups preserve
+it, restore recovers it, and wipe clears it. Older backups need a collector sync
+to populate the name after migration.
+
+Server backups are written beneath the mounted `NAS_BACKUP_PATH`; choose
 or create a subfolder there as the default destination. The selected folder is
 stored in the persistent `data` directory, so it remains in effect across
 deployment updates and is also used by scheduled and pre-update backups.
 The browser can optionally download a second copy to the admin's device; it
-cannot write directly to an arbitrary path on the Pi.
+cannot write directly to an arbitrary path on the remote server.
 The folder dialog browses the server's mounted volume, not the Windows PC;
 `/backups` is the container path mapped to `NAS_BACKUP_PATH`. A native Windows
 folder picker cannot select this server destination. Restore choices display
@@ -221,7 +237,7 @@ readable WAL/SHM files already created by the API, which Compose waits for
 before starting the backup service. Missing or inaccessible WAL/SHM files cause
 an explicit backup failure; the backup never uses `immutable=1`, which could
 miss live WAL changes. This does not run a checkpoint or copy raw database files.
-NAS unmounts/network failures must be monitored separately.
+backup storage unmounts/network failures must be monitored separately.
 
 For offline/manual recovery, stop the stack, preserve the current database and
 its WAL/SHM files elsewhere, put a selected verified backup at
@@ -289,10 +305,10 @@ GitHub's unauthenticated rate-limit usage.
 
 Snapshot support requires **both** the updated API and the updated desktop app.
 Building desktop source does not update an already packaged/running executable,
-and an existing Pi ZIP does not update itself after source changes.
+and an existing remote server ZIP does not update itself after source changes.
 
-1. Regenerate the Pi ZIP with `.\scripts\package-pi-deploy.ps1`, copy and extract
-   it on the Pi, preserving `.env` and `data`.
+1. Regenerate the remote server ZIP with `.\scripts\package-remote-server-deploy.ps1`, copy and extract
+   it on the remote server, preserving `.env` and `data`.
 2. Run `sh deploy/update-server.sh` to back up and verify SQLite before updating.
 3. Build a fresh desktop executable using `pnpm --filter @flocksync/desktop package:win`.
    Close the old desktop app completely and start the new executable.
@@ -377,20 +393,20 @@ SavedVariables folder; restart WoW or `/reload` to load it.
 
 ## 4. Development and verification
 
-### Updating and redeploying the Pi stack
+### Updating and redeploying the remote server stack
 
 On the development machine, package the current deployment sources:
 
 ```powershell
-.\scripts\package-pi-deploy.ps1
+.\scripts\package-remote-server-deploy.ps1
 ```
 
-Copy `release\FlockSync_Pi_Deploy.zip` to the Pi. There, from the directory
+Copy `release\FlockSync_Remote_Server_Deploy.zip` to the remote server. There, from the directory
 where you keep the deployment, extract it and redeploy while preserving
-`data/sqlite`, `.env`, and the mounted NAS share:
+`data/sqlite`, `.env`, and the mounted backup storage share:
 
 ```sh
-unzip -o FlockSync_Pi_Deploy.zip
+unzip -o FlockSync_Remote_Server_Deploy.zip
 cd FlockSync
 sh deploy/update-server.sh
 docker compose ps
@@ -419,7 +435,7 @@ Production web builds default to the relative `/api` endpoint. Override it with
 Local Vite development defaults to `http://localhost:3001/api`. The old
 `VITE_API_URL` origin setting remains supported for existing development setups.
 
-To verify both CPU architectures with Buildx (requires emulation off the Pi):
+To verify both CPU architectures with Buildx (requires emulation off the remote server):
 
 ```sh
 docker buildx build --platform linux/arm64,linux/amd64 -f Dockerfile.api .

@@ -9,24 +9,28 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.8.0` |
-| Desktop | `0.5.0` |
-| API + web / server | `0.5.0` |
+| Combined GitHub tag | `v0.9.0` |
+| Desktop | `0.5.1` |
+| API + web / server | `0.6.0` |
 | Main addon | `0.6.0` |
 | AppHelper | `0.2.2` |
-| Shared types | `0.5.0` |
+| Shared types | `0.6.0` |
 | Root package | `0.2.2` |
 
 ### Changes in this release
 
-- API/web 0.5.0 adds admin database backup, restore, persistent NAS backup
-  folders, and a final-backup-protected guild-data wipe that retains accounts.
-- Main addon 0.6.0 receives and relays database reset markers. API sync rejects
-  pre-reset records so stale data cannot repopulate the wiped database.
+- API/web 0.6.0 adds the synced guild name at the top center of the dashboard.
+  Guild identity is backed up/restored with SQLite and cleared on wipe.
+- Database restore inserts accounts before dependent character/theme records.
+  Backup, restore, persistent backup folders, and protected wipe remain available.
+- Main addon 0.6.0 and AppHelper 0.2.2 are unchanged from the existing 0.8.0 tag.
 - Backup status refresh clears previous messages and restore options display
   local backup dates/times. Folder recovery remains available after listing errors.
-- Overall release advances to 0.8.0; shared types advance to 0.5.0.
-  Desktop 0.5.0, AppHelper 0.2.2, and root metadata 0.2.2 are unchanged.
+- Remote-server deployment packaging is hardware/vendor-neutral; the archive is
+  `FlockSync_Remote_Server_Deploy.zip`. Existing backup settings remain compatible.
+- Overall release advances to 0.9.0; shared types advance to 0.6.0.
+  Desktop 0.5.1 changes the fresh-install client path to `_forever_` while
+  preserving saved locations. AppHelper 0.2.2 and root metadata 0.2.2 are unchanged.
   See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
 
 ## Each time you release
@@ -42,7 +46,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.8.0
+   .\scripts\package-release.ps1 -ReleaseVersion 0.9.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -55,16 +59,16 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.8.0 -m "FlockSync 0.8.0"
-   git push origin v0.8.0
+   git tag -a v0.9.0 -m "FlockSync 0.9.0"
+   git push origin v0.9.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.8.0`.
-   - Title: `FlockSync 0.8.0`.
+   - Tag: `v0.9.0`.
+   - Title: `FlockSync 0.9.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.8.0`, leave it **unchecked**; this is a normal Release-channel
+     For `v0.9.0`, leave it **unchecked**; this is a normal Release-channel
      publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
@@ -79,9 +83,9 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.5.0-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.5.0-x64.exe` | Windows portable app |
-| `FlockSync_Pi_Deploy.zip` | Web/API Docker deployment source |
+| `FlockSync-Setup-0.5.1-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.5.1-x64.exe` | Windows portable app |
+| `FlockSync_Remote_Server_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
 
@@ -141,9 +145,9 @@ service. Configure desktop `githubRepo` in its user-data `config.json` and API
 
 Preserve `.env` and the `data` directory while extracting/selecting
 the new source. Confirm `NAS_BACKUP_PATH` is configured and its directory
-already exists and is writable; mount the NAS first if applicable.
+already exists and is writable; mount the backup storage first if applicable.
 
-From the deployed project directory on the Pi:
+From the deployed project directory on the remote server:
 
 ```sh
 sh deploy/update-server.sh

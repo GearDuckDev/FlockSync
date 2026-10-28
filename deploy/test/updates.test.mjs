@@ -165,7 +165,7 @@ test("plain Compose automatically loads deployment .env for all services", () =>
   assert.equal(service.depends_on.web.condition, "service_healthy");
   assert.equal(services.api.environment.JWT_SECRET, "replace-with-a-random-secret-of-at-least-32-characters");
   assert.ok(services["db-backup"].volumes.some((volume) =>
-    volume.target === "/backups" && volume.source.endsWith("/mnt/synology/flocksync_backups")));
+    volume.target === "/backups" && volume.source.endsWith("/mnt/backup-storage/flocksync_backups")));
   succeeded(docker(["compose", "--project-name", basename(directory).toLowerCase(),
     "--project-directory", directory, "-f", join(directory, "docker-compose.yml"), "down"]));
 }));

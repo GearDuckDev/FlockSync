@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$ReleaseVersion = "0.8.0"
+    [string]$ReleaseVersion = "0.9.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,7 +44,7 @@ try {
     & pnpm --filter @flocksync/desktop package:win
     if ($LASTEXITCODE -ne 0) { throw "Desktop packaging failed." }
     & (Join-Path $PSScriptRoot "package-addons.ps1")
-    & (Join-Path $PSScriptRoot "package-pi-deploy.ps1")
+    & (Join-Path $PSScriptRoot "package-remote-server-deploy.ps1")
     $desktopAssets = @("FlockSync-Setup-$desktop-x64.exe", "FlockSync-Portable-$desktop-x64.exe")
     foreach ($name in $desktopAssets) {
         $source = Join-Path $repoRoot "apps\desktop\release\$name"
@@ -53,7 +53,7 @@ try {
     }
     $components = [ordered]@{
         desktop = @{ version = $desktop; assets = $desktopAssets }
-        server = @{ version = $server; assets = @("FlockSync_Pi_Deploy.zip") }
+        server = @{ version = $server; assets = @("FlockSync_Remote_Server_Deploy.zip") }
         addon = @{ version = $addon; assets = @("FlockSync-Raider-Only.zip", "FlockSync-Addon-Bundle.zip") }
         helper = @{ version = $helper; assets = @("FlockSync-Addon-Bundle.zip") }
     }
@@ -68,7 +68,7 @@ try {
     [IO.File]::WriteAllText($manifestPath, $json, [Text.UTF8Encoding]::new($false))
     $releaseType = if ($ReleaseVersion -match '-(alpha|beta)') { "prerelease" } else { "stable release" }
     Write-Output "Publish ONE $releaseType tagged v$ReleaseVersion with these files:"
-    @($desktopAssets) + @("FlockSync_Pi_Deploy.zip", "FlockSync-Raider-Only.zip",
+    @($desktopAssets) + @("FlockSync_Remote_Server_Deploy.zip", "FlockSync-Raider-Only.zip",
         "FlockSync-Addon-Bundle.zip", "flocksync-release.json") |
         ForEach-Object { Write-Output (Join-Path $releaseRoot $_) }
 } finally {

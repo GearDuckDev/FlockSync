@@ -4,7 +4,7 @@ import type {
   ServerReturnPayload
 } from "@flocksync/shared-types";
 import { db } from "../db/index.js";
-import { characters, deletedCharacters } from "../db/schema.js";
+import { characters, deletedCharacters, guildIdentity } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { upsertAttendance, upsertLoot } from "./ledgerSync.service.js";
 import { buildGuildSnapshot } from "./snapshot.service.js";
@@ -80,6 +80,17 @@ export const processOfficerSync = async (
   const now = Math.floor(Date.now() / 1000);
   const { databaseResetAt } = await readDatabaseAdminState();
   db.transaction((transaction) => {
+    if (payload.collectorGuild && payload.exportedAt > databaseResetAt) {
+      const currentGuild = transaction.select().from(guildIdentity).get();
+      if (!currentGuild || payload.exportedAt > currentGuild.updatedAt) {
+        transaction.insert(guildIdentity).values({
+          id: "server", ...payload.collectorGuild, updatedAt: payload.exportedAt
+        }).onConflictDoUpdate({
+          target: guildIdentity.id,
+          set: { ...payload.collectorGuild, updatedAt: payload.exportedAt }
+        }).run();
+      }
+    }
     const incomingCharacters = new Map<string, Character>();
     const tombstones = new Map(
       transaction.select().from(deletedCharacters).all().map((t) => [t.guid, t.deletedAt])

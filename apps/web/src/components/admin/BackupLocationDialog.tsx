@@ -74,11 +74,11 @@ export const BackupLocationDialog = ({ initial, onClose, onSaved }: Props): Reac
           <h2 id="backup-location-title" className="text-lg font-semibold">Default server backup folder</h2>
           <p className="mt-1 text-sm text-slate-400">
             Choose a folder on the server’s mounted backup volume. This setting is stored with persistent
-            server data and survives web/API image updates. It cannot select an unmounted Pi path.
+            server data and survives web/API image updates. It cannot select an unmounted remote server path.
           </p>
           <p className="mt-2 text-sm text-slate-400">
-            This browser lists folders on the Pi, not your Windows PC. A native Windows folder picker
-            cannot choose the server backup destination. /backups is the container path to your configured NAS share.
+            This browser lists folders on the remote server, not your Windows PC. A native Windows folder picker
+            cannot choose the server backup destination. /backups is the container path to your configured backup storage share.
           </p>
         </div>
         {!initial && <p className="text-sm text-amber-200">

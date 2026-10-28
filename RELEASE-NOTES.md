@@ -1,35 +1,98 @@
+## FlockSync 0.9.0
+
+### Guild identity, desktop setup, and remote server deployment
+- The dashboard shows the guild name at the top center. The newest timestamped collector sync supplies the name and realm; guild identity is stored in SQLite so new backups retain it and restore brings it back.
+- Wipe clears the stored guild identity until a fresh collector sync. Existing backups without guild metadata remain usable; sync a collector and refresh the dashboard to populate the name.
+- Fixed database restore ordering for populated character records: accounts are restored before character/theme records that reference them.
+- Desktop fresh installs default to `C:\Program Files (x86)\World of Warcraft\_forever_`, including the backslash before `_forever_`. Existing custom or older saved paths remain unchanged and editable.
+- Deployment is hardware/vendor-neutral. Use `FlockSync_Remote_Server_Deploy.zip` and `scripts/package-remote-server-deploy.ps1` for an ARM64 or AMD64 Linux Docker host. Backup storage can be local, attached, or network-mounted.
+- Existing `NAS_BACKUP_PATH` configuration values, mount locations, and persistent folder settings remain valid; no storage relocation is required.
+- Database administration remains available: verified online backups, optional local downloads, latest/selected/uploaded restore, and confirmation-protected guild-data wipe with a final backup. Refresh clears old status messages; restore options show local date/time; inaccessible folders report actionable errors.
+
+### Release channel and scope
+This is a normal **Release-channel**, **pre-1.0** feature release. The new bundle is **0.9.0**, following the existing local `v0.8.0-release` tag; that tag is not modified or reused. The new release uses standard tag **v0.9.0**, without a literal `-release` suffix.
+
+API/web and shared types advance **0.5.0 -> 0.6.0**. Desktop advances **0.5.0 -> 0.5.1**. Main addon **0.6.0** and AppHelper **0.2.2** are unchanged from the existing 0.8.0 tag. Unchanged addons are repackaged for a complete download set; already-current installations do not need reinstalling.
+
+### Upgrade instructions
+1. Preserve the remote server's `.env`, `data`, and independent backups. Extract `FlockSync_Remote_Server_Deploy.zip`; from the deployed project directory run `sh deploy/update-server.sh`. It verifies a pre-update backup before rebuilding/recreating API/web. Never use `docker compose down -v`.
+2. Keep the existing `NAS_BACKUP_PATH` and mount location. Verify the backup storage is mounted and the API user can list and write it. Run `docker compose exec api id` to check the actual identity; a successful root-run scheduled backup does not prove API-user access. Do not copy example storage paths over a working configuration.
+3. Startup automatically applies the guild-identity migration. Sync a collector and refresh the dashboard to populate the header. Backups made before this metadata existed need a new collector sync; they do not contain a recoverable guild name.
+4. Quit desktop fully through its tray before updating to **0.5.1**, using either the installer or portable app. Preserve settings. Fresh installs use the Forever path; existing installations keep their saved path. Existing desktop 0.5.0 remains usable if the saved location is correct.
+5. Keep main addon **0.6.0** and AppHelper **0.2.2** if already current; neither needs reinstalling. Older members install the main addon; older collectors install the bundle. Exit WoW before replacing files, extract into `Interface\AddOns` without an extra nested directory, and preserve SavedVariables.
+6. No wipe or restore is required to upgrade. If using restore, a pre-restore safety backup is saved first; restored accounts/credentials replace current ones. Wipe requires typing its confirmation, saves a `final` backup, then clears guild records/themes while retaining accounts and backup-folder settings.
+7. After an intentional wipe, use logout -> successful desktop sync -> login to load the reset marker. Updated collectors relay it to online guild members; the API rejects pre-reset data. Keep final/pre-restore backups until manually reviewed; they are not daily-retention snapshots.
+
+### Download choices
+- **FlockSync-Setup-0.5.1-x64.exe:** updated Windows installer for collectors; includes the Forever fresh-install client path.
+- **FlockSync-Portable-0.5.1-x64.exe:** updated portable alternative; choose this or the installer, not both.
+- **FlockSync-Raider-Only.zip:** unchanged main addon **0.6.0** for all members. Members do not need AppHelper, desktop, or a website account to broadcast data.
+- **FlockSync-Addon-Bundle.zip:** unchanged main addon **0.6.0** plus AppHelper **0.2.2** for collectors. Collectors also need desktop and an authorized OFFICER/ADMIN website login.
+- **FlockSync_Remote_Server_Deploy.zip:** updated **0.6.0 API/web** source, shared contracts, migrations, theme assets, and deployment/backup tooling. This replaces the old hardware-specific archive name.
+- **flocksync-release.json:** generated component-version manifest; publish beside the other five assets on one public GitHub release.
+
+### Component versions
+- Desktop: **0.5.1 - updated** from 0.5.0.
+- Server/API/web: **0.6.0 - updated** from 0.5.0; API/web remain aligned.
+- Shared types: **0.6.0 - updated** from 0.5.0.
+- Main addon: **0.6.0 - unchanged**.
+- AppHelper: **0.2.2 - unchanged**.
+- Root workspace: **0.2.2 - unchanged**.
+
+### New installations
+Members install the main addon and finish the walkthrough. Collectors additionally install AppHelper and one desktop download, select the client root containing `Interface` and `WTF`, and use their guild server's full URL without `/api`.
+
+Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first-time remote-server setup, storage permissions, backups, and offline recovery. Use local persistent storage for live SQLite; network storage is for backups only. Collection only works while a catcher is online and cannot recover missed broadcasts.
+
+### Verification and publication status
+Completed verification: workspace typecheck; 20 API tests; 11 web tests; four desktop configuration tests; six deployment/backup tests; six Lua 5.1 regression scripts; and API/web/backup Docker builds. The combined-release packager generated all six downloads and the 0.9.0 manifest. All 253 archived source files matched current sources, installers matched desktop packaging output, and archive checks found no real environment files, databases, or credential/config artifacts. `git diff --check` passed.
+
+The operator reported successful backup, restore, and wipe tests in a smaller private environment; that does not certify every deployment or live-game scenario.
+
+The older `localCapture.test.lua` harness has a known missing `GetInventoryItemTexture` mock and is not counted as passing. Dedicated gear-persistence and database-reset Lua checks are separate. No commit, push, tag, upload, or publication is performed by this preparation step.
+
+### Publishing and update notices
+Publish one GitHub release tagged **v0.9.0**, titled **FlockSync 0.9.0**, with **Set as a pre-release unchecked** and all six current assets. Do not reuse or rename the existing tag. Automatic CurseForge publishing should skip unchanged main addon **0.6.0** if already represented in an earlier published combined release; verify prior upload status before any manual upload. For older member installations, distribute addon 0.6.0 with release type **Release**.
+
+Checkers compare component versions, not the bundle tag: server 0.5.0 and desktop 0.5.0 can discover updates after publication. Already-current main addon/AppHelper should not receive unnecessary prompts. Release/Beta/Alpha channels include eligible stable updates; no component moves to 1.0.
+
+---
+
 ## FlockSync 0.8.0
 
 ### Database backups and administration
 - Admin Settings now offers on-demand online SQLite backups, optional downloads to your device, restore from the latest or a selected server backup, and upload of a custom backup up to 128 MB.
 - Restore options show backup date/time in your browser's local time zone, filename, and size. Restores create a safety backup before replacing application data and accounts.
-- Choose or create a default subfolder on the mounted NAS backup volume. The setting persists across deployments and is also used for scheduled and pre-update backups.
+- Choose or create a default subfolder on the mounted backup storage volume. The setting persists across deployments and is also used for scheduled and pre-update backups.
 - The folder browser lists the server's mounted backup volume, not your Windows PC. `/backups` is the container path mapped to `NAS_BACKUP_PATH`; native Windows folder selection cannot set this remote destination.
 - Refresh backups clears previous success messages and reports the current listing status or error. If a folder is unavailable, the folder control remains usable for recovery, and missing-folder/permission errors are explained.
 - Wipe guild data requires explicit confirmation, saves a uniquely named `flocksync-final-<UTC timestamp>-<suffix>.db` backup first, then clears guild records and themes while preserving login accounts and the backup-folder setting.
 - The API rejects pre-reset character/ledger data. Main addon 0.6.0 clears cached data when it receives a newer reset marker through desktop/AppHelper sync or a guild snapshot.
+- The dashboard displays the latest synced guild name at the top center. Guild identity is stored in SQLite, restored with new backups, and cleared by a wipe. Older backups require a collector sync to populate it.
+- Desktop 0.5.1 defaults fresh installs to `C:\Program Files (x86)\World of Warcraft\_forever_`. Existing saved client paths are preserved, and users can still change and save their location.
+- Deployment is hardware/vendor-neutral: use `FlockSync_Remote_Server_Deploy.zip` and `scripts/package-remote-server-deploy.ps1` for an ARM64 or AMD64 Linux Docker host. Backup storage can be local, attached, or network-mounted. Existing `NAS_BACKUP_PATH` values and mounts remain valid; no storage migration is required.
 
 ### Release channel and scope
-This is a normal **Release-channel**, **pre-1.0** feature release. The overall bundle advances **0.7.1 -> 0.8.0**. API/web and shared types advance **0.4.1 -> 0.5.0**; the main addon advances **0.5.1 -> 0.6.0**. Desktop and AppHelper versions are unchanged.
+This is a normal **Release-channel**, **pre-1.0** feature release. The overall bundle advances **0.7.1 -> 0.8.0**. API/web and shared types advance **0.4.1 -> 0.5.0**; the main addon advances **0.5.1 -> 0.6.0**. Desktop advances **0.5.0 -> 0.5.1** for the fresh-install client path; AppHelper is unchanged.
 
 ### Upgrade instructions
 1. Preserve the server's `.env`, `data`, and independent backups. Extract the deployment ZIP and run `sh deploy/update-server.sh` from the deployed project directory. It verifies a pre-update backup before rebuilding/recreating API/web. Never use `docker compose down -v`.
-2. Verify the NAS is mounted and the API's user can list and write the backup destination. The API runs as `node` (normally UID 1000); check the actual identity with `docker compose exec api id`. A successful root-run scheduled backup does not prove the API user has access. On NFS, verify ownership/permissions on the NAS without replacing other users' access.
-3. Exit WoW and install main addon **0.6.0** for collectors and members. Preserve SavedVariables and extract into `Interface\AddOns` without an extra nested directory. Keep AppHelper **0.2.2** and desktop **0.5.0** if already installed; unchanged components do not need reinstalling.
+2. Verify the backup storage is mounted and the API's user can list and write the backup destination. The API runs as `node` (normally UID 1000); check the actual identity with `docker compose exec api id`. A successful root-run scheduled backup does not prove the API user has access. On NFS, verify ownership/permissions on the backup storage without replacing other users' access.
+3. Exit WoW and install main addon **0.6.0** for collectors and members. Preserve SavedVariables and extract into `Interface\AddOns` without an extra nested directory. Keep AppHelper **0.2.2** if installed. Quit desktop through the tray before installing **0.5.1**; saved client paths persist. Existing desktop 0.5.0 users do not need this default-only change for database administration.
 4. Open Admin Settings, refresh the backup list, and create a backup before using restore or wipe. Restore replaces user accounts as well as guild data; credentials from that snapshot may be needed afterward. Wipe keeps accounts but removes guild records and themes. Final/pre-restore snapshots require manual retention management.
 5. After a wipe, have a collector log out, wait for successful desktop sync, then log in to load the reset marker. Updated collectors relay it to online guild members. Offline members receive it later; collection cannot recover messages sent while no catcher was online.
-6. No wipe or restore is required simply to upgrade. Keep SQLite on local Pi storage; use the NAS for backups only. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation and offline recovery.
+6. No wipe or restore is required simply to upgrade. Keep SQLite on the remote server's local persistent storage; use separate backup storage for backups only. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation and offline recovery.
 
 ### Download choices
-- **FlockSync-Setup-0.5.0-x64.exe:** unchanged Windows installer for collectors; no reinstall needed if already current.
-- **FlockSync-Portable-0.5.0-x64.exe:** unchanged portable Windows alternative; choose this or the installer, not both.
+- **FlockSync-Setup-0.5.1-x64.exe:** updated Windows installer for collectors, with the Forever fresh-install client path.
+- **FlockSync-Portable-0.5.1-x64.exe:** updated portable Windows alternative; choose this or the installer, not both.
 - **FlockSync-Raider-Only.zip:** updated main addon **0.6.0** for all members. Regular members do not need desktop, AppHelper, or a server account.
 - **FlockSync-Addon-Bundle.zip:** main addon **0.6.0** plus unchanged AppHelper **0.2.2** for collectors. Collectors also need desktop and an authorized OFFICER/ADMIN website account.
-- **FlockSync_Pi_Deploy.zip:** updated **0.5.0 API/web** source, shared contracts, migrations, theme assets, and deployment/backup tooling. Deploy this to enable database administration.
+- **FlockSync_Remote_Server_Deploy.zip:** updated **0.5.0 API/web** source, shared contracts, migrations, theme assets, and deployment/backup tooling. Deploy this to enable database administration.
 - **flocksync-release.json:** generated component-version manifest; publish beside the other five assets on one public GitHub release.
 
 ### Component versions
-- Desktop: **0.5.0 - unchanged**.
+- Desktop: **0.5.1 - updated** from 0.5.0; fresh-install path default only.
 - Server/API/web: **0.5.0 - updated** from 0.4.1; API/web remain aligned.
 - Shared types: **0.5.0 - updated** from 0.4.1.
 - Main addon: **0.6.0 - updated** from 0.5.1.
@@ -39,14 +102,14 @@ This is a normal **Release-channel**, **pre-1.0** feature release. The overall b
 ### Verification and publication status
 Completed checks: workspace typechecking; 20 API production/database-administration/update tests; 11 web regressions; API/web/backup Docker builds; and six Lua 5.1 regression scripts, including database-reset clearing, gear persistence, collection authorization, and release relay. Combined-release packaging and 105 artifact checks passed, including component versions, source-byte matching, and exclusion of database/secret files.
 
-The older `localCapture.test.lua` harness failed because it does not mock `GetInventoryItemTexture`; it is not counted as passed. The dedicated gear-persistence and new database-reset tests passed. Local testing does not certify live WoW behavior or every Windows installation. The operator has confirmed a live NAS backup succeeds after correcting folder permissions; restore/wipe propagation still needs a controlled in-game smoke test before wider distribution.
+The older `localCapture.test.lua` harness failed because it does not mock `GetInventoryItemTexture`; it is not counted as passed. The dedicated gear-persistence and new database-reset tests passed. Local testing does not certify live WoW behavior or every Windows installation. The operator confirmed backup creation on live backup storage and successful restore/wipe testing in a smaller private environment. These are working features with user-reported private-environment verification, not certification of every deployment.
 
 This is release preparation only: nothing is committed, pushed, tagged, uploaded, or published by this step. See the final preparation report for completed checks and artifacts.
 
 ### Publishing and update notices
 Use one GitHub release tagged **v0.8.0**, titled **FlockSync 0.8.0**, with **Set as a pre-release unchecked** and all six downloads. Do not reuse the previous tag. Publish the member addon separately on CurseForge as **0.6.0**, release type **Release**, through the established workflow.
 
-Server 0.4.1 and main addon 0.5.1 should discover their updated component versions after publication and refreshed metadata. Desktop 0.5.0 and AppHelper 0.2.2 should not receive unnecessary update prompts. Release/Beta/Alpha channels include eligible stable updates; no component moves to 1.0.
+Server 0.4.1, desktop 0.5.0, and main addon 0.5.1 should discover their updated component versions after publication and refreshed metadata. AppHelper 0.2.2 should not receive an unnecessary update prompt. Release/Beta/Alpha channels include eligible stable updates; no component moves to 1.0.
 
 ---
 
@@ -81,7 +144,7 @@ No settings, SavedVariables, or database reset is required. Do not delete saved 
 - **FlockSync-Portable-0.5.0-x64.exe:** unchanged portable Windows alternative; choose this or the installer, not both.
 - **FlockSync-Raider-Only.zip:** updated main addon **0.5.1** for all guild members, with logout/character-switch gear protection. Regular members do not need AppHelper, desktop, or a server account to share addon data.
 - **FlockSync-Addon-Bundle.zip:** updated main addon **0.5.1** plus unchanged AppHelper **0.2.2** for collectors. Collectors additionally need the desktop app and an authorized OFFICER or ADMIN website account.
-- **FlockSync_Pi_Deploy.zip:** complete **0.4.1 API/web source**, shared contracts, theme assets, existing database migrations, and Docker deployment tooling. Server behavior/version unchanged; redeployment is not required for this addon fix.
+- **FlockSync_Remote_Server_Deploy.zip:** complete **0.4.1 API/web source**, shared contracts, theme assets, existing database migrations, and Docker deployment tooling. Server behavior/version unchanged; redeployment is not required for this addon fix.
 - **flocksync-release.json:** generated component-version manifest required for update checking alongside the other five downloads.
 
 Publish all six assets on one GitHub release. Collection only happens while a catcher is logged in; it cannot retrieve guild messages sent while offline. Installing AppHelper alone does not grant collection permissions.
@@ -97,7 +160,7 @@ Publish all six assets on one GitHub release. Collection only happens while a ca
 ### New installations
 Members extract the main addon into `Interface\AddOns`, enable it, and complete the walkthrough. Collectors additionally install AppHelper and one desktop download, select the WoW folder containing `Interface` and `WTF`, and connect to their guild's server using an authorized login.
 
-For first-time server hosting, follow [DEPLOYMENT.md](./DEPLOYMENT.md). Configure `.env` with unique credentials, prepare a writable backup destination, and keep SQLite on local storage rather than a NAS. The server is guild-hosted, not automatically a shared public service. Background emblems default to **None**, and UI/background colors remain optional.
+For first-time server hosting, follow [DEPLOYMENT.md](./DEPLOYMENT.md). Configure `.env` with unique credentials, prepare a writable backup destination, and keep SQLite on local storage rather than network backup storage. The server is guild-hosted, not automatically a shared public service. Background emblems default to **None**, and UI/background colors remain optional.
 
 ### Verification and publication status
 Local verification covers strict workspace typechecking; addon regression tests using the real character merge for character switches, reload/logout, immediate and same-second equipment changes, unequips, and cache gaps; desktop parser regressions; automatic filesystem-triggered sync and AppHelper writes; and HTTP roster refresh/epoch conflict/unequip checks. All components are rebuilt and the Windows installer/portable app, addon ZIPs, deployment ZIP, and manifest are packaged together.
@@ -118,7 +181,7 @@ WoW cannot fetch GitHub directly. Addon notices use synced metadata and appear a
 This section is an operational snapshot, not an additional release or proof of
 publication. Start with [.github/copilot-instructions.md](./.github/copilot-instructions.md)
 for coding/build rules, [RELEASES.md](./RELEASES.md) for packaging/publication, and
-[DEPLOYMENT.md](./DEPLOYMENT.md) for first install, backup/restore, and Pi updates.
+[DEPLOYMENT.md](./DEPLOYMENT.md) for first install, backup/restore, and remote server updates.
 Do not read secrets into an agent transcript to reconstruct the environment.
 
 #### Current checkpoint and pending work
@@ -165,7 +228,7 @@ Do not read secrets into an agent transcript to reconstruct the environment.
 #### Development environment and installed tooling
 The verified Windows checkout is `C:\Users\johnn\Coding Projects\FlockSync`;
 use PowerShell, quote paths containing spaces, and use Windows path separators
-locally. Pi/container commands use Linux paths and `sh`.
+locally. server/container commands use Linux paths and `sh`.
 
 | Tool | Verified local version / availability |
 | --- | --- |
@@ -188,7 +251,7 @@ in [.vscode/settings.json](./.vscode/settings.json) are editor libraries, not
 an interpreter. No `.devcontainer` configuration exists: Container Tools and
 Dev Containers are installed extensions, not evidence that the workspace is
 containerized. Docker inventory showed no local running containers; it is not
-the production Pi. Re-check installed versions and engine health before use.
+the production remote server. Re-check installed versions and engine health before use.
 
 #### Packages and build definitions
 Use the committed [lockfile](./pnpm-lock.yaml), format **9.0**, with pnpm
@@ -217,9 +280,9 @@ Interface 16001; host Python and .NET do not replace that runtime.
 | --- | --- |
 | `FlockSync-Raider-Only.zip` | Extract into the actual WoW client's `Interface\AddOns`; expect `FlockSync\FlockSync.toc` |
 | `FlockSync-Addon-Bundle.zip` | Extract into the same AddOns folder; expect sibling `FlockSync` and `FlockSync_AppHelper` folders |
-| `FlockSync-Setup-0.5.0-x64.exe` | Run on the collector's Windows PC as an installer; not inside AddOns or on the Pi |
+| `FlockSync-Setup-0.5.0-x64.exe` | Run on the collector's Windows PC as an installer; not inside AddOns or on the remote server |
 | `FlockSync-Portable-0.5.0-x64.exe` | Keep/run on Windows as the alternative to the installer; not both |
-| `FlockSync_Pi_Deploy.zip` | Extract the `FlockSync` project folder onto the server; run commands from that folder; it contains source, not prebuilt images |
+| `FlockSync_Remote_Server_Deploy.zip` | Extract the `FlockSync` project folder onto the server; run commands from that folder; it contains source, not prebuilt images |
 | `flocksync-release.json` | Upload alongside the five payloads on one publicly readable GitHub release; consumed by update checkers |
 
 Member/officer requirements are described in Download choices above. Desktop
@@ -240,7 +303,7 @@ preserve it, never dump/commit/package it. Use the server URL without `/api`.
 - [Dockerfile.api](./Dockerfile.api): multi-stage `node:22-bookworm-slim`;
   build installs Python 3, make, g++ and pnpm `12.11.2` for native SQLite;
   runner includes sqlite3, runs as `node` (UID 1000), exposes internal 3001,
-  and health-checks `/health`. Images build for Pi ARM64 or AMD64.
+  and health-checks `/health`. Images build for remote server ARM64 or AMD64.
 - [Dockerfile.web](./Dockerfile.web): Node 22 Bookworm build with pnpm `12.11.2`,
   build argument `VITE_API_BASE_URL=/api`; `nginx:alpine` runtime with
   [nginx config](./deploy/nginx.conf), SPA fallback, and API/health proxy.
@@ -248,7 +311,7 @@ preserve it, never dump/commit/package it. Use the server URL without `/api`.
   **no published host ports**. Cloudflare's outbound tunnel targets
   `http://web:80`, nginx proxies to `api:3001`. No router port forwarding.
 - API mounts host `./data/sqlite` at `/app/data`, using
-  `/app/data/flocksync.db`. Keep this on Pi NVMe/local storage, not NAS/SMB/NFS.
+  `/app/data/flocksync.db`. Keep this on the remote server's local persistent storage, not SMB/NFS.
   Production `.env` and `data` must survive source extraction/upgrades.
 - Required configuration names are in [.env.example](./.env.example):
   `JWT_SECRET`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`,
@@ -256,14 +319,14 @@ preserve it, never dump/commit/package it. Use the server URL without `/api`.
   Real values are deliberately absent from this handoff. Compose maps the tunnel
   token to `TUNNEL_TOKEN`; API container sets its production host/port/DB path.
 - `NAS_BACKUP_PATH` must already exist, be writable, and point to the mounted
-  Synology destination. Verify the NAS is actually mounted first; otherwise
+  backup storage destination. Verify the backup storage is actually mounted first; otherwise
   the local mountpoint can misleadingly accept files.
-- The Alpine backup container mounts DB files at `/data`, NAS at `/backups`;
+- The Alpine backup container mounts DB files at `/data`, backup storage at `/backups`;
   it uses SQLite online `.backup`, `PRAGMA quick_check`, atomic publication,
   daily UTC-midnight scheduling, 30-day daily retention, and manually retained
   pre-update snapshots. The DB mount is writable for WAL/SHM coordination,
-  not read-only; the live database is not moved to the NAS.
-- On the Pi, use `sh deploy/update-server.sh`: validates Compose, builds backup
+  not read-only; the live database is not moved to the backup storage.
+- On the remote server, use `sh deploy/update-server.sh`: validates Compose, builds backup
   tooling, creates/verifies the pre-update backup, then rebuilds/recreates
   API/web and starts backup/tunnel services. Backup failure aborts before the
   app update. Verify `docker compose ps`, container logs, public login and sync.
@@ -282,7 +345,7 @@ pnpm --filter @flocksync/api test:updates
 Use [RELEASES.md](./RELEASES.md) for exact desktop, Lua 5.1, and optional
 live-GitHub/Electron test commands. Run Docker builds when container definitions
 change; don't start/restart a live stack for a documentation check. Windows
-package/build success does not certify Pi deployment, real-game operation, or
+package/build success does not certify remote server deployment, real-game operation, or
 an installer smoke test.
 
 The packager typechecks, builds API/web, packages desktop, creates both addon

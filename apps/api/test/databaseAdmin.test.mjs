@@ -61,6 +61,19 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     const login = await call("POST", "/api/auth/login", undefined, { email: adminEmail, password });
     assert.equal(login.status, 200, output);
     const token = login.body.token;
+    assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: null });
+    const syncedGuild = { name: "Test Guild", realm: "Realm" };
+    const guildSync = await call("POST", "/api/sync", token, {
+      addonVersion: "test", exportedAt: 100, collectorGuild: syncedGuild,
+      officerCharacter: {
+        guid: "guild-character", name: "Guild Member", realm: "Realm", classId: 1, level: 60,
+        isActive: true, role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: 100 },
+        gear: { items: [], updatedAt: 100 }, lastSeenAt: 100
+      },
+      characters: []
+    });
+    assert.equal(guildSync.status, 200, JSON.stringify(guildSync.body));
+    assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: syncedGuild });
     const initial = await call("GET", "/api/admin/database", token);
     assert.equal(initial.status, 200);
     assert.equal(initial.body.backups.length, 0);
@@ -95,13 +108,17 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     const backupPath = join(backupDirectory, "manual", backup.filename);
     const bytes = await readFile(backupPath);
     const writableAfterBackup = new Database(database);
-    try { writableAfterBackup.prepare("DELETE FROM theme_defaults").run(); }
+    try {
+      writableAfterBackup.prepare("DELETE FROM theme_defaults").run();
+      writableAfterBackup.prepare("DELETE FROM guild_identity").run();
+    }
     finally { writableAfterBackup.close(); }
     const restored = await call("POST", "/api/admin/database/restore", token, {
       filename: backup.filename, relativeDirectory: "manual"
     });
-    assert.equal(restored.status, 200, JSON.stringify(restored.body));
+    assert.equal(restored.status, 200, `${JSON.stringify(restored.body)}\n${output}`);
     assert.ok(restored.body.databaseResetAt > 0);
+    assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: syncedGuild });
     const verifyRestored = new Database(database, { readonly: true });
     try { assert.equal(verifyRestored.prepare("SELECT count(*) AS n FROM theme_defaults WHERE id = 'test'").get().n, 1); }
     finally { verifyRestored.close(); }
@@ -117,6 +134,7 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     assert.equal(wiped.status, 200, JSON.stringify(wiped.body));
     assert.match(wiped.body.backup.filename, /^flocksync-final-[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}\.db$/);
     assert.ok(wiped.body.databaseResetAt > restored.body.databaseResetAt);
+    assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: null });
     const verifyWiped = new Database(database, { readonly: true });
     try {
       assert.equal(verifyWiped.prepare("SELECT count(*) AS n FROM theme_defaults").get().n, 0);

@@ -48,7 +48,7 @@ export const DatabaseAdminPanel = (): React.JSX.Element => {
       <div>
         <h2 id="database-admin-title" className="text-lg font-semibold">Database backups and reset</h2>
         <p className="mt-1 text-sm text-slate-400">
-          Backups are stored on the server’s mounted NAS volume. An optional extra copy downloads to this device.
+          Backups are stored on the server’s mounted backup storage volume. An optional extra copy downloads to this device.
         </p>
       </div>
       {catalog && <p className="text-xs text-slate-400">

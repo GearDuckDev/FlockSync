@@ -11,6 +11,25 @@ import { apiLogin, apiSync } from '../src/main/apiClient';
 import { SyncWatcher } from '../src/main/syncWatcher';
 import type { SyncLogEvent } from '../src/shared/ipc';
 
+test('fresh installs default to Forever while saved client paths remain unchanged', async () => {
+  await rm(fixtureRoot, { recursive: true, force: true });
+  try {
+    assert.equal(loadStored().wowPath, 'C:\\Program Files (x86)\\World of Warcraft\\_forever_');
+    for (const wowPath of [
+      'D:\\Games\\World of Warcraft\\_forever_',
+      'C:\\Program Files (x86)\\World of Warcraft\\_classic_beta_',
+    ]) {
+      updateStored({ wowPath });
+      assert.equal(loadStored().wowPath, wowPath);
+      updateStored({ apiBaseUrl: 'https://example.test' });
+      assert.equal(loadStored().wowPath, wowPath);
+      assert.equal(JSON.parse(await readFile(join(fixtureRoot, 'config.json'), 'utf8')).wowPath, wowPath);
+    }
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
 test('configuration retains the documented server URL across saves and reloads', async () => {
   await mkdir(fixtureRoot, { recursive: true });
   try {

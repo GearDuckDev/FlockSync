@@ -1,7 +1,7 @@
 import type { AuthUser, ReleaseInfo, UpdateChannel } from '@flocksync/shared-types';
 
 export const DEFAULT_API_URL = '';
-export const DEFAULT_WOW_PATH = 'C:\\Program Files (x86)\\World of Warcraft\\_classic_beta_';
+export const DEFAULT_WOW_PATH = 'C:\\Program Files (x86)\\World of Warcraft\\_forever_';
 
 export interface AppConfig {
   apiBaseUrl: string;

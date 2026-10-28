@@ -1,5 +1,7 @@
 import {
   AuthUserSchema,
+  GuildStateSchema,
+  type GuildIdentity,
   CharacterSchema,
   LoginResponseSchema,
   PlayerAliasSchema,
@@ -77,6 +79,9 @@ export const fetchMe = async (token: string): Promise<AuthUser> => {
 
 export const fetchRoster = async (token: string): Promise<Character[]> =>
   z.array(CharacterSchema).parse(await request('/api/roster?includeInactive=true', {}, token));
+
+export const fetchGuild = async (token: string): Promise<GuildIdentity | null> =>
+  GuildStateSchema.parse(await request('/api/guild', {}, token)).guild;
 
 export const setCharacterStatus = async (token: string, guid: string, isActive: boolean): Promise<Character> =>
   CharacterSchema.parse(

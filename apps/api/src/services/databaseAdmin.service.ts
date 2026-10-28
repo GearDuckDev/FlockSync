@@ -5,7 +5,7 @@ import Database from "better-sqlite3";
 import { db, databasePath, sqliteConnection } from "../db/index.js";
 import {
   attendance, characters, deletedCharacters, lootHistory, officerTasks,
-  playerAliases, raidTeams, themeDefaults, userThemes
+  playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
 import {
@@ -121,10 +121,13 @@ const replaceDatabaseContents = async (sourcePath: string): Promise<void> => {
           throw new Error(`Selected backup schema differs at table ${name}`);
         }
       }
-      sqliteConnection.pragma("defer_foreign_keys = ON");
+      // Accounts must exist before restoring character/theme foreign keys.
+      const restoreOrder = [...names].sort((a, b) =>
+        Number(b === "users") - Number(a === "users") || a.localeCompare(b));
       sqliteConnection.transaction(() => {
-        for (const name of names) sqliteConnection.exec(`DELETE FROM main."${name}"`);
-        for (const name of names) {
+        sqliteConnection.pragma("defer_foreign_keys = ON");
+        for (const name of [...restoreOrder].reverse()) sqliteConnection.exec(`DELETE FROM main."${name}"`);
+        for (const name of restoreOrder) {
           sqliteConnection.exec(`INSERT INTO main."${name}" SELECT * FROM restore_source."${name}"`);
         }
       })();
@@ -190,6 +193,7 @@ export const wipeDatabase = () => runExclusive(async () => {
       transaction.delete(characters).run();
       transaction.delete(userThemes).run();
       transaction.delete(themeDefaults).run();
+      transaction.delete(guildIdentity).run();
     });
   } catch (error) {
     await writeDatabaseAdminState(previous);

@@ -29,6 +29,8 @@ export {
 export type { EquipmentSlotId, EquippedItem, PlayerGear } from "./gear.js";
 
 export { CharacterSchema } from "./player.js";
+export { GuildIdentitySchema, GuildStateSchema } from "./guild.js";
+export type { GuildIdentity } from "./guild.js";
 export type { Character } from "./player.js";
 
 export {

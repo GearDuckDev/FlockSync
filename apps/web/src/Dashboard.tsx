@@ -49,9 +49,12 @@ export const Dashboard = (): React.JSX.Element => {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-5">
-      <header className="flex items-center justify-between">
+      <header className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
         <h1 className="text-2xl font-bold">FlockSync</h1>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="min-w-0 text-center text-xl font-semibold" title={data.guild?.realm}>
+          {data.guild?.name}
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-sm lg:justify-self-end">
           <span className="rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-bold text-white">{user?.role}</span>
           <strong>{user?.username}</strong>
           <button onClick={() => setEditingUsername(true)} title="Change your username"

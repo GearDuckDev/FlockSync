@@ -4,8 +4,8 @@ param()
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $releaseRoot = Join-Path $repoRoot "release"
-$zipPath = Join-Path $releaseRoot "FlockSync_Pi_Deploy.zip"
-$stagingRoot = Join-Path $repoRoot ".pi_staging"
+$zipPath = Join-Path $releaseRoot "FlockSync_Remote_Server_Deploy.zip"
+$stagingRoot = Join-Path $repoRoot ".remote_server_staging"
 $stagingProject = Join-Path $stagingRoot "FlockSync"
 $excludedNames = @("node_modules", "dist", "out", ".git")
 $rootFiles = @(
@@ -91,4 +91,4 @@ try {
     }
 }
 
-Write-Host "Pi deployment package created: $zipPath" -ForegroundColor Green
+Write-Host "Remote server deployment package created: $zipPath" -ForegroundColor Green

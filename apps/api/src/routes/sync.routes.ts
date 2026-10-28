@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import {
   OfficerSyncPayloadSchema,
+  GuildStateSchema,
   RosterQuerySchema,
   RosterStatusUpdateSchema,
   ServerReturnPayloadSchema
@@ -9,8 +10,17 @@ import { listRoster, setCharacterActive } from "../services/roster.service.js";
 import { processOfficerSync } from "../services/sync.service.js";
 import { purgeCharacter } from "../services/purge.service.js";
 import { releaseCatalog } from "../services/releases.service.js";
+import { db } from "../db/index.js";
+import { guildIdentity } from "../db/schema.js";
 
 export const syncRoutes: FastifyPluginAsync = async (app) => {
+  app.get("/guild", { preHandler: app.authenticate }, async () => {
+    const guild = db.select().from(guildIdentity).get();
+    return GuildStateSchema.parse({
+      guild: guild ? { name: guild.name, realm: guild.realm } : null
+    });
+  });
+
   app.post("/sync", {
     preHandler: [app.authenticate, app.requireOfficer]
   }, async (request, reply) => {

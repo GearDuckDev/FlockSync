@@ -25,7 +25,7 @@ const backupCatalogError = (error: unknown): string => {
     return "The selected backup folder no longer exists. Choose a valid folder using Backup folder.";
   }
   if (code === "EACCES" || code === "EPERM") {
-    return "The API cannot access the backup folder. Check the NAS mount and folder permissions.";
+    return "The API cannot access the backup folder. Check the backup storage mount and folder permissions.";
   }
   return "Cannot list backups in the selected server folder. Check the API logs and backup mount.";
 };

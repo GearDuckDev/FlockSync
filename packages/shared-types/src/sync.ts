@@ -2,11 +2,9 @@ import { z } from "zod";
 import { AttendanceRecordSchema, LootRecordSchema } from "./ledger.js";
 import { CharacterSchema } from "./player.js";
 import { AddonReleaseCatalogSchema } from "./releases.js";
+import { GuildIdentitySchema } from "./guild.js";
 
-const CollectorGuildSchema = z.object({
-  name: z.string().trim().min(1).max(128),
-  realm: z.string().trim().min(1).max(128)
-}).strict();
+const CollectorGuildSchema = GuildIdentitySchema;
 
 export const OfficerSyncPayloadSchema = z.object({
   addonVersion: z.string().min(1),
