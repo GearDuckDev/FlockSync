@@ -185,6 +185,37 @@ by daily runs or deleted by automatic retention. Review/remove these rollback
 snapshots manually when no longer needed. They contain the database, not your
 production environment file: keep a separate secure configuration backup.
 
+### Admin backup, restore and wipe controls
+
+Admins can manage the live database in **Admin Settings** without stopping the
+stack. Server backups are written beneath the mounted `NAS_BACKUP_PATH`; choose
+or create a subfolder there as the default destination. The selected folder is
+stored in the persistent `data` directory, so it remains in effect across
+deployment updates and is also used by scheduled and pre-update backups.
+The browser can optionally download a second copy to the admin's device; it
+cannot write directly to an arbitrary path on the Pi.
+The folder dialog browses the server's mounted volume, not the Windows PC;
+`/backups` is the container path mapped to `NAS_BACKUP_PATH`. A native Windows
+folder picker cannot select this server destination. Restore choices display
+backup dates/times in the browser's local time zone. **Refresh backups** clears
+previous success messages and reports the current listing status or error.
+
+Restore defaults to the newest valid backup in the selected server folder. An
+admin can instead choose another listed backup or upload a local FlockSync
+SQLite backup (maximum 128 MB). The API validates the backup, makes a
+pre-restore safety backup, and applies the restore to the running database.
+Restoring replaces current application data and user accounts, so log in again
+if the selected backup has different credentials. For an offline/manual
+recovery, use the stop-and-replace procedure below.
+
+Wiping guild data first saves a
+`flocksync-final-<UTC timestamp>-<unique suffix>.db` backup, then clears guild/application records while retaining user
+accounts so admins can still sign in. The reset epoch is returned to addon
+syncs; characters and ledger entries older than that epoch are rejected, and
+the addon clears pre-reset cached data when it receives the marker. Have a
+collector sync after the wipe and follow the normal logout -> desktop sync ->
+login flow to load the reset marker into the addon.
+
 The source volume is mounted read-only. With a live WAL database, SQLite needs
 readable WAL/SHM files already created by the API, which Compose waits for
 before starting the backup service. Missing or inaccessible WAL/SHM files cause
@@ -192,10 +223,11 @@ an explicit backup failure; the backup never uses `immutable=1`, which could
 miss live WAL changes. This does not run a checkpoint or copy raw database files.
 NAS unmounts/network failures must be monitored separately.
 
-To restore: stop the stack, preserve the current database and its WAL/SHM files
-elsewhere, put a selected verified backup at `data/sqlite/flocksync.db`, ensure
-no old WAL/SHM files remain alongside it, set ownership to 1000:1000, then start
-the stack. Never restore over a running SQLite connection.
+For offline/manual recovery, stop the stack, preserve the current database and
+its WAL/SHM files elsewhere, put a selected verified backup at
+`data/sqlite/flocksync.db`, ensure no old WAL/SHM files remain alongside it,
+set ownership to 1000:1000, then start the stack. Never replace a database file
+while the API has it open.
 
 ## 2. Windows officer desktop releases
 

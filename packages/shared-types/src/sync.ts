@@ -67,6 +67,7 @@ export const ServerReturnPayloadSchema = z.object({
   authorizedCollectorGuild: CollectorGuildSchema.optional(),
   culledCharacterGuids: z.array(z.string()),
   serverTimestamp: z.number().int().nonnegative(),
+  databaseResetAt: z.number().int().nonnegative().optional(),
   craftersIndex: z.array(GuildCrafterSummarySchema).optional(),
   upcomingRaids: z.array(GuildUpcomingRaidSummarySchema).optional(),
   goalMatches: z.array(GuildGoalMatchSummarySchema).optional(),

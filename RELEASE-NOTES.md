@@ -1,3 +1,55 @@
+## FlockSync 0.8.0
+
+### Database backups and administration
+- Admin Settings now offers on-demand online SQLite backups, optional downloads to your device, restore from the latest or a selected server backup, and upload of a custom backup up to 128 MB.
+- Restore options show backup date/time in your browser's local time zone, filename, and size. Restores create a safety backup before replacing application data and accounts.
+- Choose or create a default subfolder on the mounted NAS backup volume. The setting persists across deployments and is also used for scheduled and pre-update backups.
+- The folder browser lists the server's mounted backup volume, not your Windows PC. `/backups` is the container path mapped to `NAS_BACKUP_PATH`; native Windows folder selection cannot set this remote destination.
+- Refresh backups clears previous success messages and reports the current listing status or error. If a folder is unavailable, the folder control remains usable for recovery, and missing-folder/permission errors are explained.
+- Wipe guild data requires explicit confirmation, saves a uniquely named `flocksync-final-<UTC timestamp>-<suffix>.db` backup first, then clears guild records and themes while preserving login accounts and the backup-folder setting.
+- The API rejects pre-reset character/ledger data. Main addon 0.6.0 clears cached data when it receives a newer reset marker through desktop/AppHelper sync or a guild snapshot.
+
+### Release channel and scope
+This is a normal **Release-channel**, **pre-1.0** feature release. The overall bundle advances **0.7.1 -> 0.8.0**. API/web and shared types advance **0.4.1 -> 0.5.0**; the main addon advances **0.5.1 -> 0.6.0**. Desktop and AppHelper versions are unchanged.
+
+### Upgrade instructions
+1. Preserve the server's `.env`, `data`, and independent backups. Extract the deployment ZIP and run `sh deploy/update-server.sh` from the deployed project directory. It verifies a pre-update backup before rebuilding/recreating API/web. Never use `docker compose down -v`.
+2. Verify the NAS is mounted and the API's user can list and write the backup destination. The API runs as `node` (normally UID 1000); check the actual identity with `docker compose exec api id`. A successful root-run scheduled backup does not prove the API user has access. On NFS, verify ownership/permissions on the NAS without replacing other users' access.
+3. Exit WoW and install main addon **0.6.0** for collectors and members. Preserve SavedVariables and extract into `Interface\AddOns` without an extra nested directory. Keep AppHelper **0.2.2** and desktop **0.5.0** if already installed; unchanged components do not need reinstalling.
+4. Open Admin Settings, refresh the backup list, and create a backup before using restore or wipe. Restore replaces user accounts as well as guild data; credentials from that snapshot may be needed afterward. Wipe keeps accounts but removes guild records and themes. Final/pre-restore snapshots require manual retention management.
+5. After a wipe, have a collector log out, wait for successful desktop sync, then log in to load the reset marker. Updated collectors relay it to online guild members. Offline members receive it later; collection cannot recover messages sent while no catcher was online.
+6. No wipe or restore is required simply to upgrade. Keep SQLite on local Pi storage; use the NAS for backups only. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation and offline recovery.
+
+### Download choices
+- **FlockSync-Setup-0.5.0-x64.exe:** unchanged Windows installer for collectors; no reinstall needed if already current.
+- **FlockSync-Portable-0.5.0-x64.exe:** unchanged portable Windows alternative; choose this or the installer, not both.
+- **FlockSync-Raider-Only.zip:** updated main addon **0.6.0** for all members. Regular members do not need desktop, AppHelper, or a server account.
+- **FlockSync-Addon-Bundle.zip:** main addon **0.6.0** plus unchanged AppHelper **0.2.2** for collectors. Collectors also need desktop and an authorized OFFICER/ADMIN website account.
+- **FlockSync_Pi_Deploy.zip:** updated **0.5.0 API/web** source, shared contracts, migrations, theme assets, and deployment/backup tooling. Deploy this to enable database administration.
+- **flocksync-release.json:** generated component-version manifest; publish beside the other five assets on one public GitHub release.
+
+### Component versions
+- Desktop: **0.5.0 - unchanged**.
+- Server/API/web: **0.5.0 - updated** from 0.4.1; API/web remain aligned.
+- Shared types: **0.5.0 - updated** from 0.4.1.
+- Main addon: **0.6.0 - updated** from 0.5.1.
+- AppHelper: **0.2.2 - unchanged**.
+- Root workspace: **0.2.2 - unchanged**.
+
+### Verification and publication status
+Completed checks: workspace typechecking; 20 API production/database-administration/update tests; 11 web regressions; API/web/backup Docker builds; and six Lua 5.1 regression scripts, including database-reset clearing, gear persistence, collection authorization, and release relay. Combined-release packaging and 105 artifact checks passed, including component versions, source-byte matching, and exclusion of database/secret files.
+
+The older `localCapture.test.lua` harness failed because it does not mock `GetInventoryItemTexture`; it is not counted as passed. The dedicated gear-persistence and new database-reset tests passed. Local testing does not certify live WoW behavior or every Windows installation. The operator has confirmed a live NAS backup succeeds after correcting folder permissions; restore/wipe propagation still needs a controlled in-game smoke test before wider distribution.
+
+This is release preparation only: nothing is committed, pushed, tagged, uploaded, or published by this step. See the final preparation report for completed checks and artifacts.
+
+### Publishing and update notices
+Use one GitHub release tagged **v0.8.0**, titled **FlockSync 0.8.0**, with **Set as a pre-release unchecked** and all six downloads. Do not reuse the previous tag. Publish the member addon separately on CurseForge as **0.6.0**, release type **Release**, through the established workflow.
+
+Server 0.4.1 and main addon 0.5.1 should discover their updated component versions after publication and refreshed metadata. Desktop 0.5.0 and AppHelper 0.2.2 should not receive unnecessary update prompts. Release/Beta/Alpha channels include eligible stable updates; no component moves to 1.0.
+
+---
+
 ## FlockSync 0.7.1
 
 ### Gear sync reliability

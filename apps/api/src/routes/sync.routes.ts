@@ -23,7 +23,7 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: "Collector guild realm must match the synced character" });
     }
 
-    const result = processOfficerSync(payload.data, request.user.id);
+    const result = await processOfficerSync(payload.data, request.user.id);
     const addonReleases = releaseCatalog.cachedAddonReleases((error) => {
       app.log.warn({ err: error }, "Addon release metadata unavailable; sync remains successful");
     });

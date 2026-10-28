@@ -13,6 +13,32 @@ ns.Snapshot = {
 
 local listeners = {}
 local currentSource = nil
+local rebuild
+
+function ns.ResetGuildSnapshot()
+    FlockSyncDB.guildSnapshot = nil
+    currentSource = nil
+    rebuild({ serverTimestamp = 0 }, nil)
+end
+
+function ns.ApplyDatabaseReset(resetAt)
+    if type(resetAt) ~= "number" or resetAt <= (FlockSyncDB.databaseResetAt or 0)
+        or resetAt > GetServerTime() + 300 then
+        return false
+    end
+    FlockSyncDB.databaseResetAt = resetAt
+    FlockSyncDB.profiles = {}
+    FlockSyncDB.accountCharacters = {}
+    FlockSyncDB.characters = {}
+    FlockSyncDB.staleCharacters = {}
+    FlockSyncDB.guildLedger = { loot = {}, attendance = {} }
+    FlockSyncDB.guildSnapshot = nil
+    FlockSyncDB.myProfile = nil
+    FlockSyncDB.exportedAt = 0
+    ns.ResetGuildSnapshot()
+    ns.RegisterAccountCharacter()
+    return true
+end
 
 function ns.OnSnapshotChanged(callback)
     listeners[#listeners + 1] = callback
@@ -37,7 +63,7 @@ local function validRaid(raid)
         and type(raid.assignments) == "table"
 end
 
-local function rebuild(source, origin)
+rebuild = function(source, origin)
     ns.CacheAddonReleases(source.addonReleases)
     local snapshot = ns.Snapshot
     snapshot.craftersByItem = {}
@@ -112,6 +138,10 @@ end
 -- Far-future timestamps are rejected so a bad sender cannot block real updates.
 -- The guild name is kept so alts in another guild ignore the cached copy.
 function ns.ApplyBroadcastSnapshot(source, guildName)
+    if type(source.databaseResetAt) == "number"
+        and source.databaseResetAt <= timestampOf(source) then
+        ns.ApplyDatabaseReset(source.databaseResetAt)
+    end
     local stamp = timestampOf(source)
     if stamp <= ns.Snapshot.serverTimestamp or stamp > GetServerTime() + 300 then
         return false

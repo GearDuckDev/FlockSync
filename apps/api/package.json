@@ -1,6 +1,6 @@
 {
   "name": "@flocksync/api",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "pnpm --filter @flocksync/shared-types build && tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "test:production": "pnpm run build && node --test test/production.test.mjs test/users.test.mjs test/themes.test.mjs",
+    "test:production": "pnpm run build && node --test test/production.test.mjs test/users.test.mjs test/themes.test.mjs test/databaseAdmin.test.mjs",
     "test:updates": "pnpm run build && node --test test/updates.test.mjs"
   },
   "dependencies": {

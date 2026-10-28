@@ -112,3 +112,11 @@ export type {
 export { loadReleaseManifests, RELEASE_MANIFEST_ASSET } from "./releaseManifests.js";
 export { ThemeImageSchema, ThemeColorSchema, ThemeSchema, ThemeStateSchema, DEFAULT_THEME, DEFAULT_THEME_COLOR } from "./themes.js";
 export type { Theme, ThemeState } from "./themes.js";
+export {
+  BackupDirectoryRequestSchema,
+  BackupSchema,
+  BackupCatalogSchema,
+  RestoreBackupRequestSchema,
+  DatabaseAdminResultSchema
+} from "./databaseAdmin.js";
+export type { Backup, BackupCatalog, DatabaseAdminResult } from "./databaseAdmin.js";

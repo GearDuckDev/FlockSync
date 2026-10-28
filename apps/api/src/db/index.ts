@@ -8,7 +8,7 @@ import * as schema from "./schema.js";
 import { migrateDatabase } from "./migrate.js";
 
 const apiRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const databasePath = isAbsolute(env.DATABASE_URL)
+export const databasePath = isAbsolute(env.DATABASE_URL)
   ? env.DATABASE_URL
   : resolve(apiRoot, env.DATABASE_URL);
 
@@ -39,6 +39,6 @@ const initializeSqlite = (): Database.Database => {
   }
 };
 
-const sqlite = initializeSqlite();
+export const sqliteConnection = initializeSqlite();
 
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(sqliteConnection, { schema });

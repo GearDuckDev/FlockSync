@@ -12,6 +12,7 @@ import { syncRoutes } from "./routes/sync.routes.js";
 import { usersRoutes } from "./routes/users.routes.js";
 import { updatesRoutes } from "./routes/updates.routes.js";
 import { themesRoutes } from "./routes/themes.routes.js";
+import { databaseAdminRoutes } from "./routes/databaseAdmin.routes.js";
 
 export const buildServer = async () => {
   const app = Fastify({ logger: true });
@@ -20,6 +21,9 @@ export const buildServer = async () => {
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   });
   await registerAuthPlugin(app);
+  app.addContentTypeParser("application/octet-stream", {
+    parseAs: "buffer", bodyLimit: 128 * 1024 * 1024
+  }, (_request, body, done) => done(null, body));
 
   app.get("/health", async () => ({ status: "ok" }));
   await app.register(authRoutes, { prefix: "/api/auth" });
@@ -31,6 +35,7 @@ export const buildServer = async () => {
   await app.register(usersRoutes, { prefix: "/api" });
   await app.register(updatesRoutes, { prefix: "/api" });
   await app.register(themesRoutes, { prefix: "/api" });
+  await app.register(databaseAdminRoutes, { prefix: "/api/admin" });
   return app;
 };
 

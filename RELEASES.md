@@ -9,23 +9,24 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.7.1` |
+| Combined GitHub tag | `v0.8.0` |
 | Desktop | `0.5.0` |
-| API + web / server | `0.4.1` |
-| Main addon | `0.5.1` |
+| API + web / server | `0.5.0` |
+| Main addon | `0.6.0` |
 | AppHelper | `0.2.2` |
-| Shared types | `0.4.1` |
+| Shared types | `0.5.0` |
 | Root package | `0.2.2` |
 
 ### Changes in this release
 
-- Main addon 0.5.1 preserves captured equipment during reload/logout and
-  character switches, rather than replacing it with an unavailable inventory.
-- Equipment events save slot changes immediately, including genuine unequips.
-  Incomplete item-cache results retain the previous valid snapshot.
-- Overall release advances to 0.7.1. Desktop 0.5.0, API/web and shared types
-  0.4.1, AppHelper 0.2.2, and root metadata 0.2.2 are unchanged.
-  Desktop automatic sync on reload/logout file saves is regression-tested.
+- API/web 0.5.0 adds admin database backup, restore, persistent NAS backup
+  folders, and a final-backup-protected guild-data wipe that retains accounts.
+- Main addon 0.6.0 receives and relays database reset markers. API sync rejects
+  pre-reset records so stale data cannot repopulate the wiped database.
+- Backup status refresh clears previous messages and restore options display
+  local backup dates/times. Folder recovery remains available after listing errors.
+- Overall release advances to 0.8.0; shared types advance to 0.5.0.
+  Desktop 0.5.0, AppHelper 0.2.2, and root metadata 0.2.2 are unchanged.
   See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
 
 ## Each time you release
@@ -41,7 +42,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.7.1
+   .\scripts\package-release.ps1 -ReleaseVersion 0.8.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -54,16 +55,16 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.7.1 -m "FlockSync 0.7.1"
-   git push origin v0.7.1
+   git tag -a v0.8.0 -m "FlockSync 0.8.0"
+   git push origin v0.8.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.7.1`.
-   - Title: `FlockSync 0.7.1`.
+   - Tag: `v0.8.0`.
+   - Title: `FlockSync 0.8.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.7.1`, leave it **unchecked**; this is a normal Release-channel
+     For `v0.8.0`, leave it **unchecked**; this is a normal Release-channel
      publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
@@ -297,6 +298,7 @@ lua5.1 .\apps\addon\test\reviewRegressions.test.lua
 lua5.1 .\apps\addon\test\localCapture.test.lua
 lua5.1 .\apps\addon\test\collectorAuthorization.test.lua
 lua5.1 .\apps\addon\test\releaseRelay.test.lua
+lua5.1 .\apps\addon\test\databaseReset.test.lua
 ```
 
 The review regressions cover guild-lookup exhaustion and leaving/rejoining

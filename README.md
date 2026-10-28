@@ -84,7 +84,7 @@ Item search is a bounded local cache, not a complete game-item database.
 | Attunements | Group by the main's step; expand initially collapsed alts to see their individual progress |
 | Loot & Attendance | Recorded loot and 30/60/90-day attendance, counting mains and alts as one player |
 | Officer Tasks | Character-linked task board for officers/admins |
-| Admin Settings | Account roles and server update notices |
+| Admin Settings | Account roles, database backup/restore, persistent backup folders, guild-data wipe, and server update notices |
 | Theme Settings | Custom UI/page colors, optional backgrounds, custom uploads, admin defaults, and personal overrides |
 
 **Themes start at None.** Bundled options are Alliance, Horde, and World of

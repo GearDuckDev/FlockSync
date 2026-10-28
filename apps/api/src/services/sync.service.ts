@@ -8,6 +8,7 @@ import { characters, deletedCharacters } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { upsertAttendance, upsertLoot } from "./ledgerSync.service.js";
 import { buildGuildSnapshot } from "./snapshot.service.js";
+import { readDatabaseAdminState } from "./databaseAdminState.js";
 
 const attunementsEpoch = (character: Character): number =>
   Math.max(0, ...(character.attunements ?? []).map((chain) => chain.updatedAt));
@@ -52,20 +53,43 @@ const toCharacterValues = (character: Character, officerUserId: string, now: num
   updatedByOfficerId: officerUserId
 });
 
-export const processOfficerSync = (
+const freshCharacterAfterReset = (character: Character, resetAt: number): Character => {
+  const { availability, lockouts, professions, gearGoals, mainCharacterGuid: _mainGuid,
+    mainCharacterName: _mainName, ...base } = character;
+  return {
+    ...base,
+    role: character.role.updatedAt > resetAt
+      ? character.role
+      : { primaryRole: "DPS", offSpecEnabled: false, updatedAt: resetAt },
+    gear: character.gear.updatedAt > resetAt
+      ? character.gear : { items: [], updatedAt: resetAt },
+    ...(availability?.updatedAt && availability.updatedAt > resetAt ? { availability } : {}),
+    ...(lockouts?.updatedAt && lockouts.updatedAt > resetAt ? { lockouts } : {}),
+    ...(professions?.updatedAt && professions.updatedAt > resetAt ? { professions } : {}),
+    ...(gearGoals?.updatedAt && gearGoals.updatedAt > resetAt ? { gearGoals } : {}),
+    ...(character.attunements ? {
+      attunements: character.attunements.filter((chain) => chain.updatedAt > resetAt)
+    } : {})
+  };
+};
+
+export const processOfficerSync = async (
   payload: OfficerSyncPayload,
   officerUserId: string
-): ServerReturnPayload => {
+): Promise<ServerReturnPayload> => {
   const now = Math.floor(Date.now() / 1000);
+  const { databaseResetAt } = await readDatabaseAdminState();
   db.transaction((transaction) => {
     const incomingCharacters = new Map<string, Character>();
     const tombstones = new Map(
       transaction.select().from(deletedCharacters).all().map((t) => [t.guid, t.deletedAt])
     );
     for (const character of [payload.officerCharacter, ...payload.characters]) {
+      if (databaseResetAt > 0 && character.lastSeenAt <= databaseResetAt) continue;
       const deletedAt = tombstones.get(character.guid);
       if (deletedAt !== undefined && character.lastSeenAt <= deletedAt) continue;
-      incomingCharacters.set(character.guid, character);
+      incomingCharacters.set(character.guid, databaseResetAt > 0
+        ? freshCharacterAfterReset(character, databaseResetAt) : character);
     }
 
     for (const character of incomingCharacters.values()) {
@@ -135,8 +159,10 @@ export const processOfficerSync = (
       }
     }
 
-    upsertLoot(transaction, payload.lootHistory ?? []);
-    upsertAttendance(transaction, payload.attendanceHistory ?? []);
+    upsertLoot(transaction, (payload.lootHistory ?? [])
+      .filter((record) => databaseResetAt === 0 || record.timestamp > databaseResetAt));
+    upsertAttendance(transaction, (payload.attendanceHistory ?? [])
+      .filter((record) => databaseResetAt === 0 || record.timestamp > databaseResetAt));
   });
 
   // Auto-staled characters are excluded: the addon revives them itself on login.
@@ -149,6 +175,7 @@ export const processOfficerSync = (
     isAuthorizedOfficer: true,
     culledCharacterGuids: inactiveCharacters.map((character) => character.guid),
     serverTimestamp: now,
+    databaseResetAt,
     ...buildGuildSnapshot()
   };
 };

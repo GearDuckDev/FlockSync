@@ -11,6 +11,11 @@ services:
       DATABASE_URL: /app/data/flocksync.db
     volumes:
       - ./data/sqlite:/app/data
+      - type: bind
+        source: ${NAS_BACKUP_PATH:?Set NAS_BACKUP_PATH in .env to an existing backup directory}
+        target: /backups
+        bind:
+          create_host_path: false
     restart: unless-stopped
     stop_grace_period: 30s
   web:

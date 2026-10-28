@@ -59,7 +59,7 @@ local function compact(source)
         goals[#goals + 1] = { i = itemId, n = needs }
     end
     return { t = source.serverTimestamp, c = crafters, r = ns.Snapshot.upcomingRaids,
-        g = goals, u = ns.CompactAddonReleases() }
+        g = goals, u = ns.CompactAddonReleases(), x = source.databaseResetAt }
 end
 
 local function expand(data)
@@ -86,7 +86,7 @@ local function expand(data)
     end
     return { serverTimestamp = data.t, craftersIndex = craftersIndex,
         upcomingRaids = type(data.r) == "table" and data.r or {}, goalMatches = goalMatches,
-        addonReleases = data.u }
+        addonReleases = data.u, databaseResetAt = data.x }
 end
 
 local function canShare()

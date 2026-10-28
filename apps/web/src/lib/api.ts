@@ -30,8 +30,9 @@ export class ApiError extends Error {
 }
 
 export const request = async (path: string, init: RequestInit = {}, token?: string): Promise<unknown> => {
-  const headers: Record<string, string> = init.body ? { 'content-type': 'application/json' } : {};
-  if (token) headers['authorization'] = `Bearer ${token}`;
+  const headers = new Headers(init.headers);
+  if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  if (token) headers.set('authorization', `Bearer ${token}`);
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path.replace(/^\/api(?=\/|$)/, '')}`, { ...init, headers });
@@ -45,6 +46,24 @@ export const request = async (path: string, init: RequestInit = {}, token?: stri
     throw new ApiError(msg, res.status);
   }
   return body;
+};
+
+export const requestBlob = async (path: string, token: string): Promise<Blob> => {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path.replace(/^\/api(?=\/|$)/, '')}`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new ApiError(`Cannot reach API at ${API_BASE_URL}`, 0);
+  }
+  if (!res.ok) {
+    const body: unknown = await res.json().catch(() => null);
+    const message = typeof body === 'object' && body !== null && 'error' in body
+      ? String(body.error) : res.statusText;
+    throw new ApiError(message, res.status);
+  }
+  return res.blob();
 };
 
 export const login = async (email: string, password: string): Promise<{ token: string; user: AuthUser }> =>

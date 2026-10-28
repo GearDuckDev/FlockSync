@@ -5,6 +5,7 @@ const EnvironmentSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   HOST: z.string().min(1).default("0.0.0.0"),
   DATABASE_URL: z.string().min(1),
+  BACKUP_DIRECTORY: z.string().min(1).default("/backups"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   GITHUB_REPOSITORY: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9_.-]+$/)
     .refine((value) => ![".", ".."].includes(value.split("/")[1] ?? ""), "Expected a GitHub owner/repository")
@@ -24,6 +25,7 @@ const parsedEnvironment = EnvironmentSchema.safeParse({
   PORT: process.env.PORT,
   HOST: process.env.HOST,
   DATABASE_URL: process.env.DATABASE_URL,
+  BACKUP_DIRECTORY: process.env.BACKUP_DIRECTORY,
   JWT_SECRET: process.env.JWT_SECRET,
   GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
   INITIAL_ADMIN_EMAIL: process.env.INITIAL_ADMIN_EMAIL || undefined,

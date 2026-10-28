@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { deleteUser, fetchUsers, updateUserRole } from './lib/apiUsers';
 import { AddUserModal } from './components/admin/AddUserModal';
 import { UsernameModal } from './components/UsernameModal';
+import { DatabaseAdminPanel } from './components/admin/DatabaseAdminPanel';
 
 const formatDate = (epoch: number): string => new Date(epoch * 1000).toLocaleDateString();
 
@@ -69,6 +70,7 @@ export const AdminUsersPage = (): React.JSX.Element => {
 
   return (
     <div className="space-y-4">
+      <DatabaseAdminPanel />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold">User accounts</h2>

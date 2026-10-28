@@ -127,6 +127,9 @@ local function ingestHelperPayload()
     if type(FlockSyncHelperDB) ~= "table" then
         return
     end
+    if type(FlockSyncHelperDB.databaseResetAt) == "number" then
+        ns.ApplyDatabaseReset(FlockSyncHelperDB.databaseResetAt)
+    end
     local culled = FlockSyncHelperDB.culledCharacterGuids
     if type(culled) == "table" then
         for _, guid in ipairs(culled) do

@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: FlockSync
 ## Author: GearDuckDev
-## Version: 0.5.1
+## Version: 0.6.0
 ## SavedVariables: FlockSyncDB
 
 Config.lua
