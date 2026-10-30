@@ -5,6 +5,9 @@ The overall Git tag identifies the bundle; the manifest identifies the version
 of each component. Desktop, server, and addon update checks compare their own
 installed version with their own manifest entry, never with the bundle tag.
 
+For dependency upgrades, follow [UPGRADE-PLAN.md](./UPGRADE-PLAN.md) before this
+release checklist. It defines upgrade waves, offline tests, and game-required gates.
+
 ## Current release (pre-1.0)
 
 | Item | Version |
