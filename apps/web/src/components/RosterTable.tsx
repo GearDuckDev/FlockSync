@@ -73,7 +73,7 @@ const Row = ({ character: c, alt, orphan, canManage, busyGuid, onSelect, onToggl
 );
 
 export const RosterTable = ({ groups, aliases, onSaveAlias, ...rest }: Props): React.JSX.Element => (
-  <div className="overflow-x-auto rounded-xl border border-slate-800">
+  <div className="hidden overflow-x-auto rounded-xl border border-slate-800 lg:block">
     <table className="w-full text-sm">
       <thead className="bg-slate-900 text-left text-xs uppercase text-slate-400">
         <tr>

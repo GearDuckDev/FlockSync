@@ -6,6 +6,7 @@ import { useAuth } from './AuthContext';
 import type { DashboardData } from './hooks/useDashboardData';
 import { SummaryCards } from './components/SummaryCards';
 import { RosterTable } from './components/RosterTable';
+import { RosterMobileList } from './components/RosterMobileList';
 import { GearDrawer } from './components/GearDrawer';
 
 interface Props {
@@ -68,10 +69,34 @@ export const RosterPage = ({ data, canManage, onCreateTask }: Props): React.JSX.
   const selected = roster.find((r) => r.guid === selectedGuid) ?? null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 lg:space-y-5">
       <SummaryCards stats={stats} />
-      <RosterTable groups={groups} aliases={aliasMap} onSaveAlias={(k, a) => void saveAlias(k, a)} onPurge={(c) => void purge(c)} canManage={canManage} busyGuid={busyGuid} onSelect={(c) => setSelectedGuid(c.guid)} onToggle={(c) => void toggle(c)} onCreateTask={(c) => onCreateTask(c, `Review ${c.name}`)} />
-      {selected && <GearDrawer character={selected} onClose={() => setSelectedGuid(null)} />}
+      <div className={selected ? 'fold:grid fold:grid-cols-[minmax(0,1fr)_20rem] fold:items-start fold:gap-4 lg:block' : ''}>
+        <RosterMobileList
+          groups={groups}
+          aliases={aliasMap}
+          selectedGuid={selectedGuid}
+          onSaveAlias={(k, a) => void saveAlias(k, a)}
+          onPurge={(c) => void purge(c)}
+          canManage={canManage}
+          busyGuid={busyGuid}
+          onSelect={(c) => setSelectedGuid((prev) => (prev === c.guid ? null : c.guid))}
+          onToggle={(c) => void toggle(c)}
+          onCreateTask={(c) => onCreateTask(c, `Review ${c.name}`)}
+        />
+        <RosterTable
+          groups={groups}
+          aliases={aliasMap}
+          onSaveAlias={(k, a) => void saveAlias(k, a)}
+          onPurge={(c) => void purge(c)}
+          canManage={canManage}
+          busyGuid={busyGuid}
+          onSelect={(c) => setSelectedGuid(c.guid)}
+          onToggle={(c) => void toggle(c)}
+          onCreateTask={(c) => onCreateTask(c, `Review ${c.name}`)}
+        />
+        {selected && <GearDrawer character={selected} onClose={() => setSelectedGuid(null)} />}
+      </div>
     </div>
   );
 };

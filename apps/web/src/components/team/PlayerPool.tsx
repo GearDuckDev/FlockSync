@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { Character, RaidTeamInput } from '@flocksync/shared-types';
 import { classInfo } from '../../lib/wow';
 import { RoleBadge } from '../Badges';
@@ -15,6 +16,7 @@ interface Props {
 
 export const PlayerPool = ({ roster, team, armedGuid, disabled, onArm, onBench }: Props): React.JSX.Element => {
   const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState(false);
   const used = useMemo(
     () => new Set([...team.assignments.map((a) => a.characterGuid), ...team.benchGuids]),
     [team],
@@ -24,18 +26,31 @@ export const PlayerPool = ({ roster, team, armedGuid, disabled, onArm, onBench }
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="flex max-h-[34rem] flex-col rounded-xl border border-slate-800">
+    <div className="flex max-h-72 flex-col rounded-xl border border-slate-800 fold:sticky fold:top-4 fold:max-h-[34rem] lg:static">
       <div className="border-b border-slate-800 p-2">
-        <div className="mb-1 text-xs font-semibold uppercase text-slate-400">Available Pool ({pool.length})</div>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search characters…"
-          className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm"
-        />
-        {!disabled && <div className="mt-1 text-[11px] text-slate-500">Click a character, then click a slot.</div>}
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-xs font-semibold uppercase text-slate-400">Available Pool ({pool.length})</div>
+          <button
+            type="button"
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed((c) => !c)}
+            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs text-slate-400 hover:bg-slate-800 fold:hidden"
+          >
+            {collapsed ? 'Show' : 'Hide'}
+            <ChevronDown size={13} className={`transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+          </button>
+        </div>
+        <div className={collapsed ? 'hidden fold:block' : ''}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search characters…"
+            className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm"
+          />
+          {!disabled && <div className="mt-1 text-[11px] text-slate-500">Select a character, then tap or click a slot.</div>}
+        </div>
       </div>
-      <ul className="overflow-y-auto">
+      <ul className={`overflow-y-auto ${collapsed ? 'hidden fold:block' : ''}`}>
         {pool.map((c) => {
           const info = classInfo(c.classId);
           return (

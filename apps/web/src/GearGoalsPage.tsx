@@ -37,7 +37,7 @@ export const GearGoalsPage = ({ data }: { data: DashboardData }): React.JSX.Elem
         <p className="mb-3 text-sm text-slate-400">
           Players chasing the exact same item. Five or more makes a full group.
         </p>
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid gap-3 fold:grid-cols-2">
           {byItem.map((g) => {
             const id = Number(g.key);
             return <GoalGroupCard key={g.key} group={g} itemId={id} itemName={linkName(id) ?? nameOf({ kind: 'item', id })} />;
@@ -51,7 +51,7 @@ export const GearGoalsPage = ({ data }: { data: DashboardData }): React.JSX.Elem
         </p>
         {byNote.length === 0
           ? <p className="text-sm text-slate-500">No shared note keywords yet.</p>
-          : <ul className="grid gap-3 lg:grid-cols-2">{byNote.map((g) => <GoalGroupCard key={g.key} group={g} />)}</ul>}
+          : <ul className="grid gap-3 fold:grid-cols-2">{byNote.map((g) => <GoalGroupCard key={g.key} group={g} />)}</ul>}
       </section>
     </div>
   );

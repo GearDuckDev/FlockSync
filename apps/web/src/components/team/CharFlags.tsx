@@ -1,6 +1,7 @@
 import { AlertTriangle, Lock } from 'lucide-react';
 import type { Character, RaidTeamInput } from '@flocksync/shared-types';
 import { dayStatus, formatReset, lockoutFor } from '../../lib/schedule';
+import { InfoTip } from '../InfoTip';
 
 type Context = Pick<RaidTeamInput, 'instanceName' | 'scheduledDay' | 'teamType'>;
 
@@ -13,22 +14,28 @@ export const CharFlags = ({ character, team }: { character: Character; team: Con
   return (
     <span className="inline-flex flex-wrap gap-1">
       {lockout && (
-        <span
-          title={`Locked to ${lockout.instanceName} (${lockout.completedEncounters}/${lockout.numEncounters}), resets in ${formatReset(lockout.resetAt)}`}
+        <InfoTip
+          text={`Locked to ${lockout.instanceName} (${lockout.completedEncounters}/${lockout.numEncounters}), resets in ${formatReset(lockout.resetAt)}`}
           className="inline-flex items-center gap-0.5 rounded bg-amber-950 px-1 text-[10px] font-semibold text-amber-300"
         >
           <Lock size={10} /> LOCKED
-        </span>
+        </InfoTip>
       )}
       {status === 'UNAVAILABLE' && (
-        <span title={`Marked unavailable on ${team.scheduledDay}`} className="inline-flex items-center gap-0.5 rounded bg-red-950 px-1 text-[10px] font-semibold text-red-300">
+        <InfoTip
+          text={`Marked unavailable on ${team.scheduledDay}`}
+          className="inline-flex items-center gap-0.5 rounded bg-red-950 px-1 text-[10px] font-semibold text-red-300"
+        >
           <AlertTriangle size={10} /> NO {team.scheduledDay}
-        </span>
+        </InfoTip>
       )}
       {status === 'OCCASIONAL' && (
-        <span title={`Only occasionally available on ${team.scheduledDay}`} className="inline-flex items-center gap-0.5 rounded bg-yellow-950 px-1 text-[10px] font-semibold text-yellow-300">
+        <InfoTip
+          text={`Only occasionally available on ${team.scheduledDay}`}
+          className="inline-flex items-center gap-0.5 rounded bg-yellow-950 px-1 text-[10px] font-semibold text-yellow-300"
+        >
           <AlertTriangle size={10} /> OCC {team.scheduledDay}
-        </span>
+        </InfoTip>
       )}
     </span>
   );

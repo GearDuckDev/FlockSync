@@ -3,6 +3,7 @@ import type { ServerUpdateStatus } from '@flocksync/shared-types';
 import { useAuth } from '../AuthContext';
 import { checkServerUpdates } from '../lib/apiUpdates';
 import { SERVER_UPDATE_CHANGED, useServerUpdateChannel } from '../hooks/useServerUpdateChannel';
+import { InfoTip } from './InfoTip';
 
 export const ServerUpdateBanner = (): React.JSX.Element | null => {
   const { token, user } = useAuth();
@@ -43,7 +44,7 @@ export const ServerUpdateBanner = (): React.JSX.Element | null => {
 
   if (error) return (
     <div className="flex justify-end">
-      <p className="text-xs text-slate-400" title={error}>Server update status unavailable</p>
+      <InfoTip text={error} className="text-xs text-slate-400">Server update status unavailable</InfoTip>
     </div>
   );
   if (!status?.updateAvailable || !status.latest) return null;

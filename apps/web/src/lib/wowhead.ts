@@ -1,5 +1,5 @@
 const SCRIPT_URL = 'https://wow.zamimg.com/js/tooltips.js';
-export const WOWHEAD_PATH = (import.meta.env['VITE_WOWHEAD_PATH'] as string | undefined) ?? 'forever';
+export const WOWHEAD_PATH = (import.meta.env?.['VITE_WOWHEAD_PATH'] as string | undefined) ?? 'forever';
 
 interface WowheadPower {
   refreshLinks?: () => void;

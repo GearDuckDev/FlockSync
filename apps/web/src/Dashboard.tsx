@@ -17,23 +17,7 @@ import { ServerUpdateBanner } from './components/ServerUpdateBanner';
 import { UsernameModal } from './components/UsernameModal';
 import { CreateTaskModal, type TaskDraft } from './components/tasks/CreateTaskModal';
 import { ThemeSettingsPage } from './ThemeSettingsPage';
-
-type Tab = 'roster' | 'teams' | 'recruitment' | 'crafters' | 'goals' | 'attunements' | 'ledger' | 'tasks' | 'admin' | 'theme';
-
-type Access = 'officer' | 'admin';
-
-const TABS: { id: Tab; label: string; access?: Access }[] = [
-  { id: 'roster', label: 'Roster & Gear' },
-  { id: 'teams', label: 'Team Builder (10/20/40)' },
-  { id: 'recruitment', label: 'Availability & Recruitment' },
-  { id: 'crafters', label: 'Crafter Directory' },
-  { id: 'goals', label: 'Gear Goals' },
-  { id: 'attunements', label: 'Attunements' },
-  { id: 'ledger', label: 'Loot & Attendance' },
-  { id: 'tasks', label: 'Officer Tasks', access: 'officer' },
-  { id: 'admin', label: 'Admin Settings', access: 'admin' },
-  { id: 'theme', label: 'Theme Settings' },
-];
+import { DashboardNav, TABS, type Access, type Tab } from './components/DashboardNav';
 
 export const Dashboard = (): React.JSX.Element => {
   const { user, logout } = useAuth();
@@ -43,42 +27,41 @@ export const Dashboard = (): React.JSX.Element => {
   const canManage = user?.role === 'OFFICER' || user?.role === 'ADMIN';
   const isAdmin = user?.role === 'ADMIN';
   const canSee = (access: Access | undefined): boolean => access === undefined || (access === 'admin' ? isAdmin : canManage);
+  const visibleTabs = TABS.filter((t) => canSee(t.access));
   const activeTab = canSee(TABS.find((t) => t.id === tab)?.access) ? tab : 'roster';
   const [draft, setDraft] = useState<TaskDraft | null>(null);
   const startTask = (c: Character, title: string): void => setDraft({ title, relatedCharacterGuid: c.guid });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 p-5">
-      <header className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
-        <h1 className="text-2xl font-bold">FlockSync</h1>
-        <div className="min-w-0 text-center text-xl font-semibold" title={data.guild?.realm}>
+    <div className="mx-auto max-w-7xl space-y-4 p-3 fold:p-4 lg:space-y-5 lg:p-5">
+      <header className="grid grid-cols-1 items-center gap-2.5 lg:grid-cols-[1fr_auto_1fr] lg:gap-3">
+        <div className="flex items-baseline justify-between gap-2 lg:block">
+          <h1 className="text-2xl font-bold">FlockSync</h1>
+          {data.guild && (
+            <div className="min-w-0 text-right lg:hidden">
+              <div className="truncate text-base font-semibold">{data.guild.name}</div>
+              {data.guild.realm && <div className="truncate text-xs text-slate-400">{data.guild.realm}</div>}
+            </div>
+          )}
+        </div>
+        <div className="hidden min-w-0 text-center text-xl font-semibold lg:block" title={data.guild?.realm}>
           {data.guild?.name}
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-sm lg:justify-self-end">
+        <div className="flex flex-wrap items-center gap-2 text-sm fold:gap-3 lg:justify-self-end">
           <span className="rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-bold text-white">{user?.role}</span>
-          <strong>{user?.username}</strong>
+          <strong className="truncate">{user?.username}</strong>
           <button onClick={() => setEditingUsername(true)} title="Change your username"
-            className="rounded-md border border-slate-700 px-2 py-1 hover:bg-slate-800">Account</button>
-          <button onClick={() => void data.reload()} className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 hover:bg-slate-800">
+            className="ml-auto rounded-md border border-slate-700 px-2.5 py-1.5 hover:bg-slate-800 lg:ml-0 lg:px-2 lg:py-1">Account</button>
+          <button onClick={() => void data.reload()} className="flex items-center gap-1 rounded-md border border-slate-700 px-2.5 py-1.5 hover:bg-slate-800 lg:px-2 lg:py-1">
             <RefreshCw size={14} className={data.loading ? 'animate-spin' : ''} /> Refresh
           </button>
-          <button onClick={logout} className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 hover:bg-slate-800">
+          <button onClick={logout} className="flex items-center gap-1 rounded-md border border-slate-700 px-2.5 py-1.5 hover:bg-slate-800 lg:px-2 lg:py-1">
             <LogOut size={14} /> Log out
           </button>
         </div>
       </header>
       <ServerUpdateBanner />
-      <nav className="flex flex-wrap gap-1 border-b border-slate-800">
-        {TABS.filter((t) => canSee(t.access)).map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${activeTab === t.id ? 'border-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      <DashboardNav tabs={visibleTabs} activeTab={activeTab} onSelect={setTab} />
       {data.error && <div className="rounded-md bg-red-950 px-3 py-2 text-sm text-red-300">{data.error}</div>}
       {activeTab === 'roster' && <RosterPage data={data} canManage={canManage} onCreateTask={startTask} />}
       {activeTab === 'teams' && <TeamBuilderPage data={data} canManage={canManage} />}

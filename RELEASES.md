@@ -53,7 +53,13 @@ installed version with their own manifest entry, never with the bundle tag.
    executables to the output folder, and generates the manifest from actual
    package/TOC versions. It stops on failure and removes an old manifest first,
    so a failed build cannot leave a publish-ready old manifest.
-4. Review `git status` and the diff, stage intended source/docs/version changes,
+4. After verifying the generated manifest and its assets, remove superseded local
+   downloads from `release` using explicit file paths. Keep all current manifest
+   assets, including unchanged component versions. Keep only the current release
+   section in `RELEASE-NOTES.md`, preserving the maintainer handoff and applicable
+   safety/migration guidance; previous notes remain in Git history. Do not delete
+   published releases or tags.
+   Review `git status` and the diff, stage intended source/docs/version changes,
    and commit with a user-facing changelog. Build output remains gitignored.
 5. Push the commit and create **one** tag:
 

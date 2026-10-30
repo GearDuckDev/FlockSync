@@ -25,7 +25,7 @@ export const RaidGrid = ({ team, byGuid, armedGuid, disabled, onPlace, onRemove,
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {groups.map((g) => (
           <div key={g} className="rounded-xl border border-slate-800">
             <div className="border-b border-slate-800 bg-slate-900 px-2 py-1 text-xs font-semibold uppercase text-slate-400">{groupLabel(team.teamType, team.instanceName, g)}</div>
@@ -37,7 +37,7 @@ export const RaidGrid = ({ team, byGuid, armedGuid, disabled, onPlace, onRemove,
                 <div
                   key={s}
                   onClick={() => canPlace && onPlace(g, s)}
-                  className={`flex min-h-9 items-center justify-between gap-2 border-b border-slate-900 px-2 py-1 text-sm last:border-0 ${canPlace ? 'cursor-pointer hover:bg-indigo-950' : ''}`}
+                  className={`flex min-h-10 items-center justify-between gap-2 border-b border-slate-900 px-2 py-1 text-sm last:border-0 lg:min-h-9 ${canPlace ? 'cursor-pointer hover:bg-indigo-950' : ''}`}
                 >
                   {a && c ? (
                     <>
@@ -51,9 +51,9 @@ export const RaidGrid = ({ team, byGuid, armedGuid, disabled, onPlace, onRemove,
                       {!disabled && (
                         <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           {alt && (
-                            <button onClick={() => onRole(c.guid, alt)} title={`Switch to ${alt}`} className="rounded border border-slate-700 px-1 text-[10px] hover:bg-slate-800">⇄ {alt}</button>
+                            <button onClick={() => onRole(c.guid, alt)} title={`Switch to ${alt}`} className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] hover:bg-slate-800 lg:px-1 lg:py-0">⇄ {alt}</button>
                           )}
-                          <button onClick={() => onRemove(c.guid)} aria-label="Remove" className="text-slate-500 hover:text-red-400"><X size={14} /></button>
+                          <button onClick={() => onRemove(c.guid)} aria-label="Remove" className="p-1 text-slate-500 hover:text-red-400 lg:p-0"><X size={14} /></button>
                         </div>
                       )}
                     </>

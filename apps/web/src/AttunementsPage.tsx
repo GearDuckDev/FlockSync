@@ -35,7 +35,7 @@ export const AttunementsPage = ({ data, canManage, onCreateTask }: Props): React
               </div>
               <p className="mt-1 text-xs text-slate-400">{attuned} / {total} mains attuned · Alts stay under their main</p>
             </div>
-            <ul className="grid gap-3 lg:grid-cols-2">
+            <ul className="grid gap-3 fold:grid-cols-2">
               {chain.groups.map((g) => (
                 <li key={g.key} className={`rounded-lg border p-3 ${g.attuned ? 'border-emerald-900 bg-emerald-950/30' : 'border-slate-800 bg-slate-900'}`}>
                   <div className="mb-2 text-sm font-semibold">

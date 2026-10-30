@@ -18,7 +18,34 @@ export const LootTable = ({ loot }: { loot: LootRecord[] }): React.JSX.Element =
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-xl border border-slate-800">
+      <div className="space-y-2 fold:hidden">
+        {rows.length === 0 && (
+          <div className="rounded-xl border border-slate-800 px-3 py-6 text-center text-sm text-slate-500">
+            No loot recorded yet.
+          </div>
+        )}
+        {rows.map((r) => {
+          const parsed = parseItemLink(r.itemLink);
+          return (
+            <div key={r.id} className="space-y-1 rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <WowheadLink
+                  entity={{ kind: 'item', id: r.itemId }}
+                  name={parsed.name === 'Unknown item' ? undefined : parsed.name}
+                  color={parsed.color}
+                />
+                <span className="shrink-0 text-xs font-semibold text-slate-200">{r.recipientName}</span>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                <span>{r.instanceName}{r.bossName ? ` · ${r.bossName}` : ''}</span>
+                <span>{new Date(r.timestamp * 1000).toLocaleString()}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-800 fold:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-900 text-left text-xs uppercase text-slate-400">
             <tr>{['When', 'Item', 'Recipient', 'Instance', 'Boss'].map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr>
@@ -43,9 +70,9 @@ export const LootTable = ({ loot }: { loot: LootRecord[] }): React.JSX.Element =
         </table>
       </div>
       <div className="flex items-center justify-end gap-2 text-sm">
-        <button disabled={current === 0} onClick={() => setPage(current - 1)} className="rounded-md border border-slate-700 px-2 py-1 disabled:opacity-40">Prev</button>
+        <button disabled={current === 0} onClick={() => setPage(current - 1)} className="rounded-md border border-slate-700 px-2.5 py-1 disabled:opacity-40 lg:px-2">Prev</button>
         <span className="text-slate-400">Page {current + 1} / {pages}</span>
-        <button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} className="rounded-md border border-slate-700 px-2 py-1 disabled:opacity-40">Next</button>
+        <button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} className="rounded-md border border-slate-700 px-2.5 py-1 disabled:opacity-40 lg:px-2">Next</button>
       </div>
     </div>
   );

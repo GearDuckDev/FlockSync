@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, CornerDownRight } from 'lucide-react';
 import type { Character } from '@flocksync/shared-types';
 import type { AttunementFamily, CharacterProgress } from '../lib/attunements';
 import { ClassBadge } from './Badges';
+import { InfoTip } from './InfoTip';
 
 interface Props {
   family: AttunementFamily;
@@ -19,9 +20,9 @@ const ProgressRow = ({ entry, chainName, canManage, onCreateTask }: Omit<Props, 
     <ClassBadge character={entry.character} />
     <span className="text-xs text-slate-500">Lvl {entry.character.level}</span>
     {!entry.character.isActive && <span className="text-xs text-slate-500">Inactive</span>}
-    <span className="text-xs text-slate-400" title={entry.label}>
+    <InfoTip text={entry.label} className="text-xs text-slate-400">
       {entry.reported ? `${entry.completed}/${entry.total}` : 'No synced progress'}
-    </span>
+    </InfoTip>
     {canManage && entry.reported && !entry.attuned && (
       <button
         onClick={() => onCreateTask(entry.character, `Help ${entry.character.name} with ${chainName}: ${entry.label}`)}

@@ -4,8 +4,10 @@ import { Crown, Trash2, UserPlus } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { deleteUser, fetchUsers, updateUserRole } from './lib/apiUsers';
 import { AddUserModal } from './components/admin/AddUserModal';
+import { AdminUserCards } from './components/admin/AdminUserCards';
 import { UsernameModal } from './components/UsernameModal';
 import { DatabaseAdminPanel } from './components/admin/DatabaseAdminPanel';
+import { InfoTip } from './components/InfoTip';
 
 const formatDate = (epoch: number): string => new Date(epoch * 1000).toLocaleDateString();
 
@@ -81,7 +83,17 @@ export const AdminUsersPage = (): React.JSX.Element => {
         </button>
       </div>
       {error && <div className="rounded-md bg-red-950 px-3 py-2 text-sm text-red-300">{error}</div>}
-      <div className="overflow-x-auto rounded-lg border border-slate-800">
+      <AdminUserCards
+        users={users}
+        loading={loading}
+        meId={me?.id}
+        isRootAdmin={isRootAdmin}
+        busyId={busyId}
+        onChangeRole={(u, role) => void changeRole(u, role)}
+        onRename={setRenaming}
+        onRemove={(u) => void remove(u)}
+      />
+      <div className="hidden overflow-x-auto rounded-lg border border-slate-800 fold:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-900 text-left text-xs uppercase text-slate-400">
             <tr>
@@ -105,7 +117,7 @@ export const AdminUsersPage = (): React.JSX.Element => {
                   <td className="px-3 py-2 font-medium">
                     <span className="flex items-center gap-1.5">
                       {u.username}
-                      {u.isRootAdmin && <span title="Root admin"><Crown size={13} className="text-amber-400" /></span>}
+                      {u.isRootAdmin && <InfoTip text="Root admin"><Crown size={13} className="text-amber-400" /></InfoTip>}
                       {isSelf && <span className="rounded bg-slate-800 px-1.5 text-[10px] text-slate-400">you</span>}
                     </span>
                   </td>

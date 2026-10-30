@@ -56,11 +56,11 @@ export const OfficerTasksPage = ({ data }: { data: DashboardData }): React.JSX.E
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-slate-400">Officer-only to-dos, optionally linked to a character.</p>
         <button onClick={() => setCreating(true)} className="rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-semibold text-white">Create task</button>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 fold:grid-cols-3">
         {TASK_COLUMNS.map(({ status, label }) => {
           const items = tasks.filter((t) => t.status === status);
           return (

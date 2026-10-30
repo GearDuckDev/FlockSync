@@ -32,22 +32,22 @@ export const RecruitmentPage = ({ data }: { data: DashboardData }): React.JSX.El
           {' '}Cells show <span className="text-emerald-300">Regular</span> / <span className="text-yellow-300">Occasional</span>.
         </p>
         <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full text-center text-sm">
-            <thead className="bg-slate-900 text-xs uppercase text-slate-400">
+          <table className="w-full text-center text-xs fold:text-sm">
+            <thead className="bg-slate-900 text-[11px] uppercase text-slate-400 fold:text-xs">
               <tr>
-                <th className="px-3 py-2 text-left">Role</th>
-                {DAYS.map((d) => <th key={d} className="px-3 py-2">{d}</th>)}
+                <th className="px-2 py-2 text-left fold:px-3">Role</th>
+                {DAYS.map((d) => <th key={d} className="px-1.5 py-2 fold:px-3">{d}</th>)}
               </tr>
             </thead>
             <tbody>
               {ROLES.map((role) => (
                 <tr key={role} className="border-t border-slate-800">
-                  <td className="px-3 py-2 text-left"><RoleBadge role={role} /></td>
+                  <td className="px-2 py-2 text-left fold:px-3"><RoleBadge role={role} /></td>
                   {DAYS.map((d) => {
                     const cell = heatmap[role][d];
                     return (
-                      <td key={d} className={`px-3 py-2 ${cellStyle(cell.regular, cell.occasional)}`}>
-                        <span className="text-emerald-300">{cell.regular}</span> / <span className="text-yellow-300">{cell.occasional}</span>
+                      <td key={d} className={`whitespace-nowrap px-1.5 py-2 fold:px-3 ${cellStyle(cell.regular, cell.occasional)}`}>
+                        <span className="text-emerald-300">{cell.regular}</span>/<span className="text-yellow-300">{cell.occasional}</span>
                       </td>
                     );
                   })}

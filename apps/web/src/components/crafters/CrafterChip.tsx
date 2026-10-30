@@ -1,6 +1,7 @@
 import type { Crafter } from '../../lib/crafters';
 import { presenceOf, type PresenceTone } from '../../lib/presence';
 import { classInfo } from '../../lib/wow';
+import { InfoTip } from '../InfoTip';
 
 const TONES: Record<PresenceTone, string> = {
   online: 'bg-emerald-950 text-emerald-300',
@@ -21,9 +22,9 @@ export const CrafterChip = ({ crafter }: { crafter: Crafter }): React.JSX.Elemen
       <span className="text-xs text-slate-500">Lv {character.level} {info.name}</span>
       <span className="text-xs text-slate-400">{skill}/{maxLevel}</span>
       {accepting && <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-bold text-emerald-950">Accepting requests</span>}
-      <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${TONES[presence.tone]}`} title={presence.detail}>
+      <InfoTip text={presence.detail} className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${TONES[presence.tone]}`}>
         {presence.label}
-      </span>
+      </InfoTip>
     </li>
   );
 };

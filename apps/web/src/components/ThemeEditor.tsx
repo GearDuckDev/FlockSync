@@ -71,7 +71,8 @@ export const ThemeEditor = ({ title, theme, disabled, onSave }: Props): React.JS
         </select>
         {draft.image === 'custom' && <label className="block text-sm">
           Upload PNG or JPEG (up to 5 MB; resized for storage)
-          <input type="file" accept="image/png,image/jpeg" className="mt-1 block w-full text-xs"
+          <input type="file" accept="image/png,image/jpeg"
+            className="mt-1.5 block w-full text-sm text-slate-300 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-indigo-500"
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void upload(file);
@@ -93,7 +94,7 @@ export const ThemeEditor = ({ title, theme, disabled, onSave }: Props): React.JS
           </div>
         </div>
         <button type="button" onClick={() => void persist()} disabled={draft.image === 'custom' && !draft.customImage}
-          className="rounded bg-indigo-600 px-3 py-2 text-sm disabled:opacity-50">{busy ? 'Saving...' : 'Save theme'}</button>
+          className="rounded bg-indigo-600 px-3 py-2 text-sm hover:bg-indigo-500 disabled:opacity-50">{busy ? 'Saving...' : 'Save theme'}</button>
       </fieldset>
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {saved && <p role="status" className="text-sm text-emerald-300">Theme saved.</p>}

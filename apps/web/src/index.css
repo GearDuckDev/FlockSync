@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --breakpoint-fold: 37.5rem;
+}
+
 body {
   font-family: "Segoe UI", system-ui, sans-serif;
 }
@@ -19,6 +23,33 @@ body {
   color: var(--color-slate-100);
 }
 
-:where(.flocksync-theme) :where(button[class*="bg-indigo-"]) {
+:where(.flocksync-theme) :where(button[class*="bg-indigo-"]),
+:where(.flocksync-theme) :where(input[type="file"][class*="file:bg-indigo-"])::file-selector-button {
   color: white;
 }
+
+.wh-tooltip-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.wh-tooltip-body td,
+.wh-tooltip-body th {
+  padding: 0;
+  vertical-align: top;
+}
+.wh-tooltip-body th {
+  padding-left: 1rem;
+  font-weight: 400;
+  text-align: right;
+  white-space: nowrap;
+}
+.wh-tooltip-body .q { color: #ffd100; }
+.wh-tooltip-body .q0 { color: #9d9d9d; }
+.wh-tooltip-body .q1 { color: #ffffff; }
+.wh-tooltip-body .q2 { color: #1eff00; }
+.wh-tooltip-body .q3 { color: #0070dd; }
+.wh-tooltip-body .q4 { color: #a335ee; }
+.wh-tooltip-body .q5 { color: #ff8000; }
+.wh-tooltip-body .q6 { color: #e6cc80; }
+.wh-tooltip-body .q7 { color: #00ccff; }
+.wh-tooltip-body .indent { padding-left: 0.75rem; }

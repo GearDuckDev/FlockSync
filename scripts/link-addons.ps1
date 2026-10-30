@@ -1,5 +1,5 @@
 param(
-    [string]$WowAddonsPath = "C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns"
+    [string]$WowAddonsPath = "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns"
 )
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
