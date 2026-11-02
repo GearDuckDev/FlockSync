@@ -1,6 +1,6 @@
 # FlockSync Security, Uptime, and Admin Alerts Plan
 
-Status: **Planning**  
+Status: **In progress — API entry protections implemented**
 Implementation branch: `security-and-health-controls`  
 Scope: protect the public API from abuse, improve service/backup visibility, and
 give opted-in administrators useful alerts. This plan does not include email.
@@ -20,8 +20,17 @@ give opted-in administrators useful alerts. This plan does not include email.
   completely unavailable server.
 - Do not add email verification or require a third-party monitoring or push
   vendor for core FlockSync operation.
+- Do not require paid services, subscriptions, or per-notification fees for this
+  work. Use self-hosted tools or free services within their documented limits.
+  Existing hosting/tunnel expenses are separate; any paid tunnel upgrade is an
+  operator decision, not something FlockSync enables automatically.
+- "Cost" in this plan means CPU time, memory, disk I/O, or network traffic, not
+  a monetary charge.
+- Public registration is enabled by default. Operators may explicitly disable
+  it with `PUBLIC_REGISTRATION_ENABLED=false`; omitting the setting or setting
+  it to `true` keeps registration enabled.
 
-## Current baseline
+## Baseline before implementation
 
 - Fastify exposes `/health`, but it currently returns a static `{ status: "ok" }`.
 - Authentication has public login and self-registration routes. Registration
@@ -39,43 +48,189 @@ give opted-in administrators useful alerts. This plan does not include email.
 
 ## Implementation order
 
+### Checklist evidence rule
+
+Mark `[x]` only when the entire item is implemented and its required verification
+has passed. Split partially completed items rather than marking the whole item
+done. Reading code is not proof of runtime behavior; automated tests are not
+proof of maintainer/device/production acceptance. Record which evidence exists
+and leave untested scenarios unchecked. Reopen an item if later evidence
+invalidates it.
+
+### Commit workflow
+
+Commit a small, coherent, verified checkpoint to this feature branch rather
+than waiting for the entire project or committing every edit. A branch commit
+is a saved development checkpoint, not a release or approval to deploy.
+
+Before calling a checkpoint ready:
+
+1. Finish its implementation, regression tests, related documentation, and
+   acceptance checks. Keep incomplete work unchecked and document blockers.
+2. Run focused regression tests, `pnpm run typecheck` for code changes, affected
+   package builds, and container validation when deployment files change.
+   Refresh the relevant test artifact from the final sources.
+3. Review the diff for unrelated changes and secrets. Record test evidence and
+   clearly separate automated checks from outstanding maintainer acceptance.
+4. Report **Ready to commit: C<number> - <name>** in chat, explain the changes
+   in plain language, suggest a concise commit message, and list outstanding
+   manual tests. If an acceptance gate fails, report **Not ready to commit**
+   with the specific blocker instead.
+5. Wait for authorization before creating the commit. At authorized commit
+   preparation, follow the repository's existing changed-component versioning
+   rules, rebuild/retest if versions change, and never bump unchanged
+   components solely because they were rebuilt. Documentation-only commits
+   need no runtime version bump.
+6. After an authorized commit, record its hash and completed checkpoint here.
+   Pushing, merging to `main`, tagging, publishing, and production deployment
+   require separate authorization.
+
+| ID | Commit after | Required acceptance gate | Suggested commit message |
+| --- | --- | --- | --- |
+| C1 | Phase 1: API entry protections | Rate-limit/registration tests pass; trusted proxy sources are constrained and proxy-chain spoofing/isolation tests pass; deployment docs and artifact match final sources | Protect sign-in and account creation from excessive requests |
+| C2 | Phase 2: health and backup visibility | Liveness/readiness and backup failure/staleness tests pass; public output stays minimal; affected container health checks pass | Show server readiness and backup health |
+| C3 | Phase 3: resource safeguards and monitoring setup | Disposable deployment validates limits under representative load; monitoring/runbook is documented; any operator-only setup or acceptance remains explicitly pending | Add resource safeguards and uptime monitoring guidance |
+| C4 | Phase 4: optional admin push | Subscription authorization and delivery-failure/cooldown tests pass; service-worker checks pass; device acceptance is reported separately, never assumed | Add optional administrator push alerts |
+| C5 | Phase 5: final integration and handoff | Cross-phase regressions pass; final artifacts and numbered operator checklist are verified; unresolved manual checks remain explicit release blockers | Document security and health setup and testing |
+
+**Current checkpoint: Ready to commit: C1 - API entry protections.**
+Exact proxy trust, network isolation, regressions, builds, and candidate-archive
+verification pass. Live Cloudflare/operator acceptance remains separate and
+unchecked. No commit is authorized by this plan.
+
+Verified development evidence:
+
+- API production/auth/account/database/theme regressions: **9/9 passed**.
+- API update regressions: **14/14 passed**.
+- Deployment/backup regressions, including production Compose configuration:
+  **6/6 passed**.
+- Disposable Compose proxy-trust/isolation integration: **1/1 passed**;
+  nginx configuration validation passed within that test.
+- `pnpm run typecheck`: passed across the workspace.
+- Final API/web Docker images: built successfully on local Linux AMD64.
+  ARM64 execution is not certified by these local builds.
+- Rebuilt `release\FlockSync_Remote_Server_Deploy.zip`: all **193** archived
+  files matched their current source hashes, required proxy/auth files were
+  present, obsolete nginx config absent, and no real environment files,
+  databases, dependencies, or build outputs were included.
+- `git diff --check`: passed. Test containers/networks and package staging
+  were removed; temporary API servers stopped. No root `.env` was created.
+
+Suggested commit message: **Protect sign-in and account creation from excessive
+requests**. Wait for authorization, then prepare changed-component versions
+under the existing versioning policy and refresh affected validation/artifacts.
+
 ### 1. Protect API entry points
 
-- [ ] Trace the client IP from Cloudflare through `cloudflared`, nginx, and
-  Fastify. Configure trusted proxy handling only for known proxy hops; do not
-  blindly trust arbitrary `X-Forwarded-For` or client-supplied headers.
-- [ ] Add application rate limits for login and registration, applied before
-  expensive password hashing/comparison where possible. Consider separate
-  limits for other expensive or abuse-prone public endpoints after reviewing
-  their cost.
-- [ ] Key limits using verified client IP and, where useful, a privacy-safe
+- [x] Constrain nginx to the exact connector IP and Fastify to the exact nginx
+  IP on separate Compose networks. Test the connector-to-nginx-to-API path
+  with an emulated connector, not arbitrary forwarded headers.
+- [ ] Verify visitor attribution through an approved live Cloudflare tunnel.
+- [x] Add application rate limits for login and registration, applied before
+  password hashing/comparison using the rate-limit plugin's `onRequest` hook.
+- [x] Review other expensive or abuse-prone public endpoints and decide whether
+  separate limits are needed based on CPU, memory, disk I/O, and network usage.
+- [x] Key limits using locally verified client IP and, where useful, a privacy-safe
   normalized-account key. Do not log passwords, tokens, or raw request bodies.
-- [ ] Make limits configurable with validated environment settings and safe
-  defaults. Ensure a single abusive account/IP cannot cause a trivial denial
-  of service to all users.
-- [ ] Return a clear `429` response and `Retry-After` where appropriate. Log
-  aggregated limit events without logging secrets; do not send an admin alert
-  for every rejected request.
-- [ ] Add an operator-controlled way to disable public self-registration
+- [x] Make limits configurable with validated environment settings and defaults.
+- [x] Verify distinct clients have separate allowances through the local proxy chain,
+  including resistance to forged client-IP headers. Document shared-public-IP
+  limitations; per-IP limiting alone cannot guarantee uptime.
+- [x] Return a clear `429` response and `Retry-After` where appropriate.
+- [x] Implement rate-limit warning sampling with at most one added warning per
+  auth endpoint per minute, without explicit IP/account fields or push alerts.
+- [x] Test warning cooldown behavior and added warning fields. Current warnings sample
+  events, not aggregate counts; ordinary Fastify request logs remain enabled.
+- [x] Add an operator-controlled way to disable public self-registration
   without disabling existing-account login or environment-seeded initial-admin
-  setup. Preserve current registration behavior by default unless a reviewed
-  security decision chooses otherwise.
-- [ ] Document optional Cloudflare edge rate limiting/WAF rules as an additional
-  layer, not a requirement for the API's own protections. Keep rules
-  self-hosting-aware and avoid assuming every operator has identical Cloudflare
-  products or plan features.
+  setup. Public registration must default to enabled
+  (`PUBLIC_REGISTRATION_ENABLED=true`); disabling it requires the operator to
+  explicitly set `PUBLIC_REGISTRATION_ENABLED=false`.
+- [x] Mention optional Cloudflare edge rules as an additional layer in deployment
+  documentation.
+- [x] Document actionable optional Cloudflare rate-limit/WAF setup using
+  available free features, without assuming identical provider plans.
 
 **Acceptance checks**
 
-- Automated tests prove limits apply to login and registration, return the
+- [x] Automated tests prove limits apply to login and registration, return the
   expected status/headers, expire/reset as designed, and do not break a normal
   login or registration.
-- Tests cover spoofed forwarding headers and verify that a client cannot evade
-  limits by choosing its own IP header.
-- Test repeated requests against a disposable test server/database; do not
+- [x] Tests cover spoofed forwarding headers throughout the local proxy chain and
+  verify that a client cannot evade limits by choosing its own IP header.
+  verify network isolation. Cloudflare-supplied headers are emulated, not live.
+- [x] Test repeated requests against a disposable test server/database; do not
   test against production.
-- Existing accounts, admin-created accounts, and initial-admin seeding continue
-  to work when public registration is disabled.
+- [x] Initial-admin seeding and that account's login after restart pass with
+  public registration disabled.
+- [x] Test admin-created accounts and their login with public registration
+  disabled, including a non-admin account created before disabling it.
+
+The login/register limits are currently in-memory and assume the documented
+single API instance. A future multi-instance deployment needs a shared rate-limit
+store before scaling out. Added rate-limit warnings are sampled to at most one
+event per auth endpoint per minute without explicit IP/account fields; ordinary
+Fastify request logs still contain request details and are not globally sampled.
+
+Public-endpoint review: login/register perform password/database work and are
+limited before parsing/hashing. `/health` is currently a small static response;
+SPA assets are served by nginx. Other registered API routes require JWT
+authentication, with role checks where appropriate. No further public-route
+limits are added in C1. Body parsing occurs before existing `preHandler` auth,
+so large unauthenticated payloads still need the phase 3 body/timeout audit.
+Account-key lockouts are not added: attackers could otherwise lock a targeted
+account. Distributed clients and rotating IPv6 addresses remain limitations.
+
+### C1 maintainer test handoff
+
+**Candidate:** `release\FlockSync_Remote_Server_Deploy.zip`, development build
+from this branch, not a published release. Component versions are intentionally
+unchanged until authorized commit preparation. No addons/desktop reinstall is
+needed for C1.
+
+**Possible now, without production or game data**
+
+1. From this checkout with Docker Desktop running, build the disposable images:
+   `docker build -f Dockerfile.api -t flocksync-api:c1-tests .` and
+   `docker build -f Dockerfile.web -t flocksync-web:c1-tests .`.
+   Do not copy production secrets or SavedVariables into the checkout.
+2. Run `node --test deploy\test\proxyTrust.test.mjs`. It uses temporary database
+   storage, placeholder credentials, no tunnel connection or host ports, and
+   separately allocated test networks. Expect one passing test covering IPv4,
+   IPv6, separate quotas, header spoofing, malformed/list headers, and network
+   isolation. An overlap error is a test-network conflict, not a reason to
+   modify a live network.
+3. Run `pnpm --filter @flocksync/api test:production`,
+   `pnpm --filter @flocksync/api test:updates`, and `pnpm run typecheck`.
+   Expect no failures. API tests start/stop temporary local servers/databases.
+   These are not persistent browser URLs.
+4. Cleanup is automatic for those tests; report the failing test, command,
+   status/error, and any leftover `flocksync-proxy-test-*` project if cleanup
+   fails. Never include tokens, real credentials, or database files.
+
+**Deferred operator acceptance / distribution blockers**
+
+1. With explicit approval, use a separate staging host/project, staging tunnel
+   and hostname, independent test accounts/database, and verified backup
+   storage. Extract the candidate into a new directory; preserve the deployed
+   `.env` and data untouched. Check subnet overlap before startup.
+2. Through the real staging HTTPS hostname, confirm browser and desktop login,
+   default registration, admin-created accounts when signup is disabled, and
+   `/health`. Two genuinely different public IPs must have separate allowances;
+   clients behind one public IP share limits. Send forged forwarding headers
+   only to this approved staging environment; they must not reset allowances.
+3. If enabling the optional edge rule, follow [DEPLOYMENT.md](./DEPLOYMENT.md#optional-free-edge-protection);
+   confirm no browser challenge breaks desktop requests. Report the browser/
+   desktop versions, statuses, Retry-After, edge settings (no secrets), and logs
+   with sensitive values removed.
+4. Stop only the explicitly named staging project and disable/remove its test
+   tunnel/rules afterward. Roll back using the saved pre-change sources/config
+   and verified backups if needed; do not delete production volumes.
+
+Live edge attribution and maintainer acceptance are **not passed** by local
+tests. They block distribution/deployment approval, not a verified development
+checkpoint commit. No game-specific test is needed for C1; mobile push/device
+acceptance belongs to phase 4.
 
 ### 2. Make health and backup state observable
 
@@ -109,6 +264,9 @@ give opted-in administrators useful alerts. This plan does not include email.
 - [ ] Configure an uptime check outside the FlockSync host/network against the
   public HTTPS health endpoint. Alert when it fails repeatedly, not on one
   transient probe. This is the monitor that can report a fully down server.
+  Use a free monitoring service within its free limits or an operator-owned
+  independent host; do not require a paid monitoring subscription. A monitor
+  on the same host cannot detect that host's total outage.
 - [ ] Establish a baseline for CPU, memory, container restarts, disk free space,
   SQLite database growth, and backup destination capacity before choosing
   hard limits.
@@ -203,8 +361,6 @@ give opted-in administrators useful alerts. This plan does not include email.
 
 - Rate-limit values and window lengths after reviewing expected guild usage
   and testing through the actual proxy chain.
-- Whether public registration should remain enabled by default, and the exact
-  operator configuration name/default.
 - Which health data belongs in an admin-only view versus logs.
 - Resource limits after collecting representative deployment measurements.
 - Which admin events justify push alerts and their thresholds/cooldowns.

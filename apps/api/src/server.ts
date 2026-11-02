@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import { env } from "./config/env.js";
 import { seedInitialAdmin } from "./db/seed.js";
 import { registerAuthPlugin } from "./plugins/auth.js";
@@ -15,10 +16,22 @@ import { themesRoutes } from "./routes/themes.routes.js";
 import { databaseAdminRoutes } from "./routes/databaseAdmin.routes.js";
 
 export const buildServer = async () => {
-  const app = Fastify({ logger: true });
+  const app = Fastify({
+    logger: true,
+    trustProxy: env.TRUSTED_PROXY_IP ?? false
+  });
   await app.register(cors, {
     origin: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  });
+  await app.register(rateLimit, {
+    global: false,
+    errorResponseBuilder: (_request, context) => ({
+      statusCode: 429,
+      error: "Too Many Requests",
+      message: "Rate limit exceeded. Try again later.",
+      retryAfter: context.after
+    })
   });
   await registerAuthPlugin(app);
   app.addContentTypeParser("application/octet-stream", {

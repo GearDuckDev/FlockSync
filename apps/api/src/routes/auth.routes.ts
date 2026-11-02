@@ -8,10 +8,12 @@ import {
   RegisterRequestSchema,
   type LoginResponse
 } from "@flocksync/shared-types";
+import { env } from "../config/env.js";
 import { parseAuthUser } from "../plugins/auth.js";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
 import { createUser } from "../services/users.service.js";
+import { createAuthRateLogger } from "../services/authRateLog.js";
 
 export const authRoutes: FastifyPluginAsync = async (app) => {
   const issueSession = (user: { id: string; email: string; username: string; role: string }): LoginResponse => {
@@ -24,7 +26,16 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     return LoginResponseSchema.parse({ token: app.jwt.sign(authUser), user: authUser });
   };
 
-  app.post("/login", async (request, reply) => {
+  app.post("/login", {
+    config: {
+      rateLimit: {
+        max: env.AUTH_LOGIN_RATE_LIMIT_MAX,
+        timeWindow: env.AUTH_LOGIN_RATE_LIMIT_WINDOW_MS,
+        groupId: "auth-login",
+        onExceeded: createAuthRateLogger("login")
+      }
+    }
+  }, async (request, reply) => {
     const loginRequest = LoginRequestSchema.safeParse(request.body);
     if (!loginRequest.success) {
       return reply.code(400).send({ error: "Invalid login request" });
@@ -41,7 +52,20 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     return reply.code(200).send(issueSession(user));
   });
 
-  app.post("/register", async (request, reply) => {
+  app.post("/register", {
+    config: {
+      rateLimit: {
+        max: env.AUTH_REGISTER_RATE_LIMIT_MAX,
+        timeWindow: env.AUTH_REGISTER_RATE_LIMIT_WINDOW_MS,
+        groupId: "auth-register",
+        onExceeded: createAuthRateLogger("register")
+      }
+    }
+  }, async (request, reply) => {
+    if (!env.PUBLIC_REGISTRATION_ENABLED) {
+      return reply.code(403).send({ error: "Public registration is disabled on this server" });
+    }
+
     const body = RegisterRequestSchema.safeParse(request.body);
     if (!body.success) {
       const issue = body.error.issues[0];

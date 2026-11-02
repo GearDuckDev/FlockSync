@@ -9,6 +9,10 @@ services:
       HOST: 0.0.0.0
       PORT: "3001"
       DATABASE_URL: /app/data/flocksync.db
+      TRUSTED_PROXY_IP: ${API_PROXY_IP:-172.30.90.3}
+    networks:
+      - api_proxy
+      - api_egress
     volumes:
       - ./data/sqlite:/app/data
       - type: bind
@@ -22,6 +26,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+    environment:
+      TUNNEL_PROXY_IP: ${TUNNEL_PROXY_IP:-172.30.91.3}
+    networks:
+      api_proxy:
+        ipv4_address: ${API_PROXY_IP:-172.30.90.3}
+      tunnel_proxy:
+        ipv4_address: ${TUNNEL_WEB_IP:-172.30.91.2}
     depends_on:
       api:
         condition: service_healthy
@@ -32,6 +43,9 @@ services:
     command: tunnel --no-autoupdate run
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    networks:
+      tunnel_proxy:
+        ipv4_address: ${TUNNEL_PROXY_IP:-172.30.91.3}
     depends_on:
       web:
         condition: service_healthy
@@ -51,3 +65,14 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+networks:
+  api_proxy:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${API_PROXY_SUBNET:-172.30.90.0/29}
+  api_egress:
+  tunnel_proxy:
+    ipam:
+      config:
+        - subnet: ${TUNNEL_PROXY_SUBNET:-172.30.91.0/29}

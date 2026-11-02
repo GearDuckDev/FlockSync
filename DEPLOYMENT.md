@@ -30,6 +30,60 @@ daily at midnight UTC.
 An admin is seeded only when the users table is empty. Changing the seed
 password in the environment later does not reset an existing account.
 
+The API limits login attempts to 10 per visitor IP per 15 minutes and
+self-registration to 5 per visitor IP per hour. These in-memory limits are
+per API process and reset when it restarts; the supported Compose deployment
+runs one API instance. Successful, failed, and malformed attempts all count.
+People sharing a public IP (for example a household, VPN, or guild LAN) share
+its allowance. IPv6 addresses currently have separate allowances, not a shared
+subnet quota; rotating addresses or a distributed botnet can evade per-IP limits.
+
+Public registration defaults to enabled. To require admin-created accounts,
+set `PUBLIC_REGISTRATION_ENABLED=false` in the deployment `.env`; existing
+users can still log in, admins can still create accounts, and an initial admin
+can still be seeded. This does not add an invitation system. The defaults can
+be adjusted with `AUTH_LOGIN_RATE_LIMIT_MAX`,
+`AUTH_LOGIN_RATE_LIMIT_WINDOW_MS`, `AUTH_REGISTER_RATE_LIMIT_MAX`, and
+`AUTH_REGISTER_RATE_LIMIT_WINDOW_MS`. Values are request counts and
+milliseconds. Set these deliberately; very low limits can affect users sharing
+one public IP. Cloudflare edge rules may add another layer, but are not a
+replacement for the API limits.
+
+### Trusted proxies and private networks
+
+The traffic path is **visitor -> Cloudflare -> cloudflared -> nginx -> API**.
+Nginx is the front desk: only the configured connector's exact private IP may
+supply `CF-Connecting-IP`. Nginx replaces forwarded-IP headers before sending
+API requests onward. Direct peers cannot choose a different quota by supplying
+those headers. Missing/unparseable visitor addresses fall back to the socket
+peer; non-IP characters and address lists are rejected with `400`.
+
+The API trusts only nginx's exact private address, not every container or any
+arbitrary one-hop proxy. Compose uses an internal `api_proxy` network between
+API/nginx, a separate `tunnel_proxy` network between connector/nginx, and
+`api_egress` for outbound API requests. The connector and backup service are not
+on `api_proxy`. No API/web host ports are published. Do not publish them, attach
+untrusted containers to these networks, or route the tunnel directly to API.
+Docker/host administrators and operator-controlled Cloudflare Workers/config
+remain trusted; these controls do not protect a compromised host or edge account.
+
+Defaults reserve `172.30.90.0/29` and `172.30.91.0/29`. Before deployment,
+check for overlaps with LAN/VPN/Docker networks. If needed, change
+`API_PROXY_SUBNET` together with `API_PROXY_IP` (nginx), and
+`TUNNEL_PROXY_SUBNET` together with both `TUNNEL_WEB_IP` (nginx) and
+`TUNNEL_PROXY_IP` (connector). Use distinct, unused, non-gateway host addresses
+inside each subnet. Compose sets API `TRUSTED_PROXY_IP` from `API_PROXY_IP`
+and renders nginx's connector trust from `TUNNEL_PROXY_IP` at startup.
+Standalone API development defaults to no proxy trust; set `TRUSTED_PROXY_IP`
+only when an actual known private proxy sits in front.
+
+Deployment validation locally emulates the connector's headers; it does not
+certify a live Cloudflare tunnel. Before distributing this change, complete the
+[C1 maintainer checklist](./SECURITY-HEALTH-PLAN.md#c1-maintainer-test-handoff).
+For an existing deployment, preserve settings/data and use
+`sh deploy/update-server.sh` after approval; network membership changes require
+container recreation. Do not restart a live server just to test this candidate.
+
 Existing installations using `.env.production`: rename it to `.env` before
 using the updated Compose configuration. Use `mv -i .env.production .env` and do
 not overwrite an existing `.env`; reconcile settings manually if both exist.
@@ -128,6 +182,32 @@ FlockSync's JWT login and Officer/Admin authorization still apply. If you add
 Cloudflare Access policies, browser-only login challenges will also affect the
 desktop app's API calls; the desktop app does not implement Cloudflare Access
 service-token authentication.
+
+### Optional free edge protection
+
+Application limits above need no paid service. Cloudflare edge protection is an
+extra layer, not a guarantee of uptime and not a requirement for self-hosting:
+
+1. In the zone's **Security rules -> Create rule -> Rate limiting rules**, check
+   the rules/options included in your current free plan. Do not enable a paid
+   upgrade. If unavailable, keep application limits and skip this optional step.
+2. Match `POST` requests with paths `/api/auth/login` or `/api/auth/register`
+   (use the dashboard's method/path fields), counting by visitor IP. Choose an
+   available short window and a burst threshold comfortably above normal guild
+   activity; for example, 20 attempts per 10 seconds if those options exist.
+   This is a separate burst filter, not a replacement for the longer API windows.
+3. Use a short temporary **Block**, where included. Do not apply a browser
+   challenge or Under Attack mode to the whole API: Electron clients cannot
+   complete browser interstitials. No custom paid JSON response is required.
+4. Review the rule, deploy only to an approved staging hostname first, and
+   verify normal browser/desktop login, signup, and health requests still work.
+   Check security events for false positives, especially shared IPs. Disable
+   the new rule to roll it back; do not disable application protections.
+
+Cloudflare plan options change. Consult its
+[rate-rule setup guide](https://developers.cloudflare.com/waf/rate-limiting-rules/create-zone-dashboard/)
+and [security-level guidance](https://developers.cloudflare.com/waf/tools/security-level/).
+Do not run burst tests against production without explicit operator approval.
 
 ### Schema updates and existing databases
 
