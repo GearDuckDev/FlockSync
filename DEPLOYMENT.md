@@ -137,11 +137,11 @@ sudo chown 1000:1000 data/sqlite
 docker compose up -d --build
 docker compose ps
 docker compose logs --tail=100 api db-backup cloudflared
-docker compose exec web wget -qO- http://localhost/health
+docker compose exec web wget -qO- http://127.0.0.1/ready
 ```
 
 The API runs as UID 1000 and needs write access to `data/sqlite`. It is not
-published directly. Nginx serves the SPA and proxies `/api/` and `/health`.
+published directly. Nginx serves the SPA and proxies `/api/`, `/health`, and `/ready`.
 Visit `https://flocksync.gearduckdev.com` and log in with the initial admin
 credentials. The desktop app's **API URL** should be
 `https://flocksync.gearduckdev.com` (no `/api` suffix; the desktop app adds it).
@@ -255,6 +255,59 @@ a fallback. Mount the backup storage first if that is your chosen destination; v
 mount is actually live before upgrading. A local trial directory must be
 created manually, for example `mkdir -p data/backups`.
 
+### Liveness, readiness, and backup diagnostics
+
+- **`GET /health`** keeps the existing minimal `{"status":"ok"}` response. It
+  means the API process can respond, not that SQLite or backups are healthy.
+- **`GET /ready`** performs a small SQLite schema read. It returns
+  `{"status":"ok"}` with `200`, or `{"status":"unavailable"}` with `503`.
+  Both public checks disable caching and omit paths, stack traces and secrets.
+  API and web Docker health checks use `/ready`; web checks the nginx-to-API path.
+  Use the public HTTPS `/ready` endpoint for future availability monitoring.
+- **`GET /api/admin/health`** requires a current ADMIN JWT. MEMBER/OFFICER
+  accounts cannot read it. This is an API/log diagnostic in C2, not a new
+  Admin Settings panel, notification service, or external uptime monitor.
+  It reports `status`, `lastVerifiedAt`, `lastAttemptAt` (Unix seconds or null),
+  and `staleAfterSeconds` (129600 = 36 hours). Do not paste a JWT into chat,
+  URLs, screenshots or shell history; use the existing authenticated client
+  or a private HTTP client with an Authorization Bearer header.
+
+Backup states:
+
+| State | Meaning / operator action |
+| --- | --- |
+| `healthy` | A verified backup in the selected folder is no older than 36 hours and matches its recorded SHA-256 digest. |
+| `missing` | No verification evidence exists for the selected folder. Create a new verified backup; old files alone do not count. |
+| `failed` | The most recent recorded attempt failed (including ties with a success timestamp). Inspect backup/API logs and storage permissions; retry after fixing the cause. |
+| `stale` | The latest verified backup is more than 36 hours old. Check cron, storage, and container state. |
+| `unavailable` | Evidence is malformed/unreadable, the folder/file is missing/inaccessible, timestamps are in the future, or backup contents no longer match. This returns `503`; details stay in server logs. |
+
+Other diagnostic states return `200` with the explicit state, not a generic
+success flag. Backup trouble does **not** make `/ready` fail: a backup destination
+is not required to serve normal requests. Manual, pre-restore, pre-wipe, startup,
+daily, and pre-update backups contribute evidence; a healthy result does not
+prove that the scheduled job specifically is running. It does not certify
+off-host disaster recovery or a successful restore.
+
+The API and scheduled writer keep separate atomic `backup-health-*.json` files
+beside the live database. These are operational evidence, not secrets or
+database records. Preserve the data directory during upgrades. Existing
+backups are not retroactively called verified; make a fresh backup after upgrade.
+Changing the selected folder requires verified evidence for that folder.
+The SHA-256 check streams the selected latest snapshot on each admin diagnostic
+request, so this endpoint is limited to 6 requests/IP/minute and is not intended
+for frequent polling or a public monitor. Staleness and errors are reported
+when the endpoint is queried; C2 does not yet send background alerts.
+
+Useful structured log event names: `readiness_failed`, `backup_verified`,
+`backup_failed`, `backup_evidence_write_failed`, `backup_health_degraded`,
+`backup_health_unavailable`, `api_startup_failed`, `sqlite_initialization_failed`,
+and `sqlite_migration_failed`. Existing `auth_rate_limit_exceeded` remains.
+Use `docker compose ps` and `docker compose logs --tail 100 api db-backup web`
+privately. Docker health status alone does not restart unhealthy running
+containers; restart policy handles process exits. Independent outage alerts
+and resource limits are the next phase.
+
 ### Backups, retention and restore
 
 The Alpine sidecar runs once at startup, then daily at midnight UTC via cron. SQLite's
@@ -268,6 +321,12 @@ and then deletes daily backups older than 30 days. Successful daily runs publish
 `flocksync-YYYYMMDD.db`; rerunning on the same day replaces that day's backup
 only after validation. Failed backups log an error and leave existing backups
 untouched; cron retries at the next daily run. Inspect logs and backup storage contents regularly.
+New scheduled snapshots use mode `600` and inherit the live database's UID/GID
+so the API can read/restore them without making account hashes world-readable.
+Backup storage must permit this ownership change; failure aborts publication
+and is logged. Existing backup file ownership is not changed automatically.
+Success evidence records the published snapshot's digest after integrity
+verification; recording failures are explicit failures, not silent success.
 
 Pre-update backups are published as
 `flocksync-pre-update-<UTC timestamp>-<unique suffix>.db` and are not overwritten

@@ -32,6 +32,12 @@ server {
         proxy_pass $api_backend/health;
     }
 
+    location = /ready {
+        proxy_pass $api_backend/ready;
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 4s;
+    }
+
     location = /index.html {
         add_header Cache-Control "no-cache";
         try_files $uri =404;

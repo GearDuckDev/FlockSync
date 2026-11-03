@@ -14,6 +14,7 @@ import { usersRoutes } from "./routes/users.routes.js";
 import { updatesRoutes } from "./routes/updates.routes.js";
 import { themesRoutes } from "./routes/themes.routes.js";
 import { databaseAdminRoutes } from "./routes/databaseAdmin.routes.js";
+import { healthRoutes } from "./routes/health.routes.js";
 
 export const buildServer = async () => {
   const app = Fastify({
@@ -38,7 +39,7 @@ export const buildServer = async () => {
     parseAs: "buffer", bodyLimit: 128 * 1024 * 1024
   }, (_request, body, done) => done(null, body));
 
-  app.get("/health", async () => ({ status: "ok" }));
+  await app.register(healthRoutes);
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(syncRoutes, { prefix: "/api" });
   await app.register(raidsRoutes, { prefix: "/api" });
@@ -66,7 +67,7 @@ const startServer = async (): Promise<void> => {
     process.once("SIGTERM", shutdown);
     process.once("SIGINT", shutdown);
   } catch (error) {
-    app.log.error(error, "Failed to start API server");
+    app.log.error({ event: "api_startup_failed", err: error }, "Failed to start API server");
     await app.close();
     throw error;
   }

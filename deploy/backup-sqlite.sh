@@ -1,6 +1,34 @@
 #!/bin/sh
 set -eu
 
+write_evidence() {
+    kind=$1
+    content=$2
+    evidence=$(mktemp /data/.backup-health-scheduled-XXXXXX) || return 1
+    if ! printf '%s\n' "$content" > "$evidence" ||
+        ! chmod 644 "$evidence" ||
+        ! mv "$evidence" "/data/backup-health-scheduled-${kind}.json"; then
+        rm -f "$evidence"
+        return 1
+    fi
+}
+
+finish() {
+    outcome=$1
+    trap - 0
+    status=ok
+    if [ "$outcome" -ne 0 ]; then status=failed; fi
+    if ! write_evidence attempt "{\"attemptedAt\":$(date -u +%s),\"status\":\"$status\"}"; then
+        echo '{"event":"backup_evidence_write_failed","source":"scheduled"}' >&2
+        outcome=1
+    fi
+    if [ "$outcome" -ne 0 ]; then
+        echo '{"event":"backup_failed","source":"scheduled"}' >&2
+    fi
+    exit "$outcome"
+}
+trap 'finish "$?"' 0
+
 backup_once() {
     if [ ! -f /data/flocksync.db ]; then
         echo "Database not created yet; waiting for API startup" >&2
@@ -8,6 +36,7 @@ backup_once() {
     fi
 
     backup_directory=/backups
+    backup_subdirectory=
     if [ -f /data/admin-database-state.json ]; then
         if ! grep -q '"backupDirectory":"[^"]*"' /data/admin-database-state.json; then
             echo "Invalid persistent database admin settings" >&2
@@ -67,11 +96,25 @@ backup_once() {
         rm -f "$partial"
         return 1
     fi
+    owner=$(stat -c '%u:%g' /data/flocksync.db) || return 1
+    if ! chmod 600 "$partial" || ! chown "$owner" "$partial"; then
+        echo "Cannot give the database owner access to its backup" >&2
+        rm -f "$partial"
+        return 1
+    fi
     if ! mv "$partial" "$destination"; then
         echo "Cannot publish backup; existing backups retained" >&2
         rm -f "$partial"
         return 1
     fi
+    checksum=$(sha256sum "$destination") || return 1
+    checksum=${checksum%% *}
+    size=$(wc -c < "$destination" | tr -d ' ') || return 1
+    if ! write_evidence success "{\"verifiedAt\":$(date -u +%s),\"filename\":\"flocksync-${stamp}.db\",\"relativeDirectory\":\"$backup_subdirectory\",\"size\":$size,\"sha256\":\"$checksum\"}"; then
+        echo "Backup exists, but verified evidence could not be saved" >&2
+        return 1
+    fi
+    echo '{"event":"backup_verified","source":"scheduled"}'
     echo "Backup complete: $destination"
     # Keep rollback snapshots until the administrator explicitly removes them.
     if ! find "$backup_directory" -type f \

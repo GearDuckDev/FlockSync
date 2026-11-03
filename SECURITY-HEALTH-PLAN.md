@@ -1,6 +1,6 @@
 # FlockSync Security, Uptime, and Admin Alerts Plan
 
-Status: **In progress — API entry protections implemented**
+Status: **In progress — C2 implemented and verified**
 Implementation branch: `security-and-health-controls`  
 Scope: protect the public API from abuse, improve service/backup visibility, and
 give opted-in administrators useful alerts. This plan does not include email.
@@ -257,30 +257,90 @@ to phase 4.
 
 ### 2. Make health and backup state observable
 
-- [ ] Separate basic liveness from readiness. Keep the public liveness response
+**Ready to commit: C2 - health and backup visibility.** Public
+liveness/readiness, admin-only backup diagnostics, and manual/scheduled
+verification evidence are implemented. Regression/type/container checks pass.
+The deployment ZIP was refreshed and all 200 archived source files matched
+current hashes; private environment/data/evidence files and dependencies were
+excluded. Disposable test containers/networks/volumes were removed.
+No commit, production deployment or version change was performed.
+Suggested commit message: **Show server readiness and verified backup health**.
+Wait for authorized commit preparation before changed-component version bumps.
+
+- [x] Separate basic liveness from readiness. Keep the public liveness response
   minimal; readiness should verify only dependencies needed to serve requests
   (including a small SQLite operation), with no secrets or infrastructure
   details in public output.
-- [ ] Keep container health checks aligned with those semantics so an
+- [x] Keep container health checks aligned with those semantics so an
   unhealthy dependency is distinguishable from a process that is simply
   running.
-- [ ] Define a reliable backup-health signal: record/report the most recent
+- [x] Define a reliable backup-health signal: record/report the most recent
   successful backup and verification time, and surface a missing, failed, or
   stale backup. A log line or file's existence alone is not proof the backup is
   valid.
-- [ ] Show operational diagnostics only to authorized admins (or keep them in
+- [x] Show operational diagnostics only to authorized admins (or keep them in
   server logs); do not expose database paths, backup paths, stack traces,
   secrets, or detailed host information publicly.
-- [ ] Ensure restart and migration failures remain visible in structured logs.
+- [x] Ensure restart and migration failures remain visible in structured logs.
   Add stable event names for rate limits, readiness failures, and backup
   failures to support log-based alerting.
 
 **Acceptance checks**
 
-- Tests distinguish live-but-not-ready from healthy and verify responses do
+- [x] Tests distinguish live-but-not-ready from healthy and verify responses do
   not disclose sensitive configuration.
-- Backup tests cover missing, failed, stale, and verified-success cases.
-- Existing `/health` consumers and Docker health checks are updated together.
+- [x] Backup tests cover missing, failed, stale, and verified-success cases.
+- [x] Existing `/health` consumers and Docker health checks are updated together.
+
+Evidence: 10 API production tests, 14 update tests, 6 deployment/backup tests,
+1 proxy regression and 1 container health test pass. Workspace typecheck passes.
+The final 10-test API production suite passed inside the built Linux container.
+Windows reruns encountered the existing random-port account test selecting
+reserved ports (`EACCES`); no application failure was hidden or treated as a pass.
+API/web/backup images build on local Linux AMD64. Health tests exercise closed
+SQLite, corrupt startup database logs, authorization, privacy, exact 36-hour
+staleness threshold, manual failure/recovery, malformed/deleted/corrupt backup
+evidence, and scheduled evidence read by the non-root API. The container test
+also checks snapshot UID 1000 and mode 600. ARM64 and remote operator acceptance
+are not claimed.
+
+### C2 maintainer test handoff
+
+1. Keep production and the previous Cloudflare test tunnel stopped/unchanged.
+   C2 tests need no real tunnel token, real accounts, or SavedVariables.
+2. With Docker Desktop running, from the checkout root build:
+   ```powershell
+   docker build -f Dockerfile.api -t flocksync-api:c2-tests .
+   docker build -f Dockerfile.web -t flocksync-web:c2-tests .
+   docker build -f deploy\Dockerfile.backup -t flocksync-backup:update-tests .
+   node --test deploy\test\health.test.mjs
+   ```
+   Expect one passing test. It checks `/ready` through nginx, missing evidence,
+   a verified scheduled backup, private ownership, and corruption rejection.
+   Its uniquely named project uses temporary Docker volumes, no published
+   ports, placeholder settings, and no connector. Cleanup removes only that
+   test project's containers/networks/volumes automatically.
+3. API tests: `pnpm --filter @flocksync/api test:production`;
+   update tests: `pnpm --filter @flocksync/api test:updates`;
+   types: `pnpm run typecheck`. These stop their temporary servers afterward.
+   If Windows rejects the existing test's random port with `EACCES`, the same
+   production suite can run in the built Linux image without host ports:
+   ```powershell
+   docker run --rm --entrypoint node flocksync-api:c2-tests --test test/production.test.mjs test/users.test.mjs test/themes.test.mjs test/databaseAdmin.test.mjs test/authControls.test.mjs test/health.test.mjs
+   ```
+4. See [DEPLOYMENT.md](./DEPLOYMENT.md#liveness-readiness-and-backup-diagnostics)
+   for states, log events, and the admin-only diagnostic endpoint. No new UI
+   panel or automatic alerts are included. A healthy backup is not proof of
+   an actual restore or of the daily scheduler specifically.
+5. Before any authorized remote rollout, preserve `.env`, live data and
+   independent backups; verify backup storage supports the database UID/GID
+   and mode 600. Existing snapshots are not automatically re-owned or certified.
+   Use the backup-gated updater, then privately inspect logs, `/ready`, normal
+   login and a fresh verified backup. Remote rollout/ARM64 checks remain pending
+   and do not block saving this verified development checkpoint.
+
+No new paid services, email, push, resource caps or independent monitor are
+introduced in C2. Those later-phase checkboxes remain unchanged.
 
 ### 3. Add independent monitoring and resource safeguards
 

@@ -29,6 +29,11 @@ test("verified pre-update backups are unique and not removed by daily retention"
   succeeded(runBackup(directory, "pre-update"));
   const files = readdirSync(join(directory, "backups")).filter((name) => name.endsWith(".db"));
   assert.equal(files.length, 2);
+  const verification = JSON.parse(readFileSync(join(directory, "data", "backup-health-scheduled-success.json"), "utf8"));
+  assert.ok(files.includes(verification.filename));
+  assert.match(verification.sha256, /^[a-f0-9]{64}$/);
+  assert.ok(verification.verifiedAt > 0);
+  assert.equal(JSON.parse(readFileSync(join(directory, "data", "backup-health-scheduled-attempt.json"))).status, "ok");
   assert.ok(files.every((name) => name.startsWith("flocksync-pre-update-")));
   const old = new Date(Date.now() - 40 * 86400_000);
   for (const name of files) utimesSync(join(directory, "backups", name), old, old);
@@ -50,6 +55,8 @@ test("missing or corrupt databases fail without publishing a success-shaped back
   mkdirSync(join(directory, "data"));
   mkdirSync(join(directory, "backups"));
   assert.notEqual(runBackup(directory, "pre-update").status, 0);
+  assert.equal(JSON.parse(readFileSync(join(directory, "data", "backup-health-scheduled-attempt.json"))).status, "failed");
+  assert.ok(!readdirSync(join(directory, "data")).includes("backup-health-scheduled-success.json"));
   writeFileSync(join(directory, "data", "flocksync.db"), "not a SQLite database");
   assert.notEqual(runBackup(directory, "pre-update").status, 0);
   assert.deepEqual(readdirSync(join(directory, "backups")), []);
