@@ -95,8 +95,9 @@ Before calling a checkpoint ready:
 
 **Current checkpoint: Ready to commit: C1 - API entry protections.**
 Exact proxy trust, network isolation, regressions, builds, and candidate-archive
-verification pass. Live Cloudflare/operator acceptance remains separate and
-unchecked. No commit is authorized by this plan.
+verification pass. C1 was saved as commit `2aa961b`. Live visitor separation and
+forwarded-header resistance passed on the temporary tunnel on November 2, 2026;
+the remaining operator checks below are not implied complete.
 
 Verified development evidence:
 
@@ -125,7 +126,15 @@ under the existing versioning policy and refresh affected validation/artifacts.
 - [x] Constrain nginx to the exact connector IP and Fastify to the exact nginx
   IP on separate Compose networks. Test the connector-to-nginx-to-API path
   with an emulated connector, not arbitrary forwarded headers.
-- [ ] Verify visitor attribution through an approved live Cloudflare tunnel.
+- [x] Verify visitor attribution through an approved live Cloudflare tunnel.
+  On November 2, 2026, the operator reported PC attempt four was rate-limited
+  while the phone's first cellular attempt returned invalid credentials.
+  API logs contained two distinct login client addresses (not recorded here).
+  Automated requests through the test HTTPS hostname returned `401` three times,
+  then `429` with positive `Retry-After`. Changing `X-Forwarded-For` and
+  `X-Real-IP` still returned application `429`; a forged `CF-Connecting-IP`
+  received a Cloudflare `403` block page, not an application response.
+  No forged documentation-range addresses appeared as API login client IPs.
 - [x] Add application rate limits for login and registration, applied before
   password hashing/comparison using the rate-limit plugin's `onRequest` hook.
 - [x] Review other expensive or abuse-prone public endpoints and decide whether
@@ -227,10 +236,24 @@ needed for C1.
    tunnel/rules afterward. Roll back using the saved pre-change sources/config
    and verified backups if needed; do not delete production volumes.
 
-Live edge attribution and maintainer acceptance are **not passed** by local
-tests. They block distribution/deployment approval, not a verified development
-checkpoint commit. No game-specific test is needed for C1; mobile push/device
-acceptance belongs to phase 4.
+Local tests alone do not prove live edge attribution. The live attribution
+check above now passes. On November 2, 2026, the operator also confirmed normal
+browser admin login after the limit expired, dashboard access, and opening Admin
+Settings through the temporary hostname. The operator also confirmed public
+registration, dashboard access, sign-out/subsequent login, and lack of admin
+access for the new member account. With public registration disabled, the
+operator confirmed signup rejection, existing member/admin login, Admin Settings
+access, admin creation of a new MEMBER, and login by that new account.
+The operator also confirmed desktop login to the test hostname without issues.
+No optional edge rule was tested. The operator confirmed finishing the desktop/
+browser restoration steps. The isolated `flocksync-security-live-test` project
+was stopped; Docker confirmed no project containers or networks remained.
+Test database/backups and the private local environment file were preserved.
+On November 2, 2026, the operator confirmed Cloudflare test tunnel/hostname/DNS
+cleanup. C1 live acceptance and staging cleanup are complete; no optional edge
+rule was enabled or tested. Do not treat this result as full deployment/distribution approval.
+No game-specific test is needed for C1; mobile push/device acceptance belongs
+to phase 4.
 
 ### 2. Make health and backup state observable
 
