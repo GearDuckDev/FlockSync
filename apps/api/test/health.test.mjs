@@ -22,6 +22,7 @@ test("health distinguishes SQLite readiness and verified, stale, failed, missing
   const { sqliteConnection } = await import("../dist/db/index.js");
   const { createDatabaseBackup } = await import("../dist/services/databaseAdmin.service.js");
   const { readBackupHealth } = await import("../dist/services/backupHealth.js");
+  const { env } = await import("../dist/config/env.js");
   const events = [];
   const app = Fastify({ logger: { stream: { write: (line) => events.push(JSON.parse(line)) } } });
   await app.register(rateLimit, { global: false });
@@ -78,6 +79,12 @@ test("health distinguishes SQLite readiness and verified, stale, failed, missing
       backupDirectory: "", databaseResetAt: 0
     }));
     await createDatabaseBackup();
+    assert.equal((await readBackupHealth()).status, "healthy");
+    env.BACKUP_STORAGE_ID = "test-mounted-storage";
+    await assert.rejects(readBackupHealth());
+    await writeFile(join(backups, ".flocksync-storage-id"), "wrong-storage");
+    await assert.rejects(readBackupHealth());
+    await writeFile(join(backups, ".flocksync-storage-id"), "test-mounted-storage\n");
     assert.equal((await readBackupHealth()).status, "healthy");
     await rm(backups, { recursive: true });
     await assert.rejects(readBackupHealth());

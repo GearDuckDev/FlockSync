@@ -308,7 +308,193 @@ privately. Docker health status alone does not restart unhealthy running
 containers; restart policy handles process exits. Independent outage alerts
 and resource limits are the next phase.
 
+### Resource safeguards and monitoring
+
+The supplied Compose file bounds each running service (not image builds):
+
+| Service | Memory ceiling | CPU ceiling | Processes/threads |
+| --- | --- | --- | --- |
+| API | 2 GiB | 2 CPUs | 128 |
+| nginx/web | 256 MiB | 1 CPU | 128 |
+| tunnel | 256 MiB | 1 CPU | 128 |
+| scheduled backup | 512 MiB | 1 CPU | 64 |
+
+Memory ceilings are not reservations; equal memory/swap limits prevent these
+containers from consuming additional swap. The host must support Docker memory/
+CPU/PID controls. Local Linux AMD64 tests measured a roughly 701 MiB API cgroup
+peak (including cache) before caps during a 128 MiB restore; a bounded rerun
+with 501 characters and recipe data peaked around 747 MiB, with 22 API threads/
+processes and no restarts/OOM. Scheduled backup measured about 10 MiB.
+This is synthetic test evidence, not a production or ARM64 capacity guarantee.
+The tunnel's ceiling is conservative configuration, not a measured live-traffic
+capacity claim. Re-measure real guild/large-database workload before rollout.
+
+Set `API_MEMORY_LIMIT`, `WEB_MEMORY_LIMIT`, `TUNNEL_MEMORY_LIMIT`,
+`BACKUP_MEMORY_LIMIT` and their matching `*_CPU_LIMIT` variables to override.
+Use Docker size syntax (`2g`, `512m`); do not lower limits just to fit an
+undersized host. Leave memory/CPU/disk headroom for the OS, other services,
+parallel backups and image builds. A host that cannot spare the runtime budget
+needs separate capacity planning; these ceilings do not create free RAM.
+An OOM exit/restart is a failure requiring investigation, not normal operation.
+
+All four services use Docker's rotating `local` log driver, three 10 MiB files
+per container (roughly 30 MiB plus overhead, not a whole-host disk quota).
+`docker compose logs` still works. Existing log collectors depending on Docker
+`json-file` paths must be adapted before deployment. Restart policies still
+handle process exits only; no automatic restart loop for readiness failures
+has been added.
+
+Request boundaries now align API and nginx:
+
+| Request | Maximum body |
+| --- | --- |
+| Login / public signup | 4 KiB at API |
+| Ordinary requests / theme upload JSON | 1 MiB |
+| Officer sync | 10 MiB |
+| Admin SQLite restore upload | 128 MiB |
+
+Sync/themes/database mutation authorization runs before body parsing. Restore
+uploads stream through nginx to the authenticated API rather than buffering
+the entire file at nginx, and only one authenticated restore upload may be
+admitted per API process at a time. Another receives `409` with `Retry-After`.
+Admission clears on response, error, timeout, or aborted upload; the existing
+database operation lock still serializes backup/restore/wipe. Invalid SQLite
+headers are rejected rather than treating tiny/empty inputs as a new database.
+Other protected endpoints retain their existing auth hooks and the 1 MiB cap.
+
+Nginx header timeout is 15 seconds; body/read-to-client inactivity timeouts are
+60 seconds, and upstream send/read inactivity timeouts are 300 seconds. The API
+sets a 300-second request receive timeout and socket inactivity timeout, with
+5-second keep-alive. These are bounded receives/inactivity timers, **not**
+cancellation of a running SQLite operation or a complete slow-request defense.
+Very slow uploads or huge database operations may require offline recovery.
+Cloudflare plan upload/response limits can be lower than the origin's limits:
+do not buy an upgrade just to restore; use the documented offline recovery
+procedure if the tunnel rejects the file.
+
+#### Refusing an accidental local backup fallback
+
+An unmounted NAS can leave an ordinary empty directory at its mountpoint.
+The existing bind-path check cannot distinguish that from the intended disk.
+For production, configure an identity marker **after verifying the mount**:
+
+1. Use `mountpoint /your/actual/mount` and `findmnt -T /your/backup/directory`
+   to confirm the expected source. For local/attached backup storage, verify
+   the intended filesystem with `findmnt -T` instead.
+2. Choose a non-secret identifier, such as `guild-backups`, and create
+   `.flocksync-storage-id` containing exactly that ID and a newline at the
+   **root of the configured backup directory**, while its correct storage is
+   mounted. Make it readable by API UID 1000, not writable by untrusted users.
+3. Set `BACKUP_STORAGE_ID=guild-backups` in the private deployment environment.
+   The API and scheduled/pre-update backup writer both require a matching,
+   regular, non-symlink marker before using that backup root.
+4. Do not copy the marker into the underlying unmounted local directory.
+   A missing/wrong marker must fail a test backup; remount/fix storage rather
+   than creating a fallback. Never unmount live production storage to test.
+
+Empty/unset `BACKUP_STORAGE_ID` preserves existing installations until this
+operator setup is performed; **it does not protect against that mount fallback**.
+Keep service startup ordered after the mount, and complete marker setup before
+claiming mount-fallback protection. Protect the parent path against tampering;
+the marker detects accidental absence/wrong storage, not host compromise or
+mount changes during an already-running operation.
+
+#### Host checks and resource/backup alerts
+
+From the deployed Linux project directory:
+
+```sh
+docker compose ps
+docker stats --no-stream
+docker compose exec -T api node --input-type=module < deploy/check-resources.mjs
+sh deploy/check-server.sh
+```
+
+The resource probe prints structured free-space/free-percent readings for both
+data and backup filesystems, database/WAL sizes, and verified backup state.
+It exits `0` only when backup health is good and both filesystems have at
+least **1 GiB and 10%** free. Exit `2` means pressure/degraded backup; exit `1`
+means the check could not run. The wrapper exits `1` for any failure.
+Missing/inaccessible storage is an error, never a healthy default.
+Thresholds can be overridden with `RESOURCE_MIN_FREE_BYTES` and
+`RESOURCE_MIN_FREE_PERCENT`; choose earlier warnings for larger databases.
+No automatic deletion, VACUUM, restore, or restart is performed.
+
+Inspect database/WAL trends and restart counts with host access:
+
+```sh
+docker inspect --format '{{.RestartCount}} {{.State.OOMKilled}}' "$(docker compose ps -q api)"
+df -h /your/project/data /your/actual/backup/directory
+du -sh /your/project/data /your/actual/backup/directory
+```
+
+Monitor the **host Docker filesystem too**, including image/build caches and
+other containers; these may differ from API mounts. Retain several multiples
+of the live database size for snapshots, uploads, pre-restore safety copies,
+WAL and staging. Never prune backups/build caches automatically based on one
+probe. Ordinary admins can create/list backups in Admin Settings; Docker stats,
+mounts, scheduling and capacity planning require the host operator.
+
+#### Independent, no-subscription monitoring setup
+
+This is operator-owned setup, not an automatically activated FlockSync service.
+Use an existing machine on a **different host/network/power connection**, or
+an available free external monitor. Do not purchase hosting or subscriptions
+as part of this setup. Without an independent running monitor and a tested
+notification destination, there are **no outage alerts**.
+
+One free self-hosted option is [Uptime Kuma](https://github.com/louislam/uptime-kuma);
+follow its current installation guide on that independent machine. Do not add it
+to the FlockSync Compose stack or expose an unsecured monitor admin port.
+
+1. Create an HTTPS monitor for `https://YOUR-HOSTNAME/ready`. Require status
+   `200` and, if supported, the expected `status: ok` JSON. Use a 60-second
+   interval, 10-second timeout, two retries (three consecutive failures), and
+   recovery notifications. Do not challenge the monitor with browser-only
+   Cloudflare Access; it checks public availability just like the desktop.
+2. Configure a notification destination included at no charge in your chosen
+   setup (for example an existing self-hosted Gotify instance or a free
+   supported messaging integration). Keep its credentials private and send a
+   test notification. Merely saving a notification method is not acceptance.
+3. Add a **Push/heartbeat** monitor for host resource/backup checks, expecting
+   a report every five minutes with sufficient grace (for example ten minutes).
+   Missing heartbeats must alert as well as explicit down reports.
+4. On the FlockSync host, store only that heartbeat's base endpoint in a
+   root-owned curl config outside the checkout, mode `600`:
+   ```text
+   url = "https://YOUR-MONITOR/api/push/PRIVATE-TOKEN"
+   ```
+   Omit prefilled query parameters: the wrapper supplies `status` and `msg`.
+   Treat the endpoint token as a secret. Do not commit it or put it in chat,
+   shell history, public screenshots, or packaged configuration.
+5. Test the wrapper privately with `MONITOR_CURL_CONFIG` pointing to that file.
+   If using NAS storage, also set `BACKUP_MOUNTPOINT` to its actual mountpoint.
+   The wrapper sends only a generic up/down message, never disk paths, JWTs,
+   backup filenames or account data. Curl timeouts/failures are explicit errors.
+6. After approval, schedule it under the host's service account/root every five
+   minutes, using the **actual project path**, for example:
+   ```cron
+   */5 * * * * cd /srv/flocksync && MONITOR_CURL_CONFIG=/etc/flocksync-monitor.conf BACKUP_MOUNTPOINT=/mnt/your-backup-mount sh deploy/check-server.sh 2>&1 | logger -t flocksync-resources
+   ```
+   Ensure cron has Docker/curl/mountpoint permissions/PATH, and that host
+   syslog/journal retention is bounded. For local backup storage, omit
+   `BACKUP_MOUNTPOINT`. Alert delivery uses the monitor, not cron email.
+7. Test a deliberately high free-space threshold on staging:
+   `RESOURCE_MIN_FREE_BYTES=9000000000000000 sh deploy/check-server.sh`.
+   Expect a degraded result, down heartbeat, and received notification.
+   Restore normal thresholds and confirm recovery. Simulate a missed heartbeat
+   and an HTTPS outage on an approved staging monitor, not by stopping production.
+8. Record actual notification receipt, failure/recovery timing, monitor location,
+   and scheduled execution (no secrets). These manual checks remain required.
+   A same-host probe/monitor or an asleep laptop cannot guarantee outage alerts.
+
+These are generic infrastructure notifications, not the optional administrator
+PWA push feature planned for C4.
+
 ### Backups, retention and restore
+
+See [Resource safeguards and monitoring](#resource-safeguards-and-monitoring)
+for disk-pressure checks, backup mount identity, and independent outage alerts.
 
 The Alpine sidecar runs once at startup, then daily at midnight UTC via cron. SQLite's
 online `.backup` API takes a consistent snapshot while WAL writes continue.

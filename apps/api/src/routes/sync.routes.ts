@@ -22,7 +22,8 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/sync", {
-    preHandler: [app.authenticate, app.requireOfficer]
+    onRequest: [app.authenticate, app.requireOfficer],
+    bodyLimit: 10 * 1024 * 1024
   }, async (request, reply) => {
     const payload = OfficerSyncPayloadSchema.safeParse(request.body);
     if (!payload.success) {

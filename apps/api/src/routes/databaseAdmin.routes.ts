@@ -13,6 +13,7 @@ import {
   restoreLatestDatabaseBackup, setDefaultBackupDirectory, createBackupDirectory, wipeDatabase
 } from "../services/databaseAdmin.service.js";
 import { readDatabaseAdminState } from "../services/databaseAdminState.js";
+import { createRestoreAdmission } from "../services/restoreAdmission.js";
 
 const adminOnly = (app: FastifyInstance) => [app.authenticate, app.requireAdmin];
 const uploadLimit = 128 * 1024 * 1024;
@@ -31,6 +32,10 @@ const backupCatalogError = (error: unknown): string => {
 };
 
 export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
+  const admission = createRestoreAdmission();
+  app.addHook("onError", async (request) => { await admission.release(request); });
+  app.addHook("onResponse", async (request) => { await admission.release(request); });
+  app.addHook("onTimeout", async (request) => { await admission.release(request); });
   app.get("/database", { preHandler: adminOnly(app) }, async (request, reply) => {
     try {
       const directory = typeof request.query === "object" && request.query !== null
@@ -43,7 +48,7 @@ export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.put("/database/location", { preHandler: adminOnly(app) }, async (request, reply) => {
+  app.put("/database/location", { onRequest: adminOnly(app) }, async (request, reply) => {
     const body = parseDirectory(request.body);
     if (!body.success) return reply.code(400).send({ error: "Select a valid folder under the mounted backup directory." });
     try {
@@ -55,7 +60,7 @@ export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/database/directories", { preHandler: adminOnly(app) }, async (request, reply) => {
+  app.post("/database/directories", { onRequest: adminOnly(app) }, async (request, reply) => {
     const body = parseDirectory(request.body);
     if (!body.success || body.data.relativeDirectory.length === 0) {
       return reply.code(400).send({ error: "Enter a folder path under the mounted backup directory." });
@@ -69,7 +74,7 @@ export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/database/backup", { preHandler: adminOnly(app) }, async (request, reply) => {
+  app.post("/database/backup", { onRequest: adminOnly(app) }, async (request, reply) => {
     try {
       const backup = await createDatabaseBackup();
       const state = await readDatabaseAdminState();
@@ -95,7 +100,7 @@ export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
-  app.post("/database/restore", { preHandler: adminOnly(app) }, async (request, reply) => {
+  app.post("/database/restore", { onRequest: adminOnly(app) }, async (request, reply) => {
     const parsed = RestoreBackupRequestSchema.safeParse(request.body ?? {});
     if (!parsed.success) return reply.code(400).send({ error: "Choose a valid backup to restore." });
     try {
@@ -114,10 +119,11 @@ export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post<{ Body: Buffer }>("/database/restore-upload", {
-    onRequest: adminOnly(app), bodyLimit: uploadLimit
+    onRequest: [...adminOnly(app), admission.acquire], bodyLimit: uploadLimit
   }, async (request: FastifyRequest<{ Body: Buffer }>, reply) => {
-    if (!Buffer.isBuffer(request.body) || request.body.length === 0) {
-      return reply.code(400).send({ error: "Choose a non-empty SQLite backup file." });
+    if (!Buffer.isBuffer(request.body) || request.body.length < 16
+      || !request.body.subarray(0, 16).equals(Buffer.from("SQLite format 3\0"))) {
+      return reply.code(400).send({ error: "Choose a valid SQLite backup file." });
     }
     const temporary = join(dirname(databasePath), `.restore-upload-${randomUUID()}.db`);
     try {
@@ -139,7 +145,7 @@ export const databaseAdminRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/database/wipe", { preHandler: adminOnly(app) }, async (request, reply) => {
+  app.post("/database/wipe", { onRequest: adminOnly(app) }, async (request, reply) => {
     try {
       const result = await wipeDatabase();
       request.log.warn({ backup: result.backup.filename, by: request.user.id }, "Admin wiped guild database");

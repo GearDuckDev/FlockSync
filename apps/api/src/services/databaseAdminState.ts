@@ -67,6 +67,14 @@ const assertNotSymlink = async (path: string): Promise<void> => {
 export const resolveBackupDirectory = async (relativeDirectory: string, create = false): Promise<string> => {
   const segments = relativeSegments(relativeDirectory);
   await assertNotSymlink(backupRoot);
+  if (env.BACKUP_STORAGE_ID) {
+    const marker = join(backupRoot, ".flocksync-storage-id");
+    const info = await lstat(marker);
+    if (!info.isFile() || info.isSymbolicLink()
+      || (await readFile(marker, "utf8")).trim() !== env.BACKUP_STORAGE_ID) {
+      throw new Error("Backup storage identity does not match the configured destination");
+    }
+  }
   let current = backupRoot;
   for (const segment of segments) {
     current = join(current, segment);

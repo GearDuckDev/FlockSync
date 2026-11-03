@@ -1,6 +1,6 @@
 # FlockSync Security, Uptime, and Admin Alerts Plan
 
-Status: **In progress — C2 implemented and verified**
+Status: **In progress — C3 safeguards implemented; operator monitoring setup pending**
 Implementation branch: `security-and-health-controls`  
 Scope: protect the public API from abuse, improve service/backup visibility, and
 give opted-in administrators useful alerts. This plan does not include email.
@@ -344,34 +344,107 @@ introduced in C2. Those later-phase checkboxes remain unchanged.
 
 ### 3. Add independent monitoring and resource safeguards
 
+**Ready to commit: C3 - resource safeguards and monitoring tools.**
+Development safeguards, synthetic baseline, workload tests, and monitoring
+tools/runbook are implemented. All 35 regression tests pass (10 API production,
+14 updates, 7 backup/deployment, and one each for container health, proxy trust,
+resource workload, and monitor failure handling). Workspace typecheck, affected
+API/web/backup image builds, and diff checks pass. The refreshed deployment ZIP
+contains 208 files matching current source hashes, excluding private local files.
+Disposable project containers/networks/volumes were cleaned up.
+No independent monitor or real notification destination was configured, no host
+schedule was installed, and production was not touched. Keep these operator
+acceptance tasks unchecked.
+Suggested commit message: **Add resource safeguards and uptime monitoring tools**.
+No commit, version bump, publication or deployment was performed. Authorized
+commit preparation must follow existing changed-component versioning rules.
+
 - [ ] Configure an uptime check outside the FlockSync host/network against the
   public HTTPS health endpoint. Alert when it fails repeatedly, not on one
   transient probe. This is the monitor that can report a fully down server.
   Use a free monitoring service within its free limits or an operator-owned
   independent host; do not require a paid monitoring subscription. A monitor
   on the same host cannot detect that host's total outage.
-- [ ] Establish a baseline for CPU, memory, container restarts, disk free space,
+- [x] Establish a disposable local baseline for CPU, memory, container restarts, disk free space,
   SQLite database growth, and backup destination capacity before choosing
   hard limits.
-- [ ] Add conservative, documented Compose resource/log safeguards based on
+- [ ] Record representative production/ARM64 baseline and live tunnel load
+  before rollout; synthetic local fixtures do not certify every deployment.
+- [x] Add conservative, documented Compose resource/log safeguards based on
   measured usage. Preserve enough headroom for migrations, backups, database
   restore, and supported ARM64/AMD64 hosts; do not guess a tight memory cap.
-- [ ] Document how the operator checks Compose health/logs, Docker resource
-  use, SQLite volume space, and backup freshness. Alert on disk pressure and
-  failed backups before the filesystem is full.
-- [ ] Audit request/body limits and timeouts for costly endpoints. Preserve
+- [x] Document how the operator checks Compose health/logs, Docker resource
+  use, SQLite volume space, and backup freshness.
+- [x] Implement tested disk/backup probes and optional external heartbeat
+  delivery, including explicit probe/mount/delivery failure handling.
+- [ ] Configure the host schedule and external notification receiver, then
+  confirm disk-pressure, failed-backup, missed-heartbeat and recovery alerts.
+- [x] Audit request/body limits and timeouts for costly endpoints. Preserve
   explicitly larger, bounded payload needs such as database restore and
   officer sync; do not apply a blanket limit that breaks valid use.
-- [ ] Keep backups on their configured backup storage. Do not silently fall
-  back to the database disk when the intended backup mount is missing.
+- [x] Implement an optional storage identity check in API and scheduled/pre-update
+  backups; tests reject missing/wrong markers before using a backup destination.
+- [ ] Configure `BACKUP_STORAGE_ID` on the operator's verified backup filesystem
+  and startup mount dependency. Empty settings preserve compatibility but do
+  not detect a mounted directory silently falling back to local storage.
 
 **Acceptance checks**
 
-- Compose configuration validates and container builds pass.
-- Run a disposable local deployment/test with representative sync and backup
+- [x] Compose configuration validates and container builds pass.
+- [x] Run a disposable local deployment/test with representative sync and backup
   activity; confirm limits do not restart healthy services or prevent restore.
-- Runbook identifies which checks require host access and which can be done
+- [x] Runbook identifies which checks require host access and which can be done
   from the admin UI.
+
+### C3 development evidence and handoff
+
+Local Linux AMD64 baseline used disposable Docker storage, synthetic accounts
+and data, no real tunnel or production files. Before caps, the API peaked at
+735,100,928 cgroup bytes (about 701 MiB including cache), 22 tasks, and roughly
+2.56 CPU-seconds for setup/workload/probes. Final bounded run synced 501
+characters with 600 recipe IDs each; its verified backup was 2,183,168 bytes.
+An exact 134,217,728-byte SQLite upload restored successfully through nginx.
+API peak was 783,192,064 cgroup bytes (about 747 MiB including cache), CPU usage
+about 3.88 seconds, and peak tasks 22; API/web had zero restarts/OOM exits.
+Web sampled around 14 MiB; scheduled backup peaked at 9,424,896 bytes.
+These synthetic fixtures do not model sustained bot floods or every large
+database/real-guild workload. Disk free space and database/WAL sizes were also
+measured in the test volumes, not on the operator's remote server.
+
+Configured ceilings: API 2 GiB/2 CPUs/128 tasks; nginx 256 MiB/1 CPU/128 tasks;
+tunnel 256 MiB/1 CPU/128 tasks; backup 512 MiB/1 CPU/64 tasks. Equal memory/swap
+ceilings avoid additional swap. Rotating Docker local logs use 3 x 10 MiB per
+container, plus overhead. Builds/host-wide disk use still need operator budgets.
+
+Regression evidence includes early authentication before malformed expensive
+bodies, ordinary/auth/sync/upload body ceilings, one-byte-over-limit rejection,
+valid 128 MiB restore, concurrent-upload `409` and abort release, storage marker
+rejection/recovery, actual probe disk-pressure exit `2`, and mocked
+up/down/missing-mount/delivery-rejection paths. Invalid SQLite headers are now
+rejected explicitly; the guard test exposed that tiny inputs could otherwise be
+treated by SQLite as an empty database during restore.
+
+Reproduce without real credentials/tunnel:
+
+```powershell
+docker build -f Dockerfile.api -t flocksync-api:c2-tests -t flocksync-api:c1-tests .
+docker build -f Dockerfile.web -t flocksync-web:c2-tests -t flocksync-web:c1-tests .
+docker build -f deploy\Dockerfile.backup -t flocksync-backup:update-tests .
+$env:C3_LIMITED='1'
+node --test deploy\test\resources.test.mjs deploy\test\monitoring.test.mjs deploy\test\updates.test.mjs deploy\test\health.test.mjs deploy\test\proxyTrust.test.mjs
+Remove-Item Env:\C3_LIMITED
+```
+
+The test fixtures reuse C1/C2 image labels; those are local test names, not
+component version bumps. The resource test temporarily creates a 128 MiB
+fixture and several snapshots in uniquely named disposable volumes, then removes
+only its project. Baseline mode (omit `C3_LIMITED`) disables API/web runtime caps
+and sends the large restore directly to API; capped mode verifies nginx too.
+API production/update regressions and workspace typecheck must also pass.
+Use [the operator runbook](./DEPLOYMENT.md#resource-safeguards-and-monitoring)
+for the separate host/monitor setup. Do not point these workload tests at a live
+deployment, change real backup mounts, or reuse the retired test tunnel token.
+Runtime versions remain unchanged until authorized commit preparation.
 
 ### 4. Add optional admin push notifications
 

@@ -27,6 +27,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   };
 
   app.post("/login", {
+    bodyLimit: 4096,
     config: {
       rateLimit: {
         max: env.AUTH_LOGIN_RATE_LIMIT_MAX,
@@ -53,6 +54,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/register", {
+    bodyLimit: 4096,
     config: {
       rateLimit: {
         max: env.AUTH_REGISTER_RATE_LIMIT_MAX,

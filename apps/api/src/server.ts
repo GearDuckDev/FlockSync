@@ -19,6 +19,10 @@ import { healthRoutes } from "./routes/health.routes.js";
 export const buildServer = async () => {
   const app = Fastify({
     logger: true,
+    bodyLimit: 1024 * 1024,
+    requestTimeout: 300_000,
+    connectionTimeout: 300_000,
+    keepAliveTimeout: 5_000,
     trustProxy: env.TRUSTED_PROXY_IP ?? false
   });
   await app.register(cors, {
@@ -36,7 +40,7 @@ export const buildServer = async () => {
   });
   await registerAuthPlugin(app);
   app.addContentTypeParser("application/octet-stream", {
-    parseAs: "buffer", bodyLimit: 128 * 1024 * 1024
+    parseAs: "buffer"
   }, (_request, body, done) => done(null, body));
 
   await app.register(healthRoutes);

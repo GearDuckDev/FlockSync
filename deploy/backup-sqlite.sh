@@ -35,6 +35,14 @@ backup_once() {
         return 1
     fi
 
+    if [ -n "${BACKUP_STORAGE_ID:-}" ]; then
+        if [ -L /backups/.flocksync-storage-id ] ||
+            [ ! -f /backups/.flocksync-storage-id ] ||
+            [ "$(cat /backups/.flocksync-storage-id)" != "$BACKUP_STORAGE_ID" ]; then
+            echo "Required backup storage identity is missing or incorrect; refusing fallback" >&2
+            return 1
+        fi
+    fi
     backup_directory=/backups
     backup_subdirectory=
     if [ -f /data/admin-database-state.json ]; then

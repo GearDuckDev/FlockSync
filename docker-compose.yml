@@ -1,5 +1,16 @@
+x-bounded-logs: &bounded-logs
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   api:
+    mem_limit: ${API_MEMORY_LIMIT:-2g}
+    memswap_limit: ${API_MEMORY_LIMIT:-2g}
+    cpus: ${API_CPU_LIMIT:-2}
+    pids_limit: 128
+    logging: *bounded-logs
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -23,6 +34,11 @@ services:
     restart: unless-stopped
     stop_grace_period: 30s
   web:
+    mem_limit: ${WEB_MEMORY_LIMIT:-256m}
+    memswap_limit: ${WEB_MEMORY_LIMIT:-256m}
+    cpus: ${WEB_CPU_LIMIT:-1}
+    pids_limit: 128
+    logging: *bounded-logs
     build:
       context: .
       dockerfile: Dockerfile.web
@@ -38,6 +54,11 @@ services:
         condition: service_healthy
     restart: unless-stopped
   cloudflared:
+    mem_limit: ${TUNNEL_MEMORY_LIMIT:-256m}
+    memswap_limit: ${TUNNEL_MEMORY_LIMIT:-256m}
+    cpus: ${TUNNEL_CPU_LIMIT:-1}
+    pids_limit: 128
+    logging: *bounded-logs
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel --no-autoupdate run
@@ -50,6 +71,13 @@ services:
       web:
         condition: service_healthy
   db-backup:
+    mem_limit: ${BACKUP_MEMORY_LIMIT:-512m}
+    memswap_limit: ${BACKUP_MEMORY_LIMIT:-512m}
+    cpus: ${BACKUP_CPU_LIMIT:-1}
+    pids_limit: 64
+    logging: *bounded-logs
+    environment:
+      BACKUP_STORAGE_ID: ${BACKUP_STORAGE_ID:-}
     build:
       context: .
       dockerfile: deploy/Dockerfile.backup
