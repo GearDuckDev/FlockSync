@@ -60,53 +60,30 @@ This is the workspace-wide instruction entry point. Read the current
 [release notes and environment handoff](../RELEASE-NOTES.md),
 [release checklist](../RELEASES.md), [deployment guide](../DEPLOYMENT.md), and
 [project overview](../README.md) before release/deployment work. Do not create a
-second competing root instructions file. This inventory was checked on
-**2026-10-27**; re-check mutable tools, versions, git status, and publication state.
+second competing root instructions file. Re-check tools, versions, git status,
+and publication state in the current contributor's environment.
 
 ### Current checkpoint and worktree safety
 
-- Repository: `GearDuckDev/FlockSync`; Windows checkout
-  `C:\Users\johnn\Coding Projects\FlockSync`; PowerShell terminal. Use quoted
-  Windows paths locally; Linux shell paths apply only inside containers/on remote server.
-- At handoff: branch `main`, commit `38e535e`, tag `v0.7.1`, aligned with
-  `origin/main`. These are local observations, not proof of GitHub/CurseForge
-  publication or successful production deployment.
-- Component versions: desktop **0.5.0**, API/web **0.4.1**, shared types
-  **0.4.1**, main addon **0.5.1**, AppHelper **0.2.2**, root **0.2.2**.
-  Re-read package manifests/TOCs and `release/flocksync-release.json`.
-- An existing uncommitted change in
-  [AttunementFamilyRow.tsx](../apps/web/src/components/AttunementFamilyRow.tsx)
-  predates this documentation task. Preserve it; it has no component version
-  bump yet. Do not describe the dirty tree as the exact released v0.7.1 sources.
+- Repository: `GearDuckDev/FlockSync`. Resolve the actual checkout directory;
+  never assume a maintainer's username, machine, or project location.
+- Inspect branch, status, manifests/TOCs, and `release/flocksync-release.json`
+  before resuming. Preserve pre-existing work and distinguish local builds
+  from published releases and deployed sources.
 - Never infer ZIP freshness from filenames, tag, or timestamps alone. Inspect
   contents/manifest and rebuild from the final intended sources. Never reuse
   an already published tag for changed code, or publish a local rebuild as-is.
 
-### Verified local tools and package source of truth
+### Tools and package source of truth
 
-| Tool | Installed version / state |
-| --- | --- |
-| Node / pnpm / Git | `24.22.0` / `12.11.2` / `2.56.0.windows.3` |
-| VS Code | `1.143.1`, x64 |
-| Docker Desktop engine / CLI | responsive Linux x86_64 engine / `29.9.2`; context `desktop-linux` |
-| Docker Compose / Buildx | `5.6.1` / `0.38.1` |
-| VS Code Container Tools | `ms-azuretools.vscode-containers@2.5.3` |
-| VS Code Dev Containers | `ms-vscode-remote.remote-containers@0.469.0` |
-| Editor tooling | ESLint `3.0.34`, Prettier `12.4.0`, GitHub Actions `0.32.3` |
-| Python / MSBuild | Python `3.14.7`; VS 18 Build Tools MSBuild `18.11.1` installed, not on PATH |
-| Lua / native compiler tools | `lua`, `lua5.1`, `luajit`, `make`, `g++`, `msbuild`, `devenv` not found on PATH |
-| .NET | Host `10.0.13`; no SDK installed; not a FlockSync prerequisite |
-
-- MSBuild location:
-  `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe`.
-  This does not certify C++ workloads or a usable `cl` toolchain.
-- No `.devcontainer` / `devcontainer.json` exists. Installed editor extensions
-  do not mean this repo runs inside a dev container. Dockerfiles/Compose are
-  the container build definitions. At inventory time Docker had no containers;
-  the production remote server's installed versions/status were not remotely inspected.
-- [VS Code settings](../.vscode/settings.json) configure WoW API Lua annotations;
-  annotation files are not a Lua runtime. Use Lua **5.1** for addon checks, not
-  the installed Python interpreter or a newer incompatible Lua runtime.
+- Use paths and shell syntax appropriate to the current contributor's host.
+  Linux shell paths apply inside containers/on a Linux server.
+- Verify Node/pnpm, Docker/Compose, and Lua availability locally rather than
+  assuming a maintainer's inventory. Dockerfiles define container build tools.
+  Editor extensions and annotations are not proof of installed runtimes.
+- [VS Code settings](../.vscode/settings.json) contain portable project paths.
+  Configure optional WoW API annotation-library paths in personal editor settings.
+  Use Lua **5.1** for addon checks, not Python or an incompatible Lua runtime.
 - Exact declared dependencies/scripts live in [root package.json](../package.json),
   [API](../apps/api/package.json), [web](../apps/web/package.json),
   [desktop](../apps/desktop/package.json), and
@@ -114,9 +91,12 @@ second competing root instructions file. This inventory was checked on
   [pnpm lockfile](../pnpm-lock.yaml) (format 9.0) pins resolutions;
   [workspace configuration](../pnpm-workspace.yaml) defines package/build permissions.
   Do not replace these with npm/yarn or upgrade packages just to resume work.
-- Runtime/build inventory and exact resolved versions are in the release-notes
-  handoff below. Restore missing dependencies with `pnpm install --frozen-lockfile`;
+- Keep the lockfile: it pins dependencies, not operator configuration.
+  Restore missing dependencies with `pnpm install --frozen-lockfile`;
   do not reinstall a working checkout unnecessarily.
+- Store instance-specific runbooks, host inventories, access policies, and
+  local troubleshooting notes in ignored `*.local.md` files, not shared docs.
+  Never read, commit, or package actual environment credentials.
 
 ### Commands, data flow, and artifact destinations
 
@@ -137,8 +117,8 @@ test. Root build does not itself produce installers or addon ZIPs.
 | --- | --- |
 | `FlockSync-Raider-Only.zip` | Members: extract to the actual client's `Interface\AddOns`, yielding `FlockSync\FlockSync.toc` |
 | `FlockSync-Addon-Bundle.zip` | Collectors: same AddOns directory, yielding sibling `FlockSync` and `FlockSync_AppHelper` folders |
-| `FlockSync-Setup-0.5.0-x64.exe` | Windows collector installer; run it, do not extract into AddOns or remote server |
-| `FlockSync-Portable-0.5.0-x64.exe` | Windows collector portable alternative; choose one desktop download |
+| `FlockSync-Setup-<desktop-version>-x64.exe` | Windows collector installer; run it, do not extract into AddOns or remote server |
+| `FlockSync-Portable-<desktop-version>-x64.exe` | Windows collector portable alternative; choose one desktop download |
 | `FlockSync_Remote_Server_Deploy.zip` | Server operator: extract `FlockSync` source folder on remote server; run deployment commands from inside it |
 | `flocksync-release.json` | Attach unchanged beside the five payloads on one public GitHub release; do not put in AddOns |
 

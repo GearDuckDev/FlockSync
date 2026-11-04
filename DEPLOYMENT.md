@@ -1,8 +1,16 @@
 # Production deployment
 
-For the configured Pi/NAS installation, use the
+For routine maintenance of your own installation, use the
 [server operations quick reference](./SERVER-OPERATIONS.md) for everyday status,
-maintenance stop/start, and updates with the NAS-dependent startup service.
+maintenance stop/start, and backup-aware updates. All domains and storage paths
+below are examples: substitute your own. No maintainer server, NAS, monitoring
+installation, or existing database is required.
+
+The committed `pnpm-lock.yaml` pins dependency versions for reproducible builds
+on supported platforms; keep it. It contains relative workspace links, not
+server credentials or a dependency on the maintainer's checkout. Real `.env`
+files, local Compose overrides, databases, and `*.local.*` notes must remain
+untracked. Only `.env.example` templates belong in source control.
 
 ## 1. Remote server and backup storage
 
@@ -12,6 +20,9 @@ To prepare a clean source archive on Windows, run
 `FlockSync`. The archive includes the pnpm lockfile but excludes dependencies,
 build outputs, database files, local environment secrets and symlinks/junctions.
 The script removes its temporary staging directory after packaging.
+The ZIP also includes this guide, `SERVER-OPERATIONS.md`, and the license.
+Development checklists and optional notification plans linked below are in
+the public source repository rather than installed host configuration.
 
 Use a **64-bit** Linux installation, Docker Engine and the
 Docker Compose plugin. ARM64 and AMD64 hosts are supported, including virtual
@@ -83,7 +94,7 @@ only when an actual known private proxy sits in front.
 
 Deployment validation locally emulates the connector's headers; it does not
 certify a live Cloudflare tunnel. Before distributing this change, complete the
-[C1 maintainer checklist](./SECURITY-HEALTH-PLAN.md#c1-maintainer-test-handoff).
+[C1 maintainer checklist](https://github.com/GearDuckDev/FlockSync/blob/main/SECURITY-HEALTH-PLAN.md#c1-maintainer-test-handoff).
 For an existing deployment, preserve settings/data and use
 `sh deploy/update-server.sh` after approval; network membership changes require
 container recreation. Do not restart a live server just to test this candidate.
@@ -127,8 +138,16 @@ and export permissions must allow it. Test creating a file as the API user too.
 Never store storage credentials in the repository. Configure service startup
 ordering so network storage is mounted **before** Compose; otherwise backups can
 land on the remote server's mountpoint directory instead. For local backup
-storage, set `NAS_BACKUP_PATH=./data/backups`
-and create it with `mkdir -p data/backups` before starting Compose.
+storage, set `NAS_BACKUP_PATH=./data/backups` and prepare its permissions before
+starting Compose:
+
+```sh
+mkdir -p data/backups
+sudo chown 1000:1000 data/backups
+```
+
+This is for a new local backup directory only. Do not recursively change an
+existing share's ownership; verify its configured export permissions instead.
 
 ### Start the stack
 
@@ -146,9 +165,9 @@ docker compose exec web wget -qO- http://127.0.0.1/ready
 
 The API runs as UID 1000 and needs write access to `data/sqlite`. It is not
 published directly. Nginx serves the SPA and proxies `/api/`, `/health`, and `/ready`.
-Visit `https://flocksync.gearduckdev.com` and log in with the initial admin
+Visit your own hostname (for example `https://flocksync.example.com`) and log in with the initial admin
 credentials. The desktop app's **API URL** should be
-`https://flocksync.gearduckdev.com` (no `/api` suffix; the desktop app adds it).
+`https://flocksync.example.com` (no `/api` suffix; the desktop app adds it).
 
 Cloudflare provides public HTTPS and routes traffic through an outbound tunnel;
 no router port forwarding is needed. Keep secrets and backups
@@ -164,7 +183,7 @@ Use a domain managed by Cloudflare for your public hostname.
    `.env`. Keep the token private; do not paste the entire
    Cloudflare installation command or commit the token.
 4. In the tunnel's **Public Hostname** configuration, route
-   `flocksync.gearduckdev.com` to **HTTP** service **`http://web:80`**. This is the
+   your hostname, for example `flocksync.example.com`, to **HTTP** service **`http://web:80`**. This is the
    internal Docker service, not `localhost` or the remote server's IP address.
 5. On the remote server, from the extracted project folder, start the stack:
 
@@ -178,7 +197,7 @@ Use a domain managed by Cloudflare for your public hostname.
    no `--env-file` flag is needed.
 
 Confirm the tunnel is healthy in Cloudflare and visit
-`https://flocksync.gearduckdev.com/health`. The web and API containers have no
+`https://flocksync.example.com/health` (replace the hostname). The web and API containers have no
 published host ports, so direct access at the remote server's IP/port no longer works.
 Remove any old `WEB_PORT` setting; it is no longer used.
 
@@ -442,7 +461,7 @@ mounts, scheduling and capacity planning require the host operator.
 #### Independent, no-subscription monitoring setup
 
 For optional remote dashboard access and deferred Discord/mobile delivery, see
-the [monitoring access and future notification plan](./docs/MONITORING-NOTIFICATIONS-PLAN.md).
+the [monitoring access and future notification plan](https://github.com/GearDuckDev/FlockSync/blob/main/docs/MONITORING-NOTIFICATIONS-PLAN.md).
 Protect the monitor's dashboard separately; do not put browser-only Access
 authentication in front of FlockSync's public health probes.
 
@@ -616,7 +635,7 @@ The generated manifest records each component's version; an unchanged desktop
 or server does not trigger an update just because the overall tag changed.
 Mark alpha/beta releases as prereleases; stable releases must not be marked as
 prereleases. Use `.\scripts\package-release.ps1 -ReleaseVersion <version>` for
-one-command packaging. See [RELEASES.md](./RELEASES.md) for the full tagging,
+one-command packaging. See [RELEASES.md](https://github.com/GearDuckDev/FlockSync/blob/main/RELEASES.md) for the full tagging,
 versioning, build, upload, and recurring release checklist.
 
 The update banner's **Download on GitHub** opens the release page. Installation
@@ -659,7 +678,7 @@ desktop may instead report "Unexpected sync response from server" when the new
 API returns fields its strict validator does not recognize.
 
 If desktop sync reports `Failed to parse URL from /api/sync`, set the full
-server origin (for example `https://flocksync.gearduckdev.com`, without `/api`)
+server origin (for example `https://flocksync.example.com`, without `/api`)
 in desktop settings and save. Older clients could clear that previously
 documented hostname when reloading configuration; install a corrected desktop
 build to retain it. Sync watches only `FlockSync.lua`; unrelated addon saves,
@@ -748,7 +767,8 @@ docker compose ps
 
 Keep the existing `.env` and `data/sqlite` outside the overwritten
 source archive; the ZIP intentionally excludes local secrets and database files.
-The configured tunnel hostname remains `flocksync.gearduckdev.com`.
+Keep your own configured tunnel hostname; the source archive does not select
+or change it.
 
 Build release addon archives from the development machine with:
 

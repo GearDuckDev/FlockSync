@@ -7,6 +7,7 @@
 - Backups now record verification evidence. Optional backup-storage identity markers help refuse writes to the wrong or missing destination. Failed pre-update backups continue to block server updates.
 - Added configurable container memory/CPU ceilings, process and log limits, disk-space checks, and request safeguards. Concurrent restore uploads are restricted, and valid 128 MiB restores remain supported through nginx, subject to external proxy limits.
 - Added an operator maintenance guide and resource/backup checks. Uptime Kuma and protected remote access are separately configured infrastructure, not automatically installed for other servers.
+- Fresh setup is instance-independent: generic deployment/operations guides are included in the server ZIP. Each operator supplies their own environment, tunnel, domain, and backup location; local configuration, databases, and operator notes are excluded. The dependency lockfile is intentionally included for reproducible builds.
 - Existing guild headers, themes, account data, backup locations, restore/wipe safety, collector permissions, and saved client paths are retained. No email verification, password-reset email, or notification delivery is introduced.
 
 ### Release channel and scope
@@ -15,11 +16,11 @@ This is a normal **Release-channel**, **pre-1.0** feature release, prepared as *
 API/web advance **0.6.1 -> 0.7.0** and shared types **0.6.0 -> 0.7.0** from the branch's previous source versions. Desktop **0.5.1**, main addon **0.6.0**, and AppHelper **0.2.2** are unchanged. They are rebuilt/repackaged for the complete download set; already-current desktop/addon installations do not need reinstalling.
 
 ### Upgrade instructions
-1. Server operators: preserve `.env`, `data`, independent backups, and any local Compose override or startup units. Stage and inspect `FlockSync_Remote_Server_Deploy.zip` before applying its source. For the NAS-managed Pi, stop **only** `flocksync-nas.timer` during updates; leave the active startup service alone. Follow [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for that host, not generic stop/start commands.
+1. Server operators: preserve `.env`, `data`, independent backups, and any local Compose override or startup units. Stage and inspect `FlockSync_Remote_Server_Deploy.zip` before applying its source. If you configured an external startup/retry timer, pause only that trigger during updates; do not stop an active mount-dependent service merely to pause retries. Follow [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) and your own private host runbook.
 2. Verify the intended backup storage is actually mounted and writable by the API user, not just by root. Keep the existing `NAS_BACKUP_PATH`, folder settings, and permissions. If enabling `BACKUP_STORAGE_ID`, create the matching `.flocksync-storage-id` on the verified destination first; never copy example settings over production secrets.
 3. Review new settings in `.env.example`. Public registration defaults on; set `PUBLIC_REGISTRATION_ENABLED=false` for admin-created accounts only. Review proxy subnet conflicts and resource ceilings for your host. Confirm Linux memory limits are actually enforced and leave room for the OS, other apps, and builds.
 4. From the deployed project directory, run `sh deploy/update-server.sh`. It verifies a fresh pre-update backup before rebuilding/recreating API/web. Expect a brief interruption. On failure, inspect the error rather than bypassing the backup guard. Never use `docker compose down -v` or restore automatically merely because an update failed.
-5. Check container health, `/ready` JSON, website login, collector sync, and fresh verified backup health. Use `/ready` rather than the SPA homepage for uptime checks; it does not itself certify backup freshness. On the NAS-managed Pi, re-enable the retry timer only after checks succeed. The ZIP does not install host-specific systemd units, Kuma, or a resource-check schedule.
+5. Check container health, `/ready` JSON, website login, collector sync, and fresh verified backup health. Use `/ready` rather than the SPA homepage for uptime checks; it does not itself certify backup freshness. Re-enable any paused startup/retry automation only after checks succeed. The ZIP does not install host-specific systemd units, Kuma, or a resource-check schedule.
 6. Already on desktop **0.5.1**, addon **0.6.0**, and AppHelper **0.2.2**? Keep them; no reinstall is needed. Older collectors quit desktop fully through its tray before replacing it and preserve settings. Older addon users exit WoW, extract into `Interface\AddOns` without extra nesting, and preserve SavedVariables.
 7. No wipe or restore is required. Existing databases migrate on startup. If restoring, the safety backup is retained and restored accounts/credentials replace current ones. Wipe requires confirmation and saves a `final` backup; accounts and backup-folder settings remain.
 8. After an intentional wipe, use logout -> successful desktop sync -> login to load the reset marker. Keep final/pre-restore backups until manually reviewed; daily retention does not remove them. Older backups without guild metadata need a fresh collector sync to populate the guild header.
@@ -50,7 +51,9 @@ Fresh release preparation passed workspace typecheck, API/web builds, Windows de
 
 The operator previously built this security runtime on ARM64 and verified real proxy behavior, protected remote Kuma access/session expiry, kernel limits, backup health, normal reboot ordering, simulated failed-dependency retry/recovery, and a capped disposable workload with 501 characters and a 128 MiB restore. A temporarily adjusted cron schedule triggered a successful automatic backup and was restored to midnight UTC. These are operator-reported results, not a physical NAS outage test or a sustained-capacity guarantee.
 
-All archived files matched final sources: 208 server files, 37 member-addon files, and 39 collector-bundle files. Archive checks verified expected paths/versions and intentional exclusions of private environments, databases, config artifacts, and links. Both EXEs match desktop packaging output and identify 0.5.1. The release directory contains exactly the six current assets; no superseded downloads remain.
+All archived files matched final sources: 212 server files, 37 member-addon files, and 39 collector-bundle files. Archive checks verified expected paths/versions and intentional exclusions of private environments, databases, config artifacts, and links. Both EXEs match desktop packaging output and identify 0.5.1. The release directory contains exactly the six current assets; no superseded downloads remain.
+
+Portability follow-up passed two packaging/ignore regressions and four desktop configuration tests, plus workspace typecheck. An isolated installation extracted from the ZIP built API/web/backup images using the frozen lockfile and newly generated settings, initialized an empty database/new admin, served the SPA/readiness/empty roster, and verified a startup backup. It used no maintainer environment, database, NAS, or monitoring service. No real Cloudflare connector was started; public routing still requires the new operator's own tunnel/domain.
 
 No fresh in-game, packaged installer UI, physical NAS interruption, or independent total-host outage test is claimed. Lua/addon behavior is unchanged; Lua runtime tests were not rerun. The older `localCapture.test.lua` harness has a known missing `GetInventoryItemTexture` mock and is not counted as passing.
 
@@ -74,20 +77,17 @@ for coding/build rules, [RELEASES.md](./RELEASES.md) for packaging/publication, 
 Do not read secrets into an agent transcript to reconstruct the environment.
 
 #### Current checkpoint and pending work
-- Branch `security-and-health-controls`, runtime checkpoint `54baa09`;
-  release versions/docs remain uncommitted. Re-check Git status before resuming.
+- Runtime security checkpoint was `54baa09`; inspect current branch/history
+  and Git status before resuming rather than assuming release changes are uncommitted.
   Published GitHub latest was `v0.9.0`; no `v0.10.0` remote tag was found during
   preparation. Re-check before publication; no tag was created.
 - The local manifest identifies 0.10.0 with server 0.7.0, desktop 0.5.1,
   addon 0.6.0, and helper 0.2.2. Shared types are 0.7.0. All six downloads
   were regenerated, including unchanged components, rather than reused by name.
-- The Pi previously deployed the security runtime under old component versions.
-  The final versioned release has not been applied there. Preserve `.env`,
-  data, the Pi-local override, startup units, NAS marker, and independent backups.
+- Existing operators must preserve their own `.env`, data, optional local
+  override/startup units, storage marker, and independent backups.
   See [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) and
   [SECURITY-HEALTH-PLAN.md](./SECURITY-HEALTH-PLAN.md) for acceptance evidence.
-- Windows chat-diff Keep ownership errors do not mean files are unsaved.
-  Do not discard documents or alter editor session databases to clear them.
 - Current functionality includes linked/separate UI/background theme colors,
   admin defaults/personal overrides, grouped attunement alts, tray preferences,
   indexed Lua equipment parsing, and logout/character-switch gear preservation.
@@ -116,43 +116,20 @@ Do not read secrets into an agent transcript to reconstruct the environment.
    release trigger.** Pre-1.0 releases without alpha/beta suffix remain normal
    Release-channel builds. Preparing builds does not authorize git/publication.
 
-#### Development environment and installed tooling
-The Windows checkout is `C:\Users\johnn\Coding Projects\FlockSync`;
-use PowerShell, quote paths containing spaces, and use Windows path separators
-locally. server/container commands use Linux paths and `sh`.
-
-Tool versions below were inventoried October 27 unless noted; re-check mutable
-tools when resuming. Docker was started and used successfully for this release.
-
-| Tool | Inventoried local version / availability |
-| --- | --- |
-| Node / pnpm / Git | `24.22.0` / `12.11.2` / `2.56.0.windows.3` |
-| VS Code | `1.143.1` x64 |
-| Docker Desktop Linux engine / CLI | responsive / `29.9.2`, context `desktop-linux`, x86_64 |
-| Compose / Buildx | `5.6.1` / `0.38.1` |
-| VS Code Container Tools | `ms-azuretools.vscode-containers@2.5.3` |
-| VS Code Dev Containers | `ms-vscode-remote.remote-containers@0.469.0` |
-| ESLint / Prettier / GitHub Actions extensions | `3.0.34` / `12.4.0` / `0.32.3` |
-| Python | `3.14.7` at `C:\Python314\python.exe` |
-| Visual Studio Build Tools | MSBuild `18.11.1`, installed outside PATH |
-| .NET | Host `10.0.13`, no SDK; not required for the app |
-| Lua 5.1 / LuaJIT / make / g++ | Not found on PATH; do not report addon runtime tests as passed without an interpreter |
-
-MSBuild exists under
-`C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin`;
-this does not establish that C++ workloads are installed. WoW annotation paths
-in [.vscode/settings.json](./.vscode/settings.json) are editor libraries, not
-an interpreter. No `.devcontainer` configuration exists: Container Tools and
-Dev Containers are installed extensions, not evidence that the workspace is
-containerized. Docker inventory showed no local running containers; it is not
-the production remote server. Re-check installed versions and engine health before use.
+#### Development environment
+Use the current contributor's checkout path and shell. Container/server
+commands target Linux and `sh`; Windows commands use PowerShell.
+Check the manifest's supported Node range, pinned pnpm, Docker/Compose, and
+Lua 5.1 when needed. Installed editor extensions are not installed runtimes.
+Optional local annotation-library paths belong in personal editor settings.
+Do not copy a maintainer's machine inventory into installation requirements.
 
 #### Packages and build definitions
 Use the committed [lockfile](./pnpm-lock.yaml), format **9.0**, with pnpm
 **12.11.2**; [workspace configuration](./pnpm-workspace.yaml) covers `apps/*` and
 `packages/*` and allows native builds for `better-sqlite3`, `esbuild`, `electron`,
 and `electron-winstaller`. Root declares Node `>=20`; Docker builds use Node 22,
-while local Node is 24. Do not assume those versions are interchangeable for
+while contributors may use another supported Node version. Do not assume versions are interchangeable for
 native binaries. Restore only missing dependencies with
 `pnpm install --frozen-lockfile`, not npm/yarn or unsolicited package upgrades.
 

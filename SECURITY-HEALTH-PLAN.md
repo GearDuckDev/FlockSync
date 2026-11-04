@@ -15,8 +15,8 @@ this branch's scope. Future notification details are retained in the
   or a prolonged outage.
 - Keep operator-specific credentials and infrastructure configuration out of
   source control and release artifacts.
-- Keep safeguards useful for self-hosted guild servers, not just
-  `flocksync.gearduckdev.com`.
+- Keep safeguards useful for every self-hosted guild server, not just a
+  maintainer's deployment.
 - Keep Discord, mobile/PWA push, and external alert delivery outside this
   branch's acceptance requirements. Preserve their future plan without
   installing or implementing them. Same-host monitoring is not independent
@@ -584,15 +584,12 @@ task. This is a scope exclusion, not completed notification functionality.
   isolated dependency refusal/retry/recovery. Detailed evidence is in the
   [monitoring checkpoint](./docs/MONITORING-NOTIFICATIONS-PLAN.md).
 - [Server operations](./SERVER-OPERATIONS.md) is linked prominently from README
-  and deployment documentation. Preserve the Pi-local Compose override,
-  systemd service/timer, production environment, storage marker, and backups:
-  the deployment source ZIP does not install those host-specific files.
+  and deployment documentation. It is generic guidance; preserve each host's
+  own optional Compose override, systemd service/timer, production environment,
+  storage marker, and backups. The ZIP does not install host-specific files.
 - Remaining limitations: actual NFS outage/hangs and sustained real-traffic
   capacity are not certified; notifications, automated resource alert delivery,
   and independent outage monitoring are outside branch scope.
-- VS Code's overlapping-chat Keep error remains an editor review-state issue.
-  The five changed documents are saved; accepting a chat diff is not a Git
-  commit. Do not discard files or modify editor session databases to clear it.
 - Suggested documentation commit: **Document secure monitoring and safe server maintenance**.
   Documentation needs no runtime version bump. A later combined release must
   follow changed-component versioning and packaging rules separately.
@@ -634,6 +631,28 @@ and applying the final versioned release to production were not.
 - Suggested release commit: **Protect sign-in, verify backups, and safeguard server uptime**.
   The prepared versions are final for this checkpoint; do not bump them again
   solely when committing the same changes.
+
+### Portable distribution follow-up
+
+- Replace instance-specific public runbooks, host inventories, domain examples,
+  and editor-library paths with generic guidance. Preserve operator records
+  privately outside the repository; public monitoring acceptance starts unchecked
+  for every new installation.
+- Keep the dependency lockfile and relative workspace links. Broaden Git/package
+  exclusions for private environment variants, local overrides/notes, SQLite
+  sidecars, data directories, and stale output.
+- Include generic deployment/operations guides and the license in the server
+  ZIP. It now contains 212 source/document files rather than the earlier 208.
+- Two packaging/ignore regressions and four desktop configuration regressions
+  passed, including empty URL/auth on fresh desktop setup; workspace typecheck
+  passed. Runtime/component versions did not change.
+- A new isolated Docker project extracted from the ZIP built API/web/backup
+  using the frozen lockfile and new example-derived credentials/settings.
+  Empty-database migrations, new administrator login, empty roster, SPA,
+  readiness, and verified startup backup all passed without existing instance
+  configuration. Test containers/images/networks and temporary data were removed.
+- Public DNS/tunnel activation was not tested: operators must provide their own
+  Cloudflare account, token, and domain under the documented deployment model.
 
 ## Security and reliability constraints
 

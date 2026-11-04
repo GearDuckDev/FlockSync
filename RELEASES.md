@@ -30,7 +30,7 @@ installed version with their own manifest entry, never with the bundle tag.
 - Notifications are excluded from this branch; remote Kuma access is optional,
   separately configured infrastructure, not an installed release feature.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
-  [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for the configured Pi/NAS host.
+  [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 
 ## Each time you release
 

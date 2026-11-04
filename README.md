@@ -15,8 +15,8 @@ Confirm your server's rules before using the addon and desktop bridge.
 [Server setup](./DEPLOYMENT.md) | [Release notes](./RELEASE-NOTES.md) |
 [Screenshot gallery](./docs/SCREENSHOTS.md)
 
-**Running the Pi server? [Server operations quick reference](./SERVER-OPERATIONS.md)**
-covers dashboard access, status checks, safe stop/start, and NAS-aware updates.
+**Hosting your own server? [Server operations quick reference](./SERVER-OPERATIONS.md)**
+covers status checks, safe stop/start, and backup-aware updates.
 
 ## See it in action
 
@@ -177,9 +177,10 @@ Collectors only catch broadcasts while logged in; the app cannot retrieve
 messages sent while offline. AppHelper installation and local test overrides
 do not replace server authentication or grant website permissions.
 
-The GearDuckDev-hosted dashboard is
-[flocksync.gearduckdev.com](https://flocksync.gearduckdev.com). Other guilds should
-use the server address supplied by their own administrator.
+Use the server address supplied by your own guild administrator. Fresh desktop
+installs have no server URL configured; they do not connect to a maintainer's
+instance. Each operator supplies their own domain, tunnel, credentials, and
+backup location.
 
 ## How synchronization works
 
