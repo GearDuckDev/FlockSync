@@ -5,7 +5,8 @@ import Database from "better-sqlite3";
 import { db, databasePath, sqliteConnection } from "../db/index.js";
 import {
   attendance, characters, deletedCharacters, lootHistory, officerTasks,
-  playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity
+  playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity,
+  lootSessions, lootSessionAudit
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
 import { checkIntegrity, createBackupUnlocked } from "./databaseBackup.js";
@@ -76,9 +77,11 @@ const replaceDatabaseContents = async (sourcePath: string): Promise<void> => {
           throw new Error(`Selected backup schema differs at table ${name}`);
         }
       }
-      // Accounts must exist before restoring character/theme foreign keys.
+      // Restore parents before their dependent character/theme and loot audit rows.
       const restoreOrder = [...names].sort((a, b) =>
-        Number(b === "users") - Number(a === "users") || a.localeCompare(b));
+        Number(b === "users") - Number(a === "users")
+        || Number(b === "loot_sessions") - Number(a === "loot_sessions")
+        || a.localeCompare(b));
       sqliteConnection.transaction(() => {
         sqliteConnection.pragma("defer_foreign_keys = ON");
         for (const name of [...restoreOrder].reverse()) sqliteConnection.exec(`DELETE FROM main."${name}"`);
@@ -139,6 +142,8 @@ export const wipeDatabase = () => runExclusive(async () => {
   await writeDatabaseAdminState({ ...state, databaseResetAt });
   try {
     db.transaction((transaction) => {
+      transaction.delete(lootSessionAudit).run();
+      transaction.delete(lootSessions).run();
       transaction.delete(attendance).run();
       transaction.delete(lootHistory).run();
       transaction.delete(officerTasks).run();

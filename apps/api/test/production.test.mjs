@@ -31,7 +31,9 @@ test("migrations initialize fresh DBs, adopt legacy rows, and are idempotent", a
       }
       migrateDatabase(db);
       migrateDatabase(db);
-      assert.equal(db.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get().n, 4);
+      assert.equal(db.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get().n, 5);
+      assert.equal(db.prepare("SELECT count(*) AS n FROM loot_sessions").get().n, 0);
+      assert.equal(db.prepare("SELECT count(*) AS n FROM loot_session_audit").get().n, 0);
       const columns = db.pragma("table_info(characters)").map((c) => c.name);
       assert.ok(columns.includes("attunements_json"));
       assert.ok(columns.includes("auto_stale"));

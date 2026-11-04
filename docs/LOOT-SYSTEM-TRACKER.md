@@ -1,10 +1,10 @@
 # Tiered Soft Reserve: Design and Progress Tracker
 
 - Document ID: LOOT-PLAN
-- Stage: DESIGN_ONLY
-- Last updated: 2026-11-01
+- Stage: FOUNDATION_VERIFIED
+- Last updated: 2026-11-04
 - Branch: `feature/tiered-soft-res-loot`
-- Implementation authorization: NOT_GRANTED
+- Implementation authorization: GRANTED to begin development; first checkpoint is officer-only draft-session foundations.
 - Governing instructions: [copilot-instructions.md](../.github/copilot-instructions.md)
 
 ## How we use this tracker
@@ -13,7 +13,7 @@ This is our shared feature plan, not a second instructions file or a claim that 
 Read the governing instructions and this tracker before continuing this feature.
 Use stable IDs when discussing changes, for example "approve D-03" or "expand I-07".
 Keep requirements, recommendations, decisions, and implementation evidence separate.
-Update existing rows rather than creating competing plans. Do not start code without approval.
+Update existing rows rather than creating competing plans. Do not expand a checkpoint without approval.
 
 | Record | Allowed status values | Meaning |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Snapshot invalid/missing: stop managed rolling with a visible explanation; never
 
 ## Decision register
 
-Every row is OPEN. Proposed defaults are discussion starters, not approved policy.
+Gameplay decisions remain OPEN. Draft-session foundations do not approve or enforce these policies.
 
 | ID | Status | Decision needed | Recommended starting point and why |
 | --- | --- | --- | --- |
@@ -109,10 +109,11 @@ Every row is OPEN. Proposed defaults are discussion starters, not approved polic
 | Entry | Date | Record | Outcome / evidence |
 | --- | --- | --- | --- |
 | L-01 | 2026-11-01 | Scope | User requested planning only, then a shared Markdown tracker. No gameplay policy approved and no implementation authorized. |
+| L-02 | 2026-11-04 | Scope / C-01 | User said "ok lets start development." Unavailable for follow-up choices; begin bounded officer-only drafts, without assuming approval of gameplay policy or member access. |
 
 ## Boundaries and implementation implications
 
-These are constraints and design targets, not implemented feature claims.
+These are constraints and design targets except where C-01 records implemented behavior.
 
 - Existing [loot/attendance storage](../apps/api/src/db/schema.ts) and
   [append-only ingestion](../apps/api/src/services/ledgerSync.service.ts) are useful evidence,
@@ -138,15 +139,16 @@ These are constraints and design targets, not implemented feature claims.
 
 ## Work tracker and dependencies
 
-Only W-01 is complete. All code phases remain blocked on design approval and explicit permission.
+W-01 is complete. C-01 begins authorized development without encoding unresolved gameplay decisions.
+The later full-feature phases below still depend on design approval and feasibility evidence.
 
 | ID | Status | Deliverable | Depends on | Completion evidence |
 | --- | --- | --- | --- | --- |
 | W-01 | DONE | Capture ideas, tradeoffs, open decisions, and scope in this tracker. | None | This document; no runtime changes. |
 | W-02 | TODO | Agree core raid rules, permissions, and initial feature scope. | W-01 | Approved D-01 through D-11, D-14, D-15; explicit disposition of D-12/D-13 in decision log. |
-| W-03 | TODO | Validate item source, member ownership, bridge limits, and game events. | W-01 | Bounded feasibility findings and safe test plan; no implementation implied. |
+| W-03 | IN_PROGRESS | Validate item source, member ownership, bridge limits, and game events. | W-01 | Draft persistence/auth integration inspected; item catalog, ownership, bridge, and game events still require validation. |
 | W-04 | BLOCKED | Define shared contracts, persistence, audit, and migration design. | W-02, W-03 | Reviewed design plus explicit authorization to proceed to implementation. |
-| W-05 | BLOCKED | Implement website/API choices, officer controls, and locked snapshots. | W-04 | Permission/validation tests, typecheck, affected builds and candidate artifact. |
+| W-05 | BLOCKED | Implement full website/API choices, officer controls, and locked snapshots beyond C-01 drafts. | W-04 | Permission/validation tests, typecheck, affected builds and candidate artifact. |
 | W-06 | BLOCKED | Implement desktop/AppHelper transport and snapshot verification. | W-05 | Round-trip, stale-revision, conflict, and safe-file-I/O tests; candidate artifacts. |
 | W-07 | BLOCKED | Implement addon eligibility, rolls, announcements, and confirmed awards. | W-06 | Lua 5.1 regression evidence and controlled in-game test candidate. |
 | W-08 | BLOCKED | Complete end-to-end acceptance and maintainer handoff. | W-07 | Acceptance table evidence, numbered manual checklist, blocker disposition. |
@@ -172,4 +174,35 @@ Planned future checks only. No manual acceptance has passed; no production testi
 Start with D-01: does officer priority guarantee an item, establish an ordered shortlist,
 or create another contested priority group? Then settle D-02/D-06 together: pick allowances
 and what winning consumes determine how the system feels over an entire raid.
-Before coding, resolve the other core decisions, feasibility findings, and explicit authorization.
+Before full reservations or live rolling, resolve the core decisions and feasibility findings.
+
+## Commit checkpoints and acceptance gates
+
+| ID | Status | Scope / suggested commit message | Acceptance gate |
+| --- | --- | --- | --- |
+| C-01 | DONE | Officer-only draft-session API and storage. Message: "Add officer-managed draft loot sessions with tier settings and change history". | PASS: 13 API production tests (including 3 loot tests), 2 packaging regressions, workspace typecheck, API/shared builds. Refreshed server ZIP: 16 changed API/shared files match source exactly. No commit/push authorized. |
+| C-02 | BLOCKED | Member ownership, reservations, officer claims, and lock/snapshot workflow. | Approved core policies and feasibility findings; permission/concurrency tests and website acceptance. |
+| C-03 | BLOCKED | Desktop/AppHelper transport and addon rolling. | Verified snapshot round-trip, Lua 5.1 regressions, controlled game acceptance, relevant refreshed artifacts. |
+
+### C-01: draft-session contract and limitations
+
+- Officer/admin only: `GET/POST /api/loot/sessions`, `GET/PUT /api/loot/sessions/:id`,
+  and `GET /api/loot/sessions/:id/history`. Members cannot use these endpoints.
+- Create body: `name`, `instanceName`, `scheduledAt` (UTC epoch seconds), and ordered
+  `tiers` containing `name` and `picks`. No gameplay defaults; officer supplies every tier.
+- Provisional resource bounds: 1-10 uniquely named tiers, 1-20 picks each, 80-character
+  session/instance names, and 40-character tier names. These are validation bounds, not guild rules.
+- Update uses the same fields plus `expectedRevision` and a 3-500-character `reason`.
+  The server owns ID, actor, status, revision, and timestamps; client overrides are rejected.
+- Status is only `DRAFT`. Revisions prevent stale overwrites; timestamps must increase in
+  epoch seconds. A same-second save or server clock rollback returns explicit HTTP 409.
+- Lists use `limit` (default 50, maximum 100) and `offset` (default 0, maximum 1000000).
+  Audit history records actor ID/name and before/after snapshots atomically with each change.
+- Actor provenance survives account deletion. Backups preserve sessions/history; guild wipe
+  clears both after its safety backup. Additive migration preserves existing guild records.
+- No website UI, item selections/catalog, hard reserves, locking, bridge payloads, roll handling,
+  awards, points, or bad-luck automation yet. No runtime version bumps until commit preparation.
+- Verified 2026-11-04 with `pnpm --filter @flocksync/api test:production`, `pnpm run typecheck`,
+  `node --test deploy/test/packaging.test.mjs`, and the remote-server packager.
+  No live deployment or game/browser acceptance performed. The source ZIP is a local development
+  candidate, not a versioned release; existing release notes/manifest are not evidence for it.

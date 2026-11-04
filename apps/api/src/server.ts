@@ -7,6 +7,7 @@ import { registerAuthPlugin } from "./plugins/auth.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { raidsRoutes } from "./routes/raids.routes.js";
 import { ledgerRoutes } from "./routes/ledger.routes.js";
+import { lootSessionsRoutes } from "./routes/lootSessions.routes.js";
 import { aliasesRoutes } from "./routes/aliases.routes.js";
 import { tasksRoutes } from "./routes/tasks.routes.js";
 import { syncRoutes } from "./routes/sync.routes.js";
@@ -48,6 +49,7 @@ export const buildServer = async () => {
   await app.register(syncRoutes, { prefix: "/api" });
   await app.register(raidsRoutes, { prefix: "/api" });
   await app.register(ledgerRoutes, { prefix: "/api" });
+  await app.register(lootSessionsRoutes, { prefix: "/api" });
   await app.register(aliasesRoutes, { prefix: "/api" });
   await app.register(tasksRoutes, { prefix: "/api" });
   await app.register(usersRoutes, { prefix: "/api" });

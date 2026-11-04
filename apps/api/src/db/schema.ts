@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+export { lootSessions, lootSessionAudit } from "./lootSchema.js";
 import {
   integer,
   sqliteTable,

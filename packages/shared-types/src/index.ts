@@ -59,6 +59,16 @@ export type { AttunementChain, AttunementStep } from "./attunements.js";
 export { AttendanceRecordSchema, LootRecordSchema } from "./ledger.js";
 export type { AttendanceRecord, LootRecord } from "./ledger.js";
 
+export {
+  LootReservationTierSchema, LootSessionDraftInputSchema, LootSessionDraftUpdateSchema,
+  LootSessionDraftSchema, LootSessionIdParamsSchema, LootSessionListQuerySchema,
+  LootSessionAuditSchema
+} from "./lootSessions.js";
+export type {
+  LootReservationTier, LootSessionDraftInput, LootSessionDraftUpdate,
+  LootSessionDraft, LootSessionListQuery, LootSessionAudit
+} from "./lootSessions.js";
+
 export { OfficerTaskInputSchema, OfficerTaskSchema, TaskStatusEnum } from "./tasks.js";
 export type { OfficerTask, OfficerTaskInput, TaskStatus } from "./tasks.js";
 
