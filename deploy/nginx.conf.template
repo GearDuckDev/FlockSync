@@ -1,0 +1,87 @@
+map $http_cf_connecting_ip $flocksync_invalid_client_ip {
+    default 1;
+    "" 0;
+    ~^[0-9A-Fa-f:.]+$ 0;
+}
+
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    client_max_body_size 1m;
+    client_header_timeout 15s;
+    client_body_timeout 60s;
+    send_timeout 60s;
+    keepalive_timeout 15s;
+    proxy_connect_timeout 5s;
+    proxy_send_timeout 300s;
+    proxy_read_timeout 300s;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $api_backend http://api:3001;
+    set_real_ip_from ${TUNNEL_PROXY_IP};
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive off;
+    if ($flocksync_invalid_client_ip) {
+        return 400;
+    }
+
+    location ~ ^/api(?:/|$) {
+        proxy_pass $api_backend$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /api/sync {
+        client_max_body_size 10m;
+        proxy_pass $api_backend$request_uri;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /api/admin/database/restore-upload {
+        client_max_body_size 128m;
+        proxy_request_buffering off;
+        proxy_pass $api_backend$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /health {
+        proxy_pass $api_backend/health;
+    }
+
+    location = /ready {
+        proxy_pass $api_backend/ready;
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 4s;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location = /manifest.webmanifest {
+        default_type application/manifest+json;
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location = /sw.js {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

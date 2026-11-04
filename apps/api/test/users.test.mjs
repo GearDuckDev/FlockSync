@@ -18,22 +18,26 @@ test("registration, admin user management, and role guards", async () => {
     env: {
       ...process.env, DATABASE_URL: join(directory, "flocksync.db"), PORT: port, HOST: "127.0.0.1",
       JWT_SECRET: "test-only-jwt-key-not-for-deployment-1234",
-      INITIAL_ADMIN_EMAIL: adminEmail, INITIAL_ADMIN_PASSWORD: adminPassword
+      INITIAL_ADMIN_EMAIL: adminEmail, INITIAL_ADMIN_PASSWORD: adminPassword,
+      TRUSTED_PROXY_IP: "",
+      AUTH_LOGIN_RATE_LIMIT_MAX: "5", AUTH_LOGIN_RATE_LIMIT_WINDOW_MS: "60000",
+      AUTH_REGISTER_RATE_LIMIT_MAX: "6", AUTH_REGISTER_RATE_LIMIT_WINDOW_MS: "60000",
+      PUBLIC_REGISTRATION_ENABLED: "true"
     },
     stdio: ["ignore", "pipe", "pipe"]
   });
   child.stdout.on("data", (chunk) => { output += chunk; });
   child.stderr.on("data", (chunk) => { output += chunk; });
 
-  const call = async (method, path, token, body) => {
-    const headers = {};
+  const call = async (method, path, token, body, extraHeaders = {}) => {
+    const headers = { ...extraHeaders };
     if (token) headers.authorization = "Bearer " + token;
     if (body !== undefined) headers["content-type"] = "application/json";
     const res = await fetch(`${origin}${path}`, {
       method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });
     const text = await res.text();
-    return { status: res.status, body: text ? JSON.parse(text) : null };
+    return { status: res.status, body: text ? JSON.parse(text) : null, headers: res.headers };
   };
 
   try {
@@ -137,6 +141,22 @@ test("registration, admin user management, and role guards", async () => {
     assert.equal((await call("DELETE", `/api/users/${memberId}`, adminToken)).status, 204);
     assert.equal((await call("GET", "/api/roster", memberToken)).status, 401);
     assert.equal((await call("GET", "/api/users", adminToken)).body.length, 2);
+
+    assert.equal((await call("POST", "/api/auth/login", undefined, {
+      email: "missing@example.com", password: "wrong"
+    })).status, 401);
+    const blockedLogin = await call("POST", "/api/auth/login", undefined, {
+      email: "missing@example.com", password: "wrong"
+    }, { "x-forwarded-for": "203.0.113.1" });
+    assert.equal(blockedLogin.status, 429);
+    assert.ok(Number(blockedLogin.headers.get("retry-after")) > 0);
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      assert.equal((await call("POST", "/api/auth/register", undefined, {})).status, 400);
+    }
+    assert.equal((await call("POST", "/api/auth/register", undefined, {}, {
+      "x-forwarded-for": "203.0.113.2"
+    })).status, 429);
   } finally {
     if (child.exitCode === null) {
       const exited = once(child, "exit");

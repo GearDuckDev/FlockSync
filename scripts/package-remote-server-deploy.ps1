@@ -7,11 +7,11 @@ $releaseRoot = Join-Path $repoRoot "release"
 $zipPath = Join-Path $releaseRoot "FlockSync_Remote_Server_Deploy.zip"
 $stagingRoot = Join-Path $repoRoot ".remote_server_staging"
 $stagingProject = Join-Path $stagingRoot "FlockSync"
-$excludedNames = @("node_modules", "dist", "out", ".git")
+$excludedNames = @("node_modules", "dist", "out", ".git", "data", "release", "SavedVariables")
 $rootFiles = @(
     "package.json", "pnpm-workspace.yaml", "pnpm-lock.yaml", "tsconfig.base.json",
     "Dockerfile.api", "Dockerfile.web", "docker-compose.yml",
-    ".dockerignore", ".env.example"
+    ".dockerignore", ".env.example", "DEPLOYMENT.md", "SERVER-OPERATIONS.md", "LICENSE"
 )
 $sourceFolders = @("apps\api", "apps\web", "packages\shared-types", "deploy")
 
@@ -22,7 +22,9 @@ function Copy-DeployFolder {
     foreach ($item in Get-ChildItem -LiteralPath $Source -Recurse -Force -Exclude $excludedNames) {
         $relative = $item.FullName.Substring($Source.Length).TrimStart('\', '/')
         $segments = $relative -split '[\\/]'
-        if (@($segments | Where-Object { $_ -in $excludedNames }).Count -gt 0) { continue }
+        if (@($segments | Where-Object {
+            $_ -in $excludedNames -or $_ -like "*.local" -or $_ -like "*.local.*"
+        }).Count -gt 0) { continue }
         # Reject links and any descendants of junctions, even on older PowerShell.
         $ancestor = $item
         $isLink = $false
@@ -34,7 +36,9 @@ function Copy-DeployFolder {
             $ancestor = if ($ancestor.PSIsContainer) { $ancestor.Parent } else { $ancestor.Directory }
         }
         if ($isLink) { continue }
-        if ($item.Name -match '\.db(?:-wal|-shm)?$') { continue }
+        if ($item.Name -match '\.(?:db|sqlite|sqlite3)(?:-wal|-shm)?$') { continue }
+        if ($item.Name -like "*.log") { continue }
+        if ($item.Name -like "*.local" -or $item.Name -like "*.local.*") { continue }
         if (($item.Name -eq ".env" -or $item.Name -like ".env.*") -and
             $item.Name -notlike "*.example") { continue }
         $target = Join-Path $Destination $relative

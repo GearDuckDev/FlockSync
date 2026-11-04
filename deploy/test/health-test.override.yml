@@ -1,0 +1,24 @@
+services:
+  api:
+    image: flocksync-api:c2-tests
+    env_file: !reset []
+    environment:
+      JWT_SECRET: test-only-health-jwt-secret-not-for-deployment
+      INITIAL_ADMIN_EMAIL: health-admin@example.com
+      INITIAL_ADMIN_PASSWORD: test-only-health-admin-password
+      AUTH_LOGIN_RATE_LIMIT_MAX: "20"
+    volumes: !override
+      - health-data:/app/data
+      - health-backups:/backups
+  web:
+    image: flocksync-web:c2-tests
+  db-backup:
+    image: flocksync-backup:update-tests
+    environment:
+      BACKUP_ONCE: "1"
+    volumes: !override
+      - health-data:/data
+      - health-backups:/backups
+volumes:
+  health-data:
+  health-backups:
