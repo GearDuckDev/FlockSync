@@ -1,9 +1,11 @@
-# FlockSync Security, Uptime, and Admin Alerts Plan
+# FlockSync Security and Uptime Plan
 
-Status: **In progress — C3 safeguards implemented; operator monitoring setup pending**
+Status: **C1-C3 deployed and operator checks recorded; C5 handoff and 0.10.0 release preparation ready to commit**
 Implementation branch: `security-and-health-controls`  
 Scope: protect the public API from abuse, improve service/backup visibility, and
-give opted-in administrators useful alerts. This plan does not include email.
+provide operator-owned monitoring. Email and notification delivery are outside
+this branch's scope. Future notification details are retained in the
+[separate future plan](./docs/MONITORING-NOTIFICATIONS-PLAN.md).
 
 ## Goals and guiding decisions
 
@@ -15,9 +17,10 @@ give opted-in administrators useful alerts. This plan does not include email.
   source control and release artifacts.
 - Keep safeguards useful for self-hosted guild servers, not just
   `flocksync.gearduckdev.com`.
-- Use mobile PWA push as an optional convenience for events the running server
-  detects. Push is best-effort and is **not** the independent monitor for a
-  completely unavailable server.
+- Keep Discord, mobile/PWA push, and external alert delivery outside this
+  branch's acceptance requirements. Preserve their future plan without
+  installing or implementing them. Same-host monitoring is not independent
+  outage detection.
 - Do not add email verification or require a third-party monitoring or push
   vendor for core FlockSync operation.
 - Do not require paid services, subscriptions, or per-notification fees for this
@@ -90,10 +93,19 @@ Before calling a checkpoint ready:
 | C1 | Phase 1: API entry protections | Rate-limit/registration tests pass; trusted proxy sources are constrained and proxy-chain spoofing/isolation tests pass; deployment docs and artifact match final sources | Protect sign-in and account creation from excessive requests |
 | C2 | Phase 2: health and backup visibility | Liveness/readiness and backup failure/staleness tests pass; public output stays minimal; affected container health checks pass | Show server readiness and backup health |
 | C3 | Phase 3: resource safeguards and monitoring setup | Disposable deployment validates limits under representative load; monitoring/runbook is documented; any operator-only setup or acceptance remains explicitly pending | Add resource safeguards and uptime monitoring guidance |
-| C4 | Phase 4: optional admin push | Subscription authorization and delivery-failure/cooldown tests pass; service-worker checks pass; device acceptance is reported separately, never assumed | Add optional administrator push alerts |
+| C4 | Removed from this branch | Future notifications are documented separately, not an unfinished branch gate | Not applicable |
 | C5 | Phase 5: final integration and handoff | Cross-phase regressions pass; final artifacts and numbered operator checklist are verified; unresolved manual checks remain explicit release blockers | Document security and health setup and testing |
+| Release | Authorized 0.10.0 preparation after C5 | Changed-component versions aligned; full six-asset package, container builds, regressions, archive/source hashes, and notes verified; publication and final deployment remain separately authorized | Protect sign-in, verify backups, and safeguard server uptime |
 
-**Current checkpoint: Ready to commit: C1 - API entry protections.**
+**Current checkpoint: Ready to commit: C5 and 0.10.0 release preparation.**
+Notifications are excluded from this branch. Operator evidence and remaining
+checks are tracked in the [monitoring plan](./docs/MONITORING-NOTIFICATIONS-PLAN.md).
+C1 was saved as `2aa961b` (live checks recorded in `6f2753e`), C2 as `32324d0`,
+and C3 as `54baa09`. Current uncommitted work includes the C5 documentation,
+authorized component-version bumps, release notes, and the packager default.
+This checkpoint does not certify real NAS-outage behavior or sustained capacity.
+
+**Historical C1 development checkpoint:**
 Exact proxy trust, network isolation, regressions, builds, and candidate-archive
 verification pass. C1 was saved as commit `2aa961b`. Live visitor separation and
 forwarded-header resistance passed on the temporary tunnel on November 2, 2026;
@@ -344,7 +356,80 @@ introduced in C2. Those later-phase checkboxes remain unchanged.
 
 ### 3. Add independent monitoring and resource safeguards
 
-**Ready to commit: C3 - resource safeguards and monitoring tools.**
+#### Local-first monitoring and interoperability decision
+
+Prefer free, operator-owned monitoring over a required hosted subscription.
+[Uptime Kuma](https://github.com/louislam/uptime-kuma) is the initial reference
+receiver: it supports HTTP/JSON checks, push heartbeats, and notification
+integrations. Each installation owns its monitor and notification credentials;
+GearDuckDev does not operate a central monitoring service for other servers.
+The operator subsequently installed same-Pi Kuma and reported a green public
+`/health` JSON monitor and an enforced 1 GiB memory ceiling. This is limited
+local monitoring evidence, not independent outage or notification acceptance.
+Notifications are now deferred; the current priority is remote dashboard
+access through an owner-only Cloudflare Access application. See the
+[monitoring access and future notification plan](./docs/MONITORING-NOTIFICATIONS-PLAN.md)
+for the operator checkpoint, safe access sequence, future Discord setup, and
+remaining acceptance checks.
+
+- Raspberry Pi deployments must use a supported **64-bit Raspberry Pi OS /
+  Debian ARM64** installation, consistent with FlockSync's deployment guide.
+  Do not assume a Pi implies a 64-bit OS. Before installation, verify the
+  selected monitor image's ARM64/AMD64 manifests, supported OS, and available
+  memory/storage. Existing local AMD64 tests do not certify the actual Pi.
+- A separate local machine can host the monitor without a cloud monitoring
+  vendor. Same-Pi monitoring is an optional reduced-coverage setup: it can
+  report application/resource failures while the host and receiver still run,
+  but cannot send alerts during its own power, OS, or connectivity failure.
+  Another machine on the same LAN still shares power/router/Internet risks.
+  Keep independent-outage acceptance unchecked unless that coverage is tested.
+- Do not add a monitor implicitly to the core Compose stack. Keep optional
+  monitoring separately managed, with bounded retention/resources and a
+  protected management UI. Do not grant Docker-socket access just for HTTP
+  checks; host collectors need a separate least-privilege review.
+- Monitoring and phone delivery are separate layers. Kuma can route alerts
+  to self-hosted tools such as ntfy/Gotify, but phone support and background
+  delivery differ. Android local delivery may require a persistent connection;
+  ordinary iOS/Web Push background delivery involves platform push services.
+  Do not promise fully local, immediate notifications on every closed phone
+  app. Test the chosen device, permissions, VPN/network reachability, and
+  failure/recovery receipt before claiming delivery.
+
+Keep the application-facing contract portable:
+
+| Surface | Contract and compatibility boundary |
+| --- | --- |
+| `GET /health` | Minimal HTTP `200` with `{"status":"ok"}` for process liveness; no monitor-specific dependency. |
+| `GET /ready` | HTTP `200` with `{"status":"ok"}` or `503` with `{"status":"unavailable"}` for SQLite readiness. A monitor must reject redirects/login pages and unexpected JSON, not merely accept any successful HTML response. This is not a full end-to-end feature check. |
+| `GET /api/admin/health` | Existing authenticated backup diagnostics, including degraded states that can return `200`. Inspect the JSON status, not HTTP alone. Keep this private; do not distribute full administrator JWTs to monitoring vendors. Any future unattended diagnostic credential needs a separately reviewed, read-only scope. |
+| Outbound resource/backup heartbeat | Current sender uses Kuma's `GET /api/push/<token>` with URL-encoded `status=up` or `down` and generic `msg`; it requires HTTP success and JSON `{"ok":true}`. This is a Kuma adapter, not a universal webhook protocol. |
+
+Preserve the core probe independently of receiver-specific delivery. Add another
+receiver adapter only when needed, using its documented method, authentication,
+payload, and acknowledgement; never assume generic JSON is accepted everywhere.
+Delivery must remain bounded by timeouts and report failures explicitly. Keep
+tokens, paths, account data, and detailed errors out of heartbeat messages.
+
+HTTP/JSON contracts are architecture-neutral and usable by monitors on Linux,
+Windows, and macOS where the chosen tool supports them. The existing host
+wrapper is **Linux-specific** (`sh`, Docker Compose, `mountpoint`, cron); it is
+not a native Windows/macOS agent. Future collectors must map to the same health
+semantics without pretending those host commands are portable. Existing automated
+probes cover disk/backup health, not continuous host CPU/RAM/restart alerting.
+Select and test a bounded host collector if those alerts are required.
+
+Before marking compatibility complete, test actual HTTP/JSON assertions,
+explicit down reports, missed heartbeats, rejected acknowledgements, notification
+failure/recovery, and the selected ARM64 deployment. Monitor reference:
+[installation guide](https://github.com/louislam/uptime-kuma/wiki/%F0%9F%94%A7-How-to-Install).
+Phone-delivery reference:
+[ntfy self-hosting and delivery documentation](https://docs.ntfy.sh/config/).
+
+**Historical C3 development checkpoint: resource safeguards and monitoring tools.**
+The paragraph below records the original pre-deployment validation. Subsequent
+Pi deployment and acceptance evidence is in the linked monitoring plan; the
+current checklist below reflects the narrowed, notification-free branch scope.
+
 Development safeguards, synthetic baseline, workload tests, and monitoring
 tools/runbook are implemented. All 35 regression tests pass (10 API production,
 14 updates, 7 backup/deployment, and one each for container health, proxy trust,
@@ -359,17 +444,18 @@ Suggested commit message: **Add resource safeguards and uptime monitoring tools*
 No commit, version bump, publication or deployment was performed. Authorized
 commit preparation must follow existing changed-component versioning rules.
 
-- [ ] Configure an uptime check outside the FlockSync host/network against the
-  public HTTPS health endpoint. Alert when it fails repeatedly, not on one
-  transient probe. This is the monitor that can report a fully down server.
-  Use a free monitoring service within its free limits or an operator-owned
-  independent host; do not require a paid monitoring subscription. A monitor
-  on the same host cannot detect that host's total outage.
+- [x] Configure same-Pi Kuma with protected remote access and a public HTTPS
+  JSON readiness monitor. This is reduced-coverage monitoring, not independent
+  outage detection. An independent receiver and alert delivery are future work
+  outside this branch, retained in the separate notification plan.
 - [x] Establish a disposable local baseline for CPU, memory, container restarts, disk free space,
   SQLite database growth, and backup destination capacity before choosing
   hard limits.
-- [ ] Record representative production/ARM64 baseline and live tunnel load
-  before rollout; synthetic local fixtures do not certify every deployment.
+- [x] Record an ARM64 idle baseline and run the bounded disposable sync,
+  backup, restore, and request-guard workload on the operator's Pi. The test
+  passed in about 56 seconds; production Kuma response time changed by about
+  10 ms according to the operator. This is not sustained public-tunnel load
+  or general production-capacity certification.
 - [x] Add conservative, documented Compose resource/log safeguards based on
   measured usage. Preserve enough headroom for migrations, backups, database
   restore, and supported ARM64/AMD64 hosts; do not guess a tight memory cap.
@@ -377,16 +463,26 @@ commit preparation must follow existing changed-component versioning rules.
   use, SQLite volume space, and backup freshness.
 - [x] Implement tested disk/backup probes and optional external heartbeat
   delivery, including explicit probe/mount/delivery failure handling.
-- [ ] Configure the host schedule and external notification receiver, then
-  confirm disk-pressure, failed-backup, missed-heartbeat and recovery alerts.
+- [x] Run the host disk/verified-backup probe manually on the Pi and confirm
+  healthy output. Automated resource-probe scheduling and alert delivery remain
+  future work outside this branch; no automatic resource alerts are claimed.
 - [x] Audit request/body limits and timeouts for costly endpoints. Preserve
   explicitly larger, bounded payload needs such as database restore and
   officer sync; do not apply a blanket limit that breaks valid use.
 - [x] Implement an optional storage identity check in API and scheduled/pre-update
   backups; tests reject missing/wrong markers before using a backup destination.
-- [ ] Configure `BACKUP_STORAGE_ID` on the operator's verified backup filesystem
+- [x] Configure `BACKUP_STORAGE_ID` on the operator's verified backup filesystem
   and startup mount dependency. Empty settings preserve compatibility but do
   not detect a mounted directory silently falling back to local storage.
+- [x] Verify normal reboot recovery and failed-service-dependency retries,
+  automatic recovery, and temporary simulation cleanup.
+- [x] Verify cron-triggered backup execution at a temporary scheduled time,
+  healthy backup evidence, and restoration of the midnight-UTC cron entry,
+  as confirmed by the operator.
+Actual NAS mount failure/recovery and hard-NFS hang testing are not claimed
+passed. The operator elected to proceed on the isolated dependency evidence;
+retain this as an untested operational limitation, not an outstanding request
+to disrupt the shared NAS. See the operations guide before future outage tests.
 
 **Acceptance checks**
 
@@ -446,59 +542,98 @@ for the separate host/monitor setup. Do not point these workload tests at a live
 deployment, change real backup mounts, or reuse the retired test tunnel token.
 Runtime versions remain unchanged until authorized commit preparation.
 
-### 4. Add optional admin push notifications
+### 4. Notifications: removed from this branch
 
-- [ ] Keep this phase optional and after the API protections and monitoring
-  design are stable. Do not treat push as an uptime guarantee.
-- [ ] Let an authenticated admin explicitly subscribe a supported browser/PWA
-  installation, inspect/manage subscriptions, and unsubscribe. Require a user
-  gesture for browser notification permission.
-- [ ] Use Web Push with server-held VAPID credentials supplied through validated
-  deployment environment configuration. Never include private keys in the web
-  bundle, repository, logs, or release artifacts.
-- [ ] Store subscriptions against the admin account in SQLite. Treat
-  subscription endpoints and keys as sensitive credentials; validate requests,
-  authorize subscription management, and remove expired/invalid subscriptions.
-- [ ] Extend the existing service worker with a minimal push handler and
-  notification-click behavior. Do not cache push payloads or include passwords,
-  JWTs, personal data, or sensitive database details in notification text.
-- [ ] Start with only actionable events: a verified backup failure/staleness
-  threshold, sustained auth-abuse threshold, or critical resource warning.
-  Aggregate repeated events, deduplicate them, and apply per-event cooldowns
-  to avoid alert floods.
-- [ ] If push delivery fails, log it and continue serving the application. Do
-  not let notification delivery block login, backups, or health checks.
-- [ ] Document platform prerequisites: HTTPS, installed/permission-enabled PWA,
-  browser/OS support, and best-effort delivery. On iPhone/iPad, web push
-  requires the web app to be added to the Home Screen and a supported OS
-  version; exact platform support should be rechecked at implementation time.
-- [ ] Keep a separate external uptime monitor for total outage detection.
-
-**Acceptance checks**
-
-- Tests cover authenticated subscription ownership, authorization, duplicate
-  subscriptions, unsubscribe, invalid/expired endpoints, send failures,
-  deduplication, and cooldowns.
-- Service-worker tests or focused manual checks verify notification display
-  and click behavior with the page closed.
-- Verify on supported Android and iOS devices before claiming mobile push
-  acceptance. Push delivery must remain non-blocking if a platform rejects a
-  notification.
+Discord webhook/bot setup, ntfy, administrator/PWA push, notification receivers,
+and their delivery tests are not branch completion requirements. Retain the
+[future notification plan](./docs/MONITORING-NOTIFICATIONS-PLAN.md) for a separate
+task. This is a scope exclusion, not completed notification functionality.
 
 ### 5. Release and operator handoff
 
-- [ ] Update deployment/environment examples and the deployment guide for
+- [x] Update deployment/environment examples and the deployment guide for
   every new setting and operational procedure. Never include real credentials.
-- [ ] Add regression tests for all behavior changes and run
+- [x] Add regression tests for all behavior changes and run
   `pnpm --filter @flocksync/api test:production`,
   `pnpm --filter @flocksync/api test:updates`, and `pnpm run typecheck`.
-- [ ] Build only affected packages and validate changed Docker/Compose
+- [x] Build only affected packages and validate changed Docker/Compose
   configuration. Rebuild the remote-server deployment ZIP after API/web source
   changes.
-- [ ] Provide separate maintainer checklists for local/disposable tests,
-  server-operator setup, and device-dependent push tests.
-- [ ] Do not deploy to production, publish artifacts, or change component
-  versions as part of implementation unless separately requested and ready.
+- [x] Provide separate maintainer checklists for local/disposable tests,
+  server-operator setup, and the remaining in-scope acceptance checks.
+- [x] Keep production changes separately authorized and operator-executed;
+  no commit, push, tag, publication, or new version change is authorized by
+  this documentation handoff.
+
+### C5 verification and handoff (November 4, 2026)
+
+- Fresh local workspace typecheck passed; API production regressions passed
+  10/10 and update regressions passed 14/14. These commands rebuilt API and
+  shared types only; unchanged desktop/web packages were not rebuilt.
+- Earlier C3 evidence includes container builds and 35 passing regressions.
+  The operator subsequently built/deployed API/web/backup on ARM64 and passed
+  the capped disposable workload, including 128 MiB restore and request guards.
+  Cleanup checks found no remaining test containers, volumes, or networks.
+- The refreshed deployment ZIP's 208 source files were hash-verified before
+  transfer; the operator verified the ZIP hash and staged Compose configuration
+  before using the backup-protected updater. No runtime source changed during
+  this documentation handoff, so no additional runtime build is required.
+- Operator checks cover protected remote Kuma access, MFA, denied identities,
+  expiry, path checks, live updates, exposure review, readiness, manual and
+  cron-triggered backups, kernel resource limits, normal reboot ordering, and
+  isolated dependency refusal/retry/recovery. Detailed evidence is in the
+  [monitoring checkpoint](./docs/MONITORING-NOTIFICATIONS-PLAN.md).
+- [Server operations](./SERVER-OPERATIONS.md) is linked prominently from README
+  and deployment documentation. Preserve the Pi-local Compose override,
+  systemd service/timer, production environment, storage marker, and backups:
+  the deployment source ZIP does not install those host-specific files.
+- Remaining limitations: actual NFS outage/hangs and sustained real-traffic
+  capacity are not certified; notifications, automated resource alert delivery,
+  and independent outage monitoring are outside branch scope.
+- VS Code's overlapping-chat Keep error remains an editor review-state issue.
+  The five changed documents are saved; accepting a chat diff is not a Git
+  commit. Do not discard files or modify editor session databases to clear it.
+- Suggested documentation commit: **Document secure monitoring and safe server maintenance**.
+  Documentation needs no runtime version bump. A later combined release must
+  follow changed-component versioning and packaging rules separately.
+
+### Authorized 0.10.0 release preparation (November 4, 2026)
+
+This supersedes the earlier documentation-only checkpoint's version hold.
+Preparation was authorized; committing, merging, pushing, tagging, publishing,
+and applying the final versioned release to production were not.
+
+- [x] Increment API/web 0.6.1 -> 0.7.0 and shared types 0.6.0 -> 0.7.0.
+  Keep desktop 0.5.1, addon 0.6.0, AppHelper 0.2.2, and root 0.2.2 unchanged.
+- [x] Prepare detailed 0.10.0 notes with upgrade steps, six download choices,
+  safety/migration guidance, component versions, stable-channel guidance,
+  and explicit limitations. Preserve the maintainer handoff.
+- [x] Run the complete release packager: workspace typecheck, API/web builds,
+  desktop installer/portable packaging, both addon ZIPs, server source ZIP,
+  and generated 0.10.0 manifest all passed.
+- [x] Rebuild API/web/backup Docker images on local x86_64 Linux Docker.
+  All 11 deployment regressions passed, including capped workload/128 MiB
+  restore, proxy trust, readiness, backup evidence/storage identity, and
+  update gating. No live stack was started or restarted.
+- [x] API production 10/10 and updates 14/14 passed on final versions.
+  A Windows-reserved port initially blocked one API startup; isolated and
+  full-suite reruns passed. Web tests passed 15/15; desktop passed 21 with
+  one opt-in live-network test skipped.
+- [x] Verify every archived file against its source: server 208, member addon
+  37, collector bundle 39. Confirm expected paths/TOCs, final package versions,
+  no private environments/databases/config artifacts or links, and complete
+  server source coverage after intentional exclusions. Both EXEs match the
+  desktop packaging output and identify version 0.5.1.
+- [x] Confirm the release directory contains exactly the six current assets;
+  no superseded downloads require removal. Published latest remains v0.9.0;
+  no remote v0.10.0 tag existed during preparation.
+- Remaining manual checks: packaged installer/portable UI, in-game behavior,
+  and final versioned Pi deployment. Physical NAS/NFS outage testing and
+  sustained-capacity certification are not claimed. Notifications remain
+  excluded. Re-check publication state before creating an authorized release.
+- Suggested release commit: **Protect sign-in, verify backups, and safeguard server uptime**.
+  The prepared versions are final for this checkpoint; do not bump them again
+  solely when committing the same changes.
 
 ## Security and reliability constraints
 
@@ -519,6 +654,5 @@ Runtime versions remain unchanged until authorized commit preparation.
   and testing through the actual proxy chain.
 - Which health data belongs in an admin-only view versus logs.
 - Resource limits after collecting representative deployment measurements.
-- Which admin events justify push alerts and their thresholds/cooldowns.
-- Whether push credentials are required only when push is enabled or can be
-  omitted with the feature disabled (recommended: optional).
+- Notification events, credentials, and delivery belong to the separate
+  future notification plan, not implementation on this branch.

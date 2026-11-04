@@ -15,6 +15,9 @@ Confirm your server's rules before using the addon and desktop bridge.
 [Server setup](./DEPLOYMENT.md) | [Release notes](./RELEASE-NOTES.md) |
 [Screenshot gallery](./docs/SCREENSHOTS.md)
 
+**Running the Pi server? [Server operations quick reference](./SERVER-OPERATIONS.md)**
+covers dashboard access, status checks, safe stop/start, and NAS-aware updates.
+
 ## See it in action
 
 The addon images below are developer-supplied in-game captures. Web and desktop

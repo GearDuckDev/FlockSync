@@ -9,29 +9,28 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.9.0` |
+| Combined GitHub tag | `v0.10.0` (prepared; not published) |
 | Desktop | `0.5.1` |
-| API + web / server | `0.6.0` |
+| API + web / server | `0.7.0` |
 | Main addon | `0.6.0` |
 | AppHelper | `0.2.2` |
-| Shared types | `0.6.0` |
+| Shared types | `0.7.0` |
 | Root package | `0.2.2` |
 
 ### Changes in this release
 
-- API/web 0.6.0 adds the synced guild name at the top center of the dashboard.
-  Guild identity is backed up/restored with SQLite and cleared on wipe.
-- Database restore inserts accounts before dependent character/theme records.
-  Backup, restore, persistent backup folders, and protected wipe remain available.
-- Main addon 0.6.0 and AppHelper 0.2.2 are unchanged from the existing 0.8.0 tag.
-- Backup status refresh clears previous messages and restore options display
-  local backup dates/times. Folder recovery remains available after listing errors.
-- Remote-server deployment packaging is hardware/vendor-neutral; the archive is
-  `FlockSync_Remote_Server_Deploy.zip`. Existing backup settings remain compatible.
-- Overall release advances to 0.9.0; shared types advance to 0.6.0.
-  Desktop 0.5.1 changes the fresh-install client path to `_forever_` while
-  preserving saved locations. AppHelper 0.2.2 and root metadata 0.2.2 are unchanged.
-  See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for full upgrade instructions.
+- Server 0.7.0 adds sign-in/registration abuse controls, explicit proxy trust,
+  database readiness, verified backup health, and bounded resource usage.
+- Backup storage identity checks are optional and require operator setup;
+  existing paths/settings are preserved. Request safeguards retain valid
+  128 MiB restore support through nginx, subject to edge-service limits.
+- API/web advance together from 0.6.1 to 0.7.0; shared types advance from
+  0.6.0 to 0.7.0. Desktop 0.5.1, main addon 0.6.0, AppHelper 0.2.2, and root
+  metadata 0.2.2 are unchanged. Existing current desktop/addons need no reinstall.
+- Notifications are excluded from this branch; remote Kuma access is optional,
+  separately configured infrastructure, not an installed release feature.
+- See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
+  [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for the configured Pi/NAS host.
 
 ## Each time you release
 
@@ -46,7 +45,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.9.0
+   .\scripts\package-release.ps1 -ReleaseVersion 0.10.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -65,16 +64,16 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.9.0 -m "FlockSync 0.9.0"
-   git push origin v0.9.0
+   git tag -a v0.10.0 -m "FlockSync 0.10.0"
+   git push origin v0.10.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.9.0`.
-   - Title: `FlockSync 0.9.0`.
+   - Tag: `v0.10.0`.
+   - Title: `FlockSync 0.10.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.9.0`, leave it **unchecked**; this is a normal Release-channel
+     For `v0.10.0`, leave it **unchecked**; this is a normal Release-channel
      publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub

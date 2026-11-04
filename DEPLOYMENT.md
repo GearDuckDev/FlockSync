@@ -1,5 +1,9 @@
 # Production deployment
 
+For the configured Pi/NAS installation, use the
+[server operations quick reference](./SERVER-OPERATIONS.md) for everyday status,
+maintenance stop/start, and updates with the NAS-dependent startup service.
+
 ## 1. Remote server and backup storage
 
 To prepare a clean source archive on Windows, run
@@ -436,6 +440,11 @@ probe. Ordinary admins can create/list backups in Admin Settings; Docker stats,
 mounts, scheduling and capacity planning require the host operator.
 
 #### Independent, no-subscription monitoring setup
+
+For optional remote dashboard access and deferred Discord/mobile delivery, see
+the [monitoring access and future notification plan](./docs/MONITORING-NOTIFICATIONS-PLAN.md).
+Protect the monitor's dashboard separately; do not put browser-only Access
+authentication in front of FlockSync's public health probes.
 
 This is operator-owned setup, not an automatically activated FlockSync service.
 Use an existing machine on a **different host/network/power connection**, or
