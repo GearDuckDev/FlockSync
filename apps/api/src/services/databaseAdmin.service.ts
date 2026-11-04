@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { copyFile, mkdir, rename, unlink } from "node:fs/promises";
+import { copyFile, mkdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 import { db, databasePath, sqliteConnection } from "../db/index.js";
@@ -8,6 +8,7 @@ import {
   playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
+import { checkIntegrity, createBackupUnlocked } from "./databaseBackup.js";
 import {
   listBackupDirectories, listBackupEntries, readDatabaseAdminState,
   resolveBackupDirectory, resolveBackupFile, writeDatabaseAdminState
@@ -22,52 +23,6 @@ const runExclusive = async <T>(operation: () => Promise<T>): Promise<T> => {
   } finally {
     operationActive = false;
   }
-};
-
-const timestamp = (): string => new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-const backupName = (reason: "manual" | "final" | "pre-restore"): string =>
-  `flocksync-${reason === "manual" ? "" : `${reason}-`}${timestamp()}-${randomUUID().slice(0, 8)}.db`;
-
-const checkIntegrity = (path: string): void => {
-  const source = new Database(path, { readonly: true, fileMustExist: true });
-  try {
-    const result = source.pragma("quick_check") as unknown;
-    if (!Array.isArray(result) || result.length !== 1
-      || typeof result[0] !== "object" || result[0] === null
-      || !("quick_check" in result[0]) || result[0].quick_check !== "ok") {
-      throw new Error("SQLite backup integrity check failed");
-    }
-    const violations = source.pragma("foreign_key_check") as unknown[];
-    if (violations.length > 0) throw new Error("SQLite backup contains foreign-key violations");
-  } finally {
-    source.close();
-  }
-};
-
-const createBackupUnlocked = async (reason: "manual" | "final" | "pre-restore") => {
-  const state = await readDatabaseAdminState();
-  const directory = await resolveBackupDirectory(state.backupDirectory, true);
-  const filename = backupName(reason);
-  const destination = join(directory, filename);
-  const temporary = `${destination}.${randomUUID()}.tmp`;
-  try {
-    await sqliteConnection.backup(temporary);
-    checkIntegrity(temporary);
-    await rename(temporary, destination);
-  } catch (error) {
-    try {
-      await unlink(temporary);
-    } catch (cleanupError) {
-      if (!(cleanupError instanceof Error && "code" in cleanupError && cleanupError.code === "ENOENT")) {
-        throw cleanupError;
-      }
-    }
-    throw new Error("Database backup failed; existing backups were left unchanged", { cause: error });
-  }
-  const [backup] = await listBackupEntries(state.backupDirectory)
-    .then((entries) => entries.filter((entry) => entry.filename === filename));
-  if (!backup) throw new Error("Backup was written but could not be verified in the backup directory");
-  return backup;
 };
 
 export const createDatabaseBackup = (reason: "manual" | "final" = "manual") =>

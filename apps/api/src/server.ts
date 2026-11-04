@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
+import rateLimit from "@fastify/rate-limit";
 import { env } from "./config/env.js";
 import { seedInitialAdmin } from "./db/seed.js";
 import { registerAuthPlugin } from "./plugins/auth.js";
@@ -13,19 +14,36 @@ import { usersRoutes } from "./routes/users.routes.js";
 import { updatesRoutes } from "./routes/updates.routes.js";
 import { themesRoutes } from "./routes/themes.routes.js";
 import { databaseAdminRoutes } from "./routes/databaseAdmin.routes.js";
+import { healthRoutes } from "./routes/health.routes.js";
 
 export const buildServer = async () => {
-  const app = Fastify({ logger: true });
+  const app = Fastify({
+    logger: true,
+    bodyLimit: 1024 * 1024,
+    requestTimeout: 300_000,
+    connectionTimeout: 300_000,
+    keepAliveTimeout: 5_000,
+    trustProxy: env.TRUSTED_PROXY_IP ?? false
+  });
   await app.register(cors, {
     origin: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   });
+  await app.register(rateLimit, {
+    global: false,
+    errorResponseBuilder: (_request, context) => ({
+      statusCode: 429,
+      error: "Too Many Requests",
+      message: "Rate limit exceeded. Try again later.",
+      retryAfter: context.after
+    })
+  });
   await registerAuthPlugin(app);
   app.addContentTypeParser("application/octet-stream", {
-    parseAs: "buffer", bodyLimit: 128 * 1024 * 1024
+    parseAs: "buffer"
   }, (_request, body, done) => done(null, body));
 
-  app.get("/health", async () => ({ status: "ok" }));
+  await app.register(healthRoutes);
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(syncRoutes, { prefix: "/api" });
   await app.register(raidsRoutes, { prefix: "/api" });
@@ -53,7 +71,7 @@ const startServer = async (): Promise<void> => {
     process.once("SIGTERM", shutdown);
     process.once("SIGINT", shutdown);
   } catch (error) {
-    app.log.error(error, "Failed to start API server");
+    app.log.error({ event: "api_startup_failed", err: error }, "Failed to start API server");
     await app.close();
     throw error;
   }

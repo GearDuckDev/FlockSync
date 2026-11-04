@@ -15,6 +15,9 @@ test('fresh installs default to Forever while saved client paths remain unchange
   await rm(fixtureRoot, { recursive: true, force: true });
   try {
     assert.equal(loadStored().wowPath, 'C:\\Program Files (x86)\\World of Warcraft\\_forever_');
+    assert.equal(loadStored().apiBaseUrl, '');
+    assert.equal(loadStored().token, null);
+    assert.equal(loadStored().user, null);
     for (const wowPath of [
       'D:\\Games\\World of Warcraft\\_forever_',
       'C:\\Program Files (x86)\\World of Warcraft\\_classic_beta_',
@@ -33,7 +36,7 @@ test('fresh installs default to Forever while saved client paths remain unchange
 test('configuration retains the documented server URL across saves and reloads', async () => {
   await mkdir(fixtureRoot, { recursive: true });
   try {
-    const url = 'https://flocksync.gearduckdev.com';
+    const url = 'https://flocksync.example.com';
     updateStored({ apiBaseUrl: url });
     assert.equal(loadStored().apiBaseUrl, url);
     updateStored({ wowPath: 'C:\\Games\\WoW' });

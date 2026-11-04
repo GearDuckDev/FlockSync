@@ -1,0 +1,26 @@
+services:
+  api:
+    networks:
+      api_proxy:
+        ipv4_address: ${TEST_API_IP:?Test runner supplies API address}
+      api_egress:
+    mem_limit: ${TEST_API_MEMORY:-0}
+    memswap_limit: ${TEST_API_MEMORY:-0}
+    cpus: ${TEST_API_CPUS:-0}
+    pids_limit: ${TEST_API_PIDS:-0}
+  web:
+    mem_limit: ${TEST_WEB_MEMORY:-0}
+    memswap_limit: ${TEST_WEB_MEMORY:-0}
+    cpus: ${TEST_WEB_CPUS:-0}
+    pids_limit: ${TEST_WEB_PIDS:-0}
+  resource-client:
+    image: flocksync-api:c2-tests
+    entrypoint: ["node"]
+    command: ["-e", "setInterval(() => {}, 60000)"]
+    healthcheck:
+      disable: true
+    networks:
+      api_proxy:
+        ipv4_address: ${TEST_CLIENT_IP:?Test runner supplies client address}
+    volumes:
+      - health-backups:/fixtures:ro
