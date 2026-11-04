@@ -1,0 +1,39 @@
+services:
+  api:
+    image: flocksync-api:c1-tests
+    env_file: !reset []
+    environment:
+      JWT_SECRET: test-only-proxy-jwt-secret-not-for-deployment
+      INITIAL_ADMIN_EMAIL: proxy-admin@example.com
+      INITIAL_ADMIN_PASSWORD: test-only-proxy-admin-password
+      AUTH_LOGIN_RATE_LIMIT_MAX: "2"
+      AUTH_LOGIN_RATE_LIMIT_WINDOW_MS: "60000"
+      PUBLIC_REGISTRATION_ENABLED: "true"
+    volumes: !reset []
+    tmpfs:
+      - /app/data:uid=1000,gid=1000
+  web:
+    image: flocksync-web:c1-tests
+  cloudflared:
+    image: flocksync-api:c1-tests
+    entrypoint: ["node"]
+    command: ["-e", "setInterval(() => {}, 60000)"]
+    healthcheck:
+      disable: true
+  untrusted:
+    image: flocksync-api:c1-tests
+    entrypoint: ["node"]
+    command: ["-e", "setInterval(() => {}, 60000)"]
+    healthcheck:
+      disable: true
+    networks:
+      tunnel_proxy:
+        ipv4_address: ${TEST_UNTRUSTED_IP:?Test runner supplies isolated peer address}
+  direct:
+    image: flocksync-api:c1-tests
+    entrypoint: ["node"]
+    command: ["-e", "setInterval(() => {}, 60000)"]
+    healthcheck:
+      disable: true
+    networks:
+      - api_egress

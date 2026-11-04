@@ -69,8 +69,10 @@ test("built server boots an empty DB, seeds once, and serves authenticated route
         env: {
           ...process.env, DATABASE_URL: database, PORT: port, HOST: "127.0.0.1",
           JWT_SECRET: "test-only-jwt-key-not-for-deployment-1234",
+          TRUSTED_PROXY_IP: "",
           INITIAL_ADMIN_EMAIL: email,
-          INITIAL_ADMIN_PASSWORD: pass === 0 ? password : "different-password-for-second-start"
+          INITIAL_ADMIN_PASSWORD: pass === 0 ? password : "different-password-for-second-start",
+          PUBLIC_REGISTRATION_ENABLED: "false"
         },
         stdio: ["ignore", "pipe", "pipe"]
       });
@@ -94,6 +96,11 @@ test("built server boots an empty DB, seeds once, and serves authenticated route
       assert.equal(login.status, 200, output);
       const { token, user } = await login.json();
       assert.equal(user.role, "ADMIN");
+      const registration = await fetch(`${origin}/api/auth/register`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "blocked@example.com", username: "blocked", password: "secret1" })
+      });
+      assert.equal(registration.status, 403, output);
       const roster = await fetch(`${origin}/api/roster`, { headers: { authorization: `Bearer ${token}` } });
       assert.equal(roster.status, 200);
       assert.deepEqual(await roster.json(), []);
@@ -123,6 +130,69 @@ test("built server boots an empty DB, seeds once, and serves authenticated route
     const db = new Database(database);
     try { assert.equal(db.prepare("SELECT count(*) AS n FROM users").get().n, 1); }
     finally { db.close(); }
+  } finally {
+    await stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("auth rate limits use the socket IP, return retry headers, and expire", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "flocksync-auth-limits-")), database = join(directory, "flocksync.db");
+  const port = String(35000 + Math.floor(Math.random() * 10000)), origin = `http://127.0.0.1:${port}`;
+  let output = "";
+  const child = spawn(process.execPath, [resolve("dist/server.js")], {
+    env: {
+      ...process.env,
+      DATABASE_URL: database,
+      PORT: port,
+      HOST: "127.0.0.1",
+      JWT_SECRET: "test-only-jwt-key-not-for-deployment-1234",
+      TRUSTED_PROXY_IP: "",
+      PUBLIC_REGISTRATION_ENABLED: "true",
+      AUTH_LOGIN_RATE_LIMIT_MAX: "1", AUTH_LOGIN_RATE_LIMIT_WINDOW_MS: "5000",
+      AUTH_REGISTER_RATE_LIMIT_MAX: "1", AUTH_REGISTER_RATE_LIMIT_WINDOW_MS: "5000"
+    },
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  child.stdout.on("data", (chunk) => { output += chunk; });
+  child.stderr.on("data", (chunk) => { output += chunk; });
+  const stop = async () => {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    const exited = once(child, "exit");
+    child.kill();
+    await exited;
+  };
+  const call = (path, body, headers = {}) =>
+    fetch(`${origin}${path}`, {
+      method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body)
+    });
+
+  try {
+    let ready = false;
+    for (let attempt = 0; attempt < 100 && !ready && child.exitCode === null; attempt++) {
+      try { ready = (await fetch(`${origin}/health`)).ok; } catch { await delay(100); }
+    }
+    assert.ok(ready, output);
+
+    assert.equal((await call("/api/auth/login", { email: "missing@example.com", password: "wrong" })).status, 401);
+    const blockedLogin = await call("/api/auth/login",
+      { email: "missing@example.com", password: "wrong" }, { "x-forwarded-for": "203.0.113.1" });
+    assert.equal(blockedLogin.status, 429);
+    assert.ok(Number(blockedLogin.headers.get("retry-after")) > 0);
+
+    await delay(5100);
+    assert.equal((await call("/api/auth/login", { email: "missing@example.com", password: "wrong" })).status, 401);
+
+    assert.equal((await call("/api/auth/register",
+      { email: "first@example.com", username: "first", password: "secret1" })).status, 201);
+    const blockedRegistration = await call("/api/auth/register",
+      { email: "second@example.com", username: "second", password: "secret1" },
+      { "x-forwarded-for": "203.0.113.2" });
+    assert.equal(blockedRegistration.status, 429);
+    assert.ok(Number(blockedRegistration.headers.get("retry-after")) > 0);
+    await delay(5100);
+    assert.equal((await call("/api/auth/register",
+      { email: "second@example.com", username: "second", password: "secret1" })).status, 201, output);
   } finally {
     await stop();
     await rm(directory, { recursive: true, force: true });

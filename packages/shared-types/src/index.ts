@@ -122,3 +122,5 @@ export {
   DatabaseAdminResultSchema
 } from "./databaseAdmin.js";
 export type { Backup, BackupCatalog, DatabaseAdminResult } from "./databaseAdmin.js";
+export { BackupVerificationSchema, BackupAttemptSchema, BackupHealthSchema } from "./health.js";
+export type { BackupVerification, BackupAttempt, BackupHealth } from "./health.js";
