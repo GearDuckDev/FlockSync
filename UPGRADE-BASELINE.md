@@ -187,3 +187,41 @@ full browser/PWA acceptance, Lua and live-game checks remain unverified, not pas
 The earlier offline stylesheet observation remains explicitly scoped out of this
 baseline; investigate before accepting changed web output.
 No W01 upgrade has begun, and no production services were touched.
+
+## Post-merge verification and dependency audit
+
+Recorded November 4, 2026 after merging `origin/main`.
+
+- Branch: `Dependency-Upgrade-Before-Launch`; merge HEAD:
+  `5072460e81840e5450baa4c4387daf805b0ac7d4`, nine commits ahead of its remote.
+- Preserved the existing `.vscode/settings.json` worktree edit and `stash@{0}`.
+  Do not reset the branch or alter the stash without authorization.
+- No dependency manifest or lockfile changes were made for this audit.
+- Frozen install under pnpm 12.16.1, workspace typecheck/build, API production
+  and updates tests, web tests, desktop tests, and deployment tests passed:
+  73 passed, 0 failed, 1 intentionally skipped live-GitHub test.
+- API and web Dockerfiles built successfully for `linux/amd64`. ARM64 was not
+  built/tested; no production Compose services or server were restarted.
+- Local comparison images: `flocksync-api:upgrade-postmerge-5072460` and
+  `flocksync-web:upgrade-postmerge-5072460`. These are test images, not release
+  artifacts or proof of ARM64 behavior.
+- No game/Lua test, dependency upgrade, release ZIP/installer rebuild, commit,
+  push, deployment or publication occurred.
+
+Tool state observed: host Node 24.22.0, pnpm 12.16.1, Git 2.56.0.windows.3,
+Docker Desktop 4.97.0, Engine/CLI 29.9.2, Compose 5.6.1, Buildx 0.38.1,
+VS Code 1.145.0, Container Tools 2.5.3, and Dev Containers 0.469.0.
+The installed tool versions and prior available-update candidates are detailed
+in [the November 4 audit](./UPGRADE-AUDIT-2026-11-04.md).
+
+The refreshed npm inventory queried all 479 unique lockfile package names and
+585 locked versions, with no registry lookup failures. It found 263 package
+names/317 locked versions behind npm `latest`, including transitive dependencies,
+and seven deprecated locked transitive versions. See
+[UPGRADE-INVENTORY-2026-11-04.csv](./UPGRADE-INVENTORY-2026-11-04.csv) and the
+audit report for compatible direct candidates, risks and changelog links.
+
+The maintainer currently cannot perform in-game testing. Keep W08-W10 blocked
+until access returns; no live-game acceptance has been reported or inferred.
+W02's earlier browser/icon spot-check also remains pending and does not require
+the game. Keep both gates distinct from the successful automated test results.

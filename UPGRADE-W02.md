@@ -5,8 +5,10 @@ plus uncommitted W01 and W02 changes on Dependency-Upgrade-Before-Launch.
 Related: [plan](./UPGRADE-PLAN.md), [test recipes](./UPGRADE-TESTS.md),
 [previous wave](./UPGRADE-W01.md).
 
-Status: implementation and automated verification passed; wave `blocked` only
-on the maintainer spot-check below. **Pre-launch STOP: W03 has not started.**
+Status: implementation, automated verification, and maintainer browser
+spot-check passed. The optional offline-cache check below was not reported.
+The historical pre-launch STOP was cleared for the separately approved W03-W05
+offline waves; game-gated work remains blocked.
 
 ## Changes and deliberate exclusions
 
@@ -112,8 +114,13 @@ and regenerate the server ZIP. No database migration or database rollback is nee
    If you want personal authenticated checks, request a fresh isolated fixture;
    do not deploy the candidate to production merely to test it.
 
-After that feedback, mark W02 done but **do not start W03 automatically**.
-No new in-game test is required by these web/type-only changes. W01's rebuilt
-desktop distribution still waits for the game's T06 collector/helper checks.
-ARM64, live-game, actual device installation and old-shell-update acceptance
-remain untested; none is implied by these automated results.
+On November 4, with the browser page open at `http://127.0.0.1:4179/`, the
+maintainer reported: "looks like the browser stuff works" after receiving the
+spot-check steps. Record the visual browser check as accepted. The reply did not
+specify individual desktop/phone observations or confirm the optional
+offline-cache check; do not claim those details. W02 is now done. This feedback
+does not authorize another wave, desktop distribution, game acceptance,
+deployment, or release. No new in-game test is required by these web/type-only
+changes. W01's rebuilt desktop distribution still waits for the game's T06
+collector/helper checks. ARM64, live-game, actual device installation and
+old-shell-update acceptance remain untested; none is implied here.

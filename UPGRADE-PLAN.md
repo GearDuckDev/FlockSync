@@ -1,23 +1,30 @@
 # Dependency upgrade runbook
 
-Planning baseline: October 30, 2026. **This is a plan, not authorization to upgrade.**
+Planning baseline: November 4, 2026. **This is a plan, not authorization to upgrade.**
 Audience: maintainer and coding agents. Resume here before dependency work.
 Related: [release checklist](./RELEASES.md), [deployment](./DEPLOYMENT.md),
-[environment handoff](./.github/copilot-instructions.md).
+[environment handoff](./.github/copilot-instructions.md),
+[post-merge dependency audit](./UPGRADE-AUDIT-2026-11-04.md).
 
-## Operating rules and launch boundary
+## Operating rules and current gates
 
-- Default pre-launch scope: **W00-W02 only**, one change set at a time.
-- **STOP after W02.** W03-W10 require explicit maintainer approval for that wave.
-  Offline-testable does not mean worth the risk immediately before launch.
+- W00-W02 are complete, including the maintainer's November 4 report that the
+  browser check "looks like the browser stuff works." Optional offline-cache
+  checks were not reported.
+- W03-W12 require explicit maintainer approval for each wave, one change set at
+  a time. Offline-testable does not mean behavior-free or automatically approved.
 - November 4, 2026 is the hoped-for game launch, not a confirmed deadline.
   Calendar dates never unlock game gates or authorize version 1.0.
+- The maintainer currently cannot perform in-game testing. Keep game-gated waves
+  blocked until access returns and T06 can be completed; do not infer acceptance
+  from offline tests or earlier availability.
 - No addon changes, game-format changes, or bulk `update --latest` in early waves.
   Preserve Lua 5.1 / Interface 16001. Cloudflared is already handled; exclude it.
 - Never promise zero behavior changes. Record expected invariants and test them.
   Compilation, mocked tests, successful packaging, and "latest" are not live-game proof.
-- Recheck stable versions, changelogs, engines and peer requirements before each wave.
-  Versions below are audit targets, not evergreen claims. Exclude prereleases.
+- Recheck stable versions, changelogs, engines, release age and peer requirements
+  before each wave. Versions below are audit targets, not evergreen claims.
+  Exclude prereleases and don't confuse npm's latest tag with compatibility.
 - Change supported parent packages, not forced transitive major overrides.
   Keep currently supported older lines where compatibility requires them.
 - No live deployment, host-tool installation, commit, tag, push, publication,
@@ -39,16 +46,21 @@ an independently approved change set with its own baseline and rollback.
 | --- | --- | --- | --- |
 | W00 | done | Offline and AMD64 container baseline passed; see scoped evidence | Agent + maintainer |
 | W01 | done | Tooling/offline checks passed; desktop distribution held for T06 | Agent |
-| W02 | blocked | Implementation/tests passed; maintainer spot-check pending; pre-launch STOP | Agent + maintainer |
-| W03 | pending | Approval; isolated deployment-algorithm verification | Agent |
-| W04 | pending | Approval; API compatibility regressions | Agent |
-| W05 | pending | Approval; native SQLite and backup/restore on both architectures | Agent |
-| W06 | pending | Approval; compiler and runtime alignment | Agent |
-| W07 | pending | Working game available; shared-validation migration | Agent + maintainer |
-| W08 | pending | Working game available; desktop runtime/packaging | Agent + maintainer |
-| W09 | pending | Working game available; watcher migration | Agent + maintainer |
-| W10 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
-| W11 | pending | Full release-candidate verification and explicit publication approval | Agent + maintainer |
+| W02 | done | Automated checks passed; maintainer reported browser spot-check works | Agent + maintainer |
+| W03 | done | Independently approved offline web/build updates; desktop installers held for T06 | Agent |
+| W04 | done | pnpm v12.16 non-legacy deploy passed isolated API image/runtime checks | Agent |
+| W05 | done | All six API library migrations passed offline gates; see package evidence | Agent |
+| W06 | done | better-sqlite3 13.0.3 passed Windows, AMD64/ARM64 container, and rollback gates | Agent |
+| W07 | done | TypeScript 7 and runtime-aligned Node declarations passed offline gates | Agent |
+| W08 | blocked | In-game testing unavailable; shared-validation migration needs T06 | Agent + maintainer |
+| W09 | blocked | In-game testing unavailable; desktop distribution needs T06 | Agent + maintainer |
+| W10 | blocked | In-game testing unavailable; watcher acceptance needs T06 | Agent + maintainer |
+| W11 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
+| W12 | pending | Full release-candidate verification and explicit publication approval | Agent + maintainer |
+
+Recommended order and current package targets are recorded in the
+[November 4 audit](./UPGRADE-AUDIT-2026-11-04.md). W02 and W05 are complete.
+W06 and later waves remain approval-gated or blocked as listed above.
 
 Agent: implement approved scope, add missing regressions, run tests/builds, record
 results and limitations. Maintainer: approve scope, operate/test real game and
@@ -73,7 +85,8 @@ filenames or timestamps alone. Never invent results or credentials.
 
 Evidence: October 30, 2026; source `40a9206`; no dependency versions changed.
 See [W00 baseline evidence](./UPGRADE-BASELINE.md) for commands, results, hashes,
-rollback identity and remaining checks. This record predates W01 below.
+rollback identity and remaining checks. Post-merge checks are appended there;
+they did not change dependency versions.
 
 ## W01 - Low-risk build and development tooling
 
@@ -96,45 +109,171 @@ Optional host Node/npm/Git updates were not performed. See W02's later record be
 
 ## W02 - Web visuals and declaration-only cleanup
 
-1. Upgrade lucide-react 1.58.0 -> 1.65.0; inspect every imported icon family.
+1. Upgrade lucide-react 1.58.0 -> 1.64.0; inspect every imported icon family.
 2. Separately update `@types/better-sqlite3` 7.6.13 -> 9.6.0 only if declarations
    match the installed runtime/Drizzle usage. Do not change SQLite runtime here.
 3. Run T01-T03 and API tests for declaration changes; refresh server test ZIP.
    Confirm no schema, API payload, addon or desktop-sync contract changes.
-4. **STOP.** Prefer a small verified server/web-only update before launch.
-   A server-only candidate must pass the W11 checks applicable to that scope;
-   do not mark skipped waves done. Do not ship an unverified desktop rebuild.
+4. This wave did not change SQLite runtime, app contracts, addons, Electron or
+   watcher behavior. Do not ship an unverified desktop rebuild.
 
 Evidence: October 30, 2026; source `40a9206` plus uncommitted W01/W02 changes.
 Lucide 1.58.0 -> 1.64.0 (1.65.0 deferred by release-age policy);
 SQLite declarations 7.6.13 -> 9.6.0; runtime unchanged.
 See [W02 evidence and maintainer checklist](./UPGRADE-W02.md).
-Automated verification passed; waiting for the listed maintainer spot-check.
-**Do not begin W03 or later migrations automatically.**
+Automated verification passed. On November 4, the maintainer reported
+"looks like the browser stuff works" after the browser spot-check instructions.
+Record this as general browser acceptance; the optional offline-cache check was
+not reported. No later wave was started automatically from that acceptance.
 
-## W03 - Remove legacy pnpm deployment separately
+## W03 - Remaining web/build updates
 
-1. Confirm current pnpm deploy requirements; remove only `--legacy` after reviewing
-   workspace linking. Do not add dependency injection unless actually required.
+1. Update `tailwindcss` and `@tailwindcss/vite` 4.3.3 -> 4.3.4 as one focused
+   web-only change; inspect CSS output and responsive browser behavior.
+2. Separately update `@vitejs/plugin-react` 6.1.2 -> 6.2.1; it is used by web
+   and desktop, so build and smoke-test both.
+3. Separately update `lucide-react` 1.64.0 -> 1.67.0, the newest release old
+   enough for the configured release-age policy at the time; 1.68.0 was held
+   until eligible. Inspect imported icons and compare rendered output.
+4. Run T01-T03 for web-only changes and T01/T04 for the desktop plugin change.
+   No game is required for these checks; hold rebuilt desktop installers until
+   game acceptance in W09.
+
+Evidence: November 4, 2026; independently approved offline subset. W02's
+separate maintainer spot-check was completed later that day. Baseline: merge commit
+`5072460e81840e5450baa4c4387daf805b0ac7d4`, with the audited dependency state.
+Updated Tailwind and `@tailwindcss/vite` 4.3.3 -> 4.3.4, React plugin 6.1.2 ->
+6.2.1 in web/desktop, and Lucide 1.64.0 -> 1.67.0. No application source or
+component version changed. Full frozen install, workspace typecheck, web tests
+(15/15), desktop tests (21 passed, 1 live-GitHub test skipped), web/desktop
+builds, 390/768/1440 browser smoke, AMD64 web-image build/HTTP smoke and deployment
+ZIP contents checks passed. Test ZIP SHA256:
+`00EE69796381EA0096875A199FF3F5D6BF512571315169F3F76D3FFDCB693160`.
+Image: `flocksync-web:upgrade-w03-offline-5072460`, manifest-list digest
+`sha256:246145d99aa9f781b56b7dd7cf0a4436b0eb11150b691da5ed020cf0ec446954`.
+No installer/release packaging, game check, commit, push or deployment.
+Rollback only the three affected dependency declarations and lockfile closure.
+
+## W04 - Remove legacy pnpm deployment separately
+
+1. pnpm 12.2+ supports non-injected workspace dependencies through a dedicated
+   deploy lockfile, so remove only `--legacy`; do not enable dependency injection.
 2. Run T05 on both images with fresh deployment output; verify built shared-types
    resolution, production-only dependencies, native SQLite and non-root permissions.
 3. Exercise startup, auth, persistence and restart using disposable volumes.
    Failure: restore the previous deploy algorithm, not a policy-bypass flag.
 
-## W04 - Server libraries, one migration at a time
+Evidence: November 4, 2026; independently approved offline subset based on
+merge commit `5072460e81840e5450baa4c4387daf805b0ac7d4` plus completed W03.
+Removed only `--legacy` from the API Dockerfile command; pnpm 12.16.1 generated
+the dedicated deploy lockfile and deployed the workspace shared-types dependency
+without enabling injected workspace packages or changing the root policy.
+`Dockerfile.api` built for `linux/amd64`, image manifest digest
+`sha256:29ebd842bbb3c5aeedf51bc6965dbc8e2488efc5c4c79fcb8610a337077580c3`.
+Workspace typecheck and API tests passed (10 production, 14 update). A disposable
+container ran as UID 1000, passed readiness, synthetic admin login, restart and
+login after restart on a disposable volume. Docker reassigned its dynamic host
+port on restart; the harness was corrected to re-read the mapping and then passed.
+The deployment ZIP was refreshed and inspected (212 entries, required exclusions);
+SHA256 `67B9483CF96050A7F5374C28B6F526FCCEBF96DBEE3A46BFED38D632CFAA1D65`.
+Test container and volume were removed. No dependency, application source,
+production environment, component version, deployment, commit or release changed.
+Rollback only the Dockerfile API deploy flag and rebuild/retest the prior image.
 
-1. `@fastify/cors` 10.1.0 -> 11.3.1: retain explicit origins/methods; test
-   preflight and allowed/disallowed origins across GET/POST/PUT/PATCH/DELETE/OPTIONS.
-2. `@fastify/jwt` 9.1.0 -> 10.2.6: verify tokens minted by the old stack against
-   the new stack, valid claims, expiry, malformed tokens and every user role.
-3. Drizzle 0.44.7 -> 0.45.4: verify migrations, guild identity, queries and strict
+## W05 - Server libraries, one migration at a time
+
+1. `fastify` 5.12.7 -> 5.12.8: run API regression tests.
+2. `@fastify/cors` 10.1.0 -> 11.4.0: preserve `origin: true` and the configured
+   method list; compare reflected origins and preflight headers with the baseline.
+3. `@fastify/jwt` 9.1.0 -> 10.2.7: v10 upgrades `fast-jwt` to v6, which rejects
+   array-valued claims other than `aud`; verify old/new tokens, claims, expiry,
+   malformed tokens and every user role.
+4. `@fastify/rate-limit` 10.3.0 -> 11.2.2: cover merged auth limits, keying,
+   headers, allowed traffic and standard error responses.
+5. Drizzle 0.44.7 -> 0.45.4: verify migrations, guild identity, queries and strict
    `incoming.updatedAt > existing.updatedAt` behavior for older/equal/newer writes.
-4. dotenv 16.6.1 -> 18.0.9: test existing `dotenv/config`, precedence, missing
-   required settings, startup errors and logs. Preserve deployed configuration.
-5. Run T01-T03/T05 after each migration; use fixture sync requests, not live game data.
+6. dotenv 16.6.1 -> 18.0.9: test `dotenv/config`, precedence, missing required
+   settings, startup errors and logs. Preserve deployed configuration.
+7. Run T01-T03/T05 after each migration; use fixture sync requests, not live game data.
    Keep contract changes out of this wave; escalate any required contract migration.
 
-## W05 - Native database engine
+W05 progress — `fastify` 5.12.7 -> 5.12.8:
+The official 5.12.8 release is a security release (GHSA-3qgw-9275-xf8w) and also
+contains router, stream, parser, and type fixes. The API range and lockfile now
+select 5.12.8. Frozen install, workspace typecheck, API production tests (10/10),
+API update tests (14/14), AMD64 Docker build, and disposable container readiness,
+seeded admin login, authenticated `/me`, and non-root UID 1000 passed. Deployment
+ZIP SHA256: `18E6D85F73D4F9594CD49F0FCF20BD6AAB85974E53915B455783C12C8FBD34B6`.
+
+W05 progress — `@fastify/cors` 10.1.0 -> 11.4.0:
+The lockfile and API manifest now select 11.4.0. Frozen install, workspace
+typecheck, API production tests (10/10), API update tests (14/14), AMD64 Docker
+build, and disposable container readiness passed. OPTIONS preflights for GET,
+POST, PUT, PATCH, DELETE, OPTIONS, and TRACE returned the same status and CORS
+headers as the pre-upgrade baseline; the configured allowed-method header
+continues to omit TRACE, and `origin: true` continues reflecting the request
+origin. Deployment ZIP contents were checked for the updated manifest/lockfile
+and sensitive/local artifacts. SHA256:
+`10567D604E54475CB5BABBD12556DFAF9E1D9D50140D1B352D42D8DB8CF57E12`.
+Continue with JWT, rate-limit, Drizzle and dotenv, one package at a time.
+
+W05 progress — `@fastify/jwt` 9.1.0 -> 10.2.7:
+The release includes the GHSA-9x4w-r9p5-5h7m security fix. The v10 major
+updates `fast-jwt` to v6, which rejects array-valued JWT claims other than
+`aud`; FlockSync's `AuthUserSchema` uses scalar string/enum claims. The 10.2.7
+release also settles asynchronous secret providers once; FlockSync uses the
+configured static `JWT_SECRET`. Frozen install, workspace typecheck, API
+production tests (10/10), API update tests
+(14/14), AMD64 Docker build, and disposable readiness passed. Container checks
+confirmed old and new tokens interoperate in both directions for MEMBER,
+OFFICER and ADMIN, identity claims and role guards are unchanged, and expired
+and malformed tokens still return 401. The deployment ZIP manifest and lockfile
+were checked and local secrets/data were excluded. SHA256:
+`8DD33F6D38265CB8AB33A4D0678A3361EBD5D6989DFE3EDF0CA697805BEBC4C8`.
+Continue with rate-limit, Drizzle and dotenv, one package at a time.
+
+W05 progress — `@fastify/rate-limit` 10.3.0 -> 11.2.2:
+Version 11.2.2 includes the GHSA-grpc-p53c-r64v security fix from 11.2.0 and
+the local-store counter snapshot fix. Frozen install, workspace typecheck, API
+production tests (10/10), API update tests (14/14), AMD64 Docker build, and
+disposable readiness passed. Container checks verified login/registration
+limits, socket-IP keying despite untrusted `X-Forwarded-For`, the custom 429
+body, positive `Retry-After`, and successful requests after window expiry.
+The deployment ZIP contains the updated API manifest/lockfile and excludes
+local data. SHA256:
+`89AC33995E3B31E97C26E5D80EF78D0F72175F1ECCEF9C20F8407FDBCD19CE1D`.
+Continue with Drizzle and dotenv, one package at a time.
+
+W05 progress — Drizzle 0.44.7 -> 0.45.4:
+Version 0.45.2 fixes improper escaping in `sql.identifier()` and `sql.as()`
+(CWE-89); API source uses neither helper, relying on parameterized SQL
+templates and the query builder. The 0.45.3 Netlify driver and 0.45.4
+`postgres-js` prepared-query fix do not affect FlockSync's better-sqlite3
+driver. Frozen install, workspace typecheck, API production tests (10/10),
+API update tests (14/14), AMD64 Docker build, and disposable readiness passed.
+Migration, guild/sync, epoch conflict, SQLite CRUD, UID 1000, and container
+restart/persistence checks passed. The deployment ZIP was verified to contain
+the updated manifest/lockfile and exclude local data. SHA256:
+`2EFD7D942E763CB5479F778C59A237AA319B826ABB74FE32F0FAEED627589A29`.
+
+W05 progress — dotenv 16.6.1 -> 18.0.9:
+Version 18 adds the dotenv CLI and removes `.env.vault` support; FlockSync uses
+neither and retains its explicit `import "dotenv/config"` entry point. The
+18.0.9 CLI-only `DOTENV_PATH` change does not affect the API. Frozen install,
+workspace typecheck, API production tests (10/10), API update tests (14/14),
+and web tests (15/15) passed. Isolated checks verified `.env` loading,
+process-environment precedence, explicit failure for a missing `JWT_SECRET`,
+and container startup/auth. AMD64 API and web images built; isolated
+API-to-nginx integration passed SPA shell, readiness, login and authenticated
+request checks. Final deployment ZIP contains the updated manifest/lockfile
+and excludes local secrets/data. SHA256:
+`4C3CF820C1154620E1E7DC5810C66FA904917B4D205D0D8EB5BD06C0A50B6F98`.
+
+W05 complete: all six API dependency updates passed their offline checks.
+No game, release installers, live deployment, commit, push or publication was
+performed. Continue to W06 only after its approval gate.
+
+## W06 - Native database engine
 
 1. better-sqlite3 12.11.1 -> 13.0.3; review N-API/prebuild changes and Node floor.
 2. Run T01/T02/T05 on Windows and Linux AMD64/ARM64. Verify WAL/SHM access,
@@ -143,36 +282,71 @@ Automated verification passed; waiting for the listed maintainer spot-check.
    and restore a verified pre-upgrade backup into the old stack as a rollback drill.
    Never assume binary downgrade alone safely reverses database changes.
 
-## W06 - Compiler and supported runtime alignment
+Evidence: November 4, 2026. better-sqlite3 13.0.3 uses Node-API, bundles
+SQLite 3.53.4, and requires Node >=22; the API container remains on Node 22.
+On Windows Node 24.22.0, frozen install and native loading passed. API production
+tests (10/10), update tests (14/14), workspace typecheck, AMD64 and ARM64 image
+builds and runtime checks passed. Both Linux images booted as UID 1000, passed
+readiness/auth, applied all four migrations, and verified WAL/SHM sidecars,
+bound writes and reads, concurrent WAL reader/writer snapshots, and online
+backup. AMD64/ARM64 execution used Docker's Buildx/emulation, not physical ARM
+hardware. The retained old image confirmed better-sqlite3 12.11.1 / SQLite
+3.53.2; it created a verified backup which 13.0.3 read and restored. After a
+new-engine write, 12.11.1 reopened the database and restored the pre-upgrade
+backup successfully. The deployment ZIP contains the new API manifest/lockfile,
+excludes sensitive/local payloads, and has SHA256
+`9DCC7BBC8795C2CFFAA3F303931E1F927FF43173D4FFC4964208BFE2B38E88FC`.
+Only disposable databases and Docker volumes were used; all test containers and
+volumes were removed. No live server, physical Pi, commit, push or release
+publication was used. W07 was started after its separate maintainer approval.
+
+## W07 - Compiler and supported runtime alignment
 
 1. Align API/shared TypeScript 5.9.3 -> 7.0.2 with web/desktop; review intervening
    migrations. Verify emitted JS/declarations, package exports and all consumers.
 2. Align Node declarations to each actual host/container/Electron runtime.
-   Do not blindly choose the latest `@types/node` major.
-3. Separately evaluate Node 26.13.0 LTS; first refresh the supported Node 22
-   container line (audit latest 22.23.4) if needed. Do not combine runtime majors
-   with SQLite migration. Align engines/docs with verified dependency floors.
+   Update web/desktop 26.6.5 -> 26.6.6; retain API 22.20.5 unless a newer 22.x
+   declaration is verified. Do not choose the latest `@types/node` major blindly.
+3. The post-merge AMD64 image already ran Node 22.23.4, the current Node 22 line
+   observed in this audit. Do not combine any future runtime change with SQLite;
+   align engines/docs only with verified dependency floors.
 4. Run T01-T05; require T06 before distributing a changed collector/runtime.
 
-## W07 - Shared Zod migration: game gate
+Evidence: November 4, 2026. API/shared-types moved from TypeScript 5.9.3
+through 6.0.3 to 7.0.2, matching web/desktop. Each compiler step passed a
+workspace build. `@types/node` web/desktop declarations moved 26.6.5 -> 26.6.6;
+API remains on current Node 22 declarations 22.20.5, with Electron's separate
+Node 24.19.2 declarations unchanged. No TypeScript programmatic API consumers
+were found, and no compiler configuration or application code required edits.
+Frozen install, workspace typecheck/build, API production tests (10/10) and
+update tests (14/14), web tests (15/15), and desktop tests (21 passed, 1
+skipped, 0 failed) passed. The deployment ZIP was refreshed with the updated
+API/shared-types manifests and lockfile; AMD64 API and web Docker builds and
+isolated container readiness, auth, SPA fallback, and API restart-persistence
+checks passed. No game, installer packaging, live deployment, commit, push or
+publication occurred. The separate W08 contract migration remains blocked on
+in-game testing.
 
-1. **Do not begin the migration until a working game and test window are available.**
+## W08 - Shared Zod migration: game gate
+
+1. A working-game testing window is reported available; get the maintainer's
+   explicit approval and schedule T06 before starting the migration.
 2. Migrate Zod 3.25.76 -> 4.6.7 across shared/API/web/desktop as one coordinated
    contract change. Cover defaults, optional fields, coercion, refinements and errors.
 3. Use old payload fixtures to test Lua-parser output, sync requests/responses,
    auth, themes, helper serialization and release metadata; reject invalid inputs.
 4. Run T01-T06. Ship only after real capture -> upload -> helper load succeeds.
 
-## W08 - Desktop runtime and packaging: game gate
+## W09 - Desktop runtime and packaging: game gate
 
-1. First electron-builder 26.15.3 -> 26.18.0, then Electron 44.8.0 -> 45.2.0
+1. First electron-builder 26.15.3 -> 26.18.0, then Electron 44.8.0 -> 45.2.2
    in separate change sets. Keep Chokidar unchanged for attribution.
 2. Run T01/T04/T06 for each: installed and portable launch, preload/IPC, tray,
    startup settings, auth, network fetch, update checks, saved paths and fixture sync.
 3. Verify packaging contains correct dependencies and no configuration/secrets.
    Require live-game collection/helper acceptance before desktop distribution.
 
-## W09 - Chokidar migration: game gate
+## W10 - Chokidar migration: game gate
 
 1. Chokidar 5.0.0 -> 6.0.0 changes Windows watching; verify embedded Node meets
    its floor (audit: >=22.22), options and close behavior before implementation.
@@ -181,10 +355,11 @@ Automated verification passed; waiting for the listed maintainer spot-check.
 3. Run T06 across logout/reload/relogin and multiple accounts. Prove successful
    final-state sync without lost updates, runaway repeats or unsafe helper overwrites.
 
-## W10 - CI, container images and remaining tooling
+## W11 - CI, container images and remaining tooling
 
-1. Update actions separately: checkout v4 -> v7.0.1, github-script v7 -> v9,
-   upload-artifact v4 -> v7.0.2. Review Node/ESM compatibility and embedded scripts.
+1. Recheck action versions/changelogs (the November 4 npm scan does not cover
+   GitHub Actions), then update checkout, github-script, and upload-artifact
+   separately. Review Node/ESM compatibility and embedded scripts.
    Test packager workflow with publishing disabled; preserve hidden ZIP inclusion.
 2. BigWigs packager v2 already tracks current major (audit release 2.6.1);
    optional SHA pinning is not a required major update. Never duplicate uploads.
@@ -193,7 +368,10 @@ Automated verification passed; waiting for the listed maintainer spot-check.
    test cron, permissions, retention, actual backup integrity and isolated restore.
 4. Recheck VS Code/Container Tools/Dev Containers and other extensions via their
    own version histories; distinguish extension versions from embedded libraries.
-   Docker Desktop/Engine/Compose/Buildx were current at audit; update only if needed.
+   The November 4 audit records candidate host versions; install/update none without
+   separate maintainer approval and a recovery plan.
+   The audit records newer Docker Desktop/Compose/Buildx candidates; recheck and
+   update host tools only with separate maintainer approval and recovery plan.
 5. Inventory Python/MSBuild/.NET and remote OS tooling before claiming currency.
    Do not install a runtime merely because it exists; Lua remains 5.1.
 6. Re-audit all direct/transitive packages and deprecations. Record retained versions,
@@ -205,7 +383,7 @@ Execute [UPGRADE-TESTS.md](./UPGRADE-TESTS.md) for T01-T06, including the exact
 commands, isolation requirements, browser checks and maintainer game checklist.
 Missing required evidence blocks the wave; a skipped test is never acceptance.
 
-## W11 - Release and rollback gate
+## W12 - Release and rollback gate
 
 1. Confirm scope, all applicable wave evidence, tests and manual acceptance.
    Collector/shared-contract changes require T06; web/server-only candidates require
