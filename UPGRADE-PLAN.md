@@ -55,7 +55,7 @@ an independently approved change set with its own baseline and rollback.
 | W05 | done | All six API library migrations passed offline gates; see package evidence | Agent |
 | W06 | done | better-sqlite3 13.0.3 passed Windows, AMD64/ARM64 container, and rollback gates | Agent |
 | W07 | done | TypeScript 7 and runtime-aligned Node declarations passed offline gates | Agent |
-| W08 | pending | Game available; explicit migration approval and candidate-specific T06 required | Agent + maintainer |
+| W08 | done | Automated gates and candidate-specific game/browser/portable/installer checks passed; scoped limits below | Agent + maintainer |
 | W09 | pending | W08, explicit approval, packaging/runtime and candidate-specific T06 required | Agent + maintainer |
 | W10 | pending | W09, explicit approval, watcher and candidate-specific T06 required | Agent + maintainer |
 | W11 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
@@ -362,6 +362,95 @@ or W10 as part of that checkpoint.
 3. Use old payload fixtures to test Lua-parser output, sync requests/responses,
    auth, themes, helper serialization and release metadata; reject invalid inputs.
 4. Run T01-T06. Ship only after real capture -> upload -> helper load succeeds.
+
+Evidence: November 5, 2026; maintainer approved W08 with "lets start".
+Baseline workspace build passed. npm reported stable Zod `4.6.7`, and pnpm's
+release-age/supply-chain policy accepted it. Updated all four direct consumers
+from `3.25.76` to `4.6.7`, retaining coordinated `^4.6.7` ranges.
+Reviewed the [official migration guide](https://zod.dev/v4/changelog).
+Changed the web name-cache record to explicit string keys/string values and
+the API proxy validator from `.ip({ version: "v4" })` to `z.ipv4()`.
+Existing schema strictness, refinements and optional fields remain in place.
+Zod 4 rejects unsafe integers and may change validation error wording; tests
+assert actionable field paths/statuses rather than the old wording.
+
+Frozen install, workspace typecheck/build, API production tests (11/11),
+API update tests (14/14), web tests (16/16), and desktop tests (25 passed,
+1 opt-in live-update test skipped) passed. Added synthetic legacy Lua/sync,
+availability, helper/snapshot/metadata, auth, theme/refinement, update-default,
+name-cache and environment coercion/IPv4 regressions. No real SavedVariables,
+desktop credentials or production databases were read for these checks.
+
+After the maintainer started Docker Desktop, AMD64 API/web image builds passed
+(`flocksync-api:w08-zod-test`, `flocksync-web:w08-zod-test`).
+An isolated internal network with disposable containers verified non-root API
+startup, Zod 4 availability, readiness, nginx SPA fallback/proxy, login, legacy
+sync and helper response, roster availability, invalid-input rejection, and
+database persistence across API restart. No host ports were exposed. Test
+containers/network were removed. ARM64 was not rerun for this pure-JS migration;
+W06's native-runtime evidence is historical, not a fresh W08 ARM64 result.
+
+Windows installer/portable packaging passed; the packaged ASAR main matches
+the rebuilt output and contains no root desktop config or node_modules folder.
+The deployment ZIP was refreshed and inspected for Zod dependency alignment
+and sensitive-path exclusions. Candidate identities (SHA256):
+
+| Candidate | SHA256 |
+| --- | --- |
+| `release/FlockSync_Remote_Server_Deploy.zip` | `944CA4E63488288F042FF6A7CB4EEA54D94E20DBF2CDDF5AEB736D4D6FF705B3` |
+| `apps/desktop/release/FlockSync-Setup-0.5.1-x64.exe` | `4E69452F57AFB0AA843D81EDE8F3E6A222BCFEAC246AFDB8178ABF47C4602E0D` |
+| `apps/desktop/release/FlockSync-Portable-0.5.1-x64.exe` | `8BE6EE5CBCD02E50D15E5549FE147BB81024A519A3CBA5199345B6E674A5EFE9` |
+
+These are local test candidates with unchanged component versions, not a release
+or replacements for published same-version downloads. Root release desktop assets
+and the existing bundle manifest were not regenerated; that directory is not a
+coherent W08 release set. No component bumps, commit, deployment, tag, push or
+publication were performed.
+
+Manual acceptance update: maintainer passed isolated browser login/theme/roster,
+rebuilt Desktop login/synthetic sync, real game export upload, fresh equipment
+removal/restoration and exit -> sync -> helper login, with no reported errors.
+The Desktop used a separate-userData Electron harness, not installer/portable
+execution. Original helper and `.bak` files were backed up and hash-verified,
+then restored and verified after WoW and the test Desktop were closed. Manual
+test containers were stopped; the local URL is no longer active.
+Portable follow-up: actual candidate launch with isolated settings/synthetic
+files reached the local website by maintainer report and exited completely.
+With explicit approval, original startup entries were backed up, restored and
+verified by the launch wrapper. No FlockSync processes remained afterward;
+manual API/web containers were stopped again. Installer launch and remaining
+packaged settings/relaunch checks are still pending. No prior baseline report
+substitutes for those modes.
+
+Portable relaunch/settings follow-up passed by maintainer report: saved login,
+endpoint/path, sync, startup/minimized preferences off, close-to-tray enable,
+tray reopen and Quit, with no errors. Startup entries were restored/verified
+and test services stopped again. Installer execution remains pending;
+startup-at-login activation was intentionally not exercised on the normal
+Windows account.
+
+Installer follow-up passed November 5. Maintainer explicitly accepted replacing
+the normal installation and reported installation to `C:\Program Files\FlockSync`
+without errors. Normal config/startup entries were backed up first; installed
+ASAR matched the candidate hash. Installed launch with isolated settings passed
+login/settings, synthetic sync/roster and tray close/reopen/Quit by maintainer
+report. Startup entries were restored/verified, normal config remained
+hash-identical to its backup, and manual services were stopped. The unreleased
+installed binary remains at unchanged `0.5.1`; no server deployment occurred.
+This closes the earlier pending W08 candidate acceptance. W08 is complete for
+the scoped migration; reboot/startup activation, multi-account live behavior
+and fresh ARM64 checks remain unverified, not passed.
+
+Ready-to-commit checkpoint: W08 coordinated validation upgrade, subject to
+normal changed-component version preparation and final artifact refresh when
+the maintainer is ready to commit. Suggested message:
+`Update data validation while preserving guild sync and settings`.
+W09 is not started; obtain explicit approval before its separate packaging
+and Electron upgrades.
+Follow the [W08 handoff](./UPGRADE-TESTS.md#w08-candidate-handoff---november-5-2026).
+Do not mark W08 done or start W09 from the earlier baseline game reports.
+Rollback checkpoint is the pre-W08 committed tree/lockfile; retain all unrelated
+work and do not restore a production database merely to revert this dependency.
 
 ## W09 - Desktop runtime and packaging: game gate
 

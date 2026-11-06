@@ -180,6 +180,21 @@ restart passed. No game, release installers, live deployment, commit, push, or
 publication occurred. W07 is complete for offline scope; W08 remains blocked
 pending real-game acceptance.
 
+## W08 follow-up - November 5, 2026
+
+W08 was explicitly approved after game access and baseline guild testing
+returned. All four direct Zod consumers now use `4.6.7`; the CSV's Zod row
+reflects this change, not a fresh registry audit of every dependency.
+Explicit record keys and `z.ipv4()` replace the removed APIs. Workspace
+typecheck/build, frozen install, API production (11), update (14), web (16)
+and desktop (25 passed, one opt-in skipped) tests passed, including new legacy
+contract/default/refinement/coercion regressions. Windows candidates and the
+deployment ZIP were rebuilt; isolated AMD64 API/web builds and runtime checks
+passed and disposable containers/network were removed.
+Candidate hashes and limitations are in [W08 evidence](./UPGRADE-PLAN.md#w08---shared-zod-migration-game-gate).
+Candidate-specific manual acceptance remains pending; W08 is in progress,
+not complete. No production deployment or release publication occurred.
+
 ## Deprecated locked versions
 
 Registry metadata marked seven locked transitive versions deprecated:

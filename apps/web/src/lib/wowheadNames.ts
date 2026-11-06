@@ -10,7 +10,7 @@ export interface Entity {
 
 const STORAGE_KEY = 'flocksync.wowheadNames';
 const NameResponseSchema = z.object({ name: z.string().min(1) });
-const StoredSchema = z.record(z.string());
+const StoredSchema = z.record(z.string(), z.string());
 
 export const entityKey = (e: Entity): string => `${e.kind}:${e.id}`;
 

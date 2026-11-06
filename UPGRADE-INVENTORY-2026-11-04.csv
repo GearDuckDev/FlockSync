@@ -25,7 +25,7 @@
 "tsx","4.23.15","4.23.15","","@flocksync/api","","","https://www.npmjs.com/package/tsx"
 "typescript","7.0.2","7.0.2","","@flocksync/api; @flocksync/web; @flocksync/desktop; @flocksync/shared-types","","","https://www.npmjs.com/package/typescript"
 "vite","8.3.5","8.3.5","","@flocksync/web; @flocksync/desktop","","","https://www.npmjs.com/package/vite"
-"zod","3.25.76","4.6.7","3.25.76","@flocksync/api; @flocksync/web; @flocksync/desktop; @flocksync/shared-types","","","https://www.npmjs.com/package/zod"
+"zod","4.6.7","4.6.7","","@flocksync/api; @flocksync/web; @flocksync/desktop; @flocksync/shared-types","","","https://www.npmjs.com/package/zod"
 "@babel/code-frame","7.29.7","8.0.6","7.29.7","","","","https://www.npmjs.com/package/@babel/code-frame"
 "@babel/compat-data","7.29.7","8.0.5","7.29.7","","","","https://www.npmjs.com/package/@babel/compat-data"
 "@babel/core","7.29.7","8.1.0","7.29.7","","","","https://www.npmjs.com/package/@babel/core"
