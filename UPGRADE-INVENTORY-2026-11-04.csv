@@ -10,7 +10,7 @@
 "@vitejs/plugin-react","6.2.1","6.2.1","","@flocksync/web; @flocksync/desktop","","","https://www.npmjs.com/package/@vitejs/plugin-react"
 "bcryptjs","3.0.3","3.0.3","","@flocksync/api","","","https://www.npmjs.com/package/bcryptjs"
 "better-sqlite3","13.0.3","13.0.3","","@flocksync/api","","","https://www.npmjs.com/package/better-sqlite3"
-"chokidar","5.0.0","6.0.0","5.0.0","@flocksync/desktop","","","https://www.npmjs.com/package/chokidar"
+"chokidar","6.0.0","6.0.0","6.0.0","@flocksync/desktop","","","https://www.npmjs.com/package/chokidar"
 "dotenv","18.0.9","18.0.9","","@flocksync/api","","","https://www.npmjs.com/package/dotenv"
 "drizzle-kit","0.31.11","0.31.11","","@flocksync/api","","","https://www.npmjs.com/package/drizzle-kit"
 "drizzle-orm","0.45.4","0.45.4","","@flocksync/api","","","https://www.npmjs.com/package/drizzle-orm"

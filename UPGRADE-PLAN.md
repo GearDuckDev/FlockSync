@@ -57,7 +57,7 @@ an independently approved change set with its own baseline and rollback.
 | W07 | done | TypeScript 7 and runtime-aligned Node declarations passed offline gates | Agent |
 | W08 | done | Automated gates and candidate-specific game/browser/portable/installer checks passed; scoped limits below | Agent + maintainer |
 | W09 | done | Builder and Electron 45.2.3 automated/manual acceptance passed; scoped limits below | Agent + maintainer |
-| W10 | pending | W09, explicit approval, watcher and candidate-specific T06 required | Agent + maintainer |
+| W10 | done | Chokidar 6 automated/package and applicable portable/installed/game acceptance passed; scoped limits below | Agent + maintainer |
 | W11 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
 | W12 | pending | Full release-candidate verification and explicit publication approval | Agent + maintainer |
 
@@ -601,6 +601,58 @@ W10 requires separate approval; Chokidar remains `5.0.0`.
    rapid saves, duplicates, partial writes, retries, shutdown and watcher recreation.
 3. Run T06 across logout/reload/relogin and multiple accounts. Prove successful
    final-state sync without lost updates, runaway repeats or unsafe helper overwrites.
+
+Automated checkpoint, November 5, 2026: maintainer approved W10 with "lets start".
+Chokidar `5.0.0 -> 6.0.0` is the only runtime dependency change in this wave;
+Electron `45.2.3`, builder `26.18.0` and component version `0.5.1` are unchanged.
+The [v6 migration notes](https://github.com/paulmillr/chokidar/blob/6.0.0/README.md#upgrading)
+require Node >=22.22 and a new watcher after close. Host Node `24.22.0` and
+embedded Node `24.22.2` satisfy the floor; existing options and watcher recreation
+already comply. No production source adjustment was needed.
+
+Verification:
+- Baseline Desktop build, frozen install, workspace typecheck and final Windows
+  installer/portable packaging passed.
+- Desktop regressions: 27 passed, one optional live-network test skipped.
+- Three actual-filesystem watcher tests also passed under the packaged Electron
+  executable's embedded Node (`ELECTRON_RUN_AS_NODE=1`); this is not GUI acceptance.
+- Added partial/rapid-write stabilization, atomic replacement, HTTP 503 helper
+  preservation and next-save recovery, idle stop/restart, explicit missing-folder
+  error, restarted two-account discovery and separate per-account helper checks.
+- All six bundled output files byte-match the rebuilt output; builder-normalized
+  manifest version/dependency verified. ASAR contains only output/package metadata.
+  Windows reports both executables unsigned.
+
+| Candidate | SHA256 |
+| --- | --- |
+| `apps/desktop/release/FlockSync-Setup-0.5.1-x64.exe` | `F832E16B4E257B9E680FC636B8E81636A02FB99992448A2647FBFC69B6CD8D88` |
+| `apps/desktop/release/FlockSync-Portable-0.5.1-x64.exe` | `9F923037BB1D5E1817FD685FCF99F58E597F112FC5D4A357B819C1A1028278A6` |
+| `apps/desktop/release/win-unpacked/resources/app.asar` | `326CAD09012E195C268C5A37D05E95DAE95583FB554C0982F8AFB8ED86E9D8B9` |
+
+Preserved limitations: directories created after start require watcher restart;
+no autonomous retry timer (next save or Sync Now retries); idle-stop tests do not
+prove cancellation/draining of in-flight requests. Synthetic two-account coverage
+does not replace live multi-account acceptance. Reboot/startup activation remains
+unverified. Candidate-specific portable/installer and approved game acceptance
+passed as recorded in [the W10 handoff](./UPGRADE-TESTS.md#w10-chokidar-6-candidate-handoff).
+Maintainer passed automatic saves, rename/replacement without idle repeats,
+HTTP 502 failure and manual recovery, persisted settings/restarted watching,
+installed tray behavior, real-game gear removal/restoration through reload saves,
+and exit/sync/login with no errors.
+With game/Desktop verified closed, original helper files were restored and
+hash-verified. Startup entries were restored/verified by the wrappers and normal
+Desktop config remained unchanged. Local test containers are stopped; the old
+localhost URL is inactive. The isolated profile again targets synthetic files.
+The installed app is now the unreleased W10 candidate, still `0.5.1`.
+API/web/addons were not changed/repackaged. No version bump, commit or publication.
+
+Ready-to-commit checkpoint: W10 watcher upgrade with scoped acceptance complete.
+On explicit commit preparation, apply the changed-component patch version rules
+and rebuild the candidates. Suggested message: "Keep desktop sync reliable when
+game files are saved". Rollback: restore only W10's desktop manifest/lockfile
+dependency changes from the pre-W10 checkpoint and rebuild; preserve unrelated
+work. Do not reuse the same version/tag for published changed sources.
+W11 has not started and requires separate approval.
 
 ## W11 - CI, container images and remaining tooling
 

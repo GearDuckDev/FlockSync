@@ -393,3 +393,153 @@ services have been started for W09; the old localhost URL is inactive.
    test services. Record manual outcomes and candidate identities before starting
    the separate Electron upgrade. Do not claim reboot/startup activation or
    unavailable multi-account coverage passed.
+
+### W10 Chokidar 6 candidate handoff
+
+Automated watcher migration checks passed: 27 Desktop tests, one optional
+live-network skip; three filesystem watcher tests passed again under packaged
+Electron's embedded Node. Frozen install, workspace typecheck and Windows
+packaging passed. See [W10 evidence](./UPGRADE-PLAN.md#w10---chokidar-migration-game-gate)
+for exact candidate hashes. The `0.5.1` filenames now identify new W10 builds,
+not the previously accepted W09 builds. Both are unsigned.
+
+Tests possible now, one checkpoint at a time:
+1. Close WoW and normal/test Desktop. Do not launch the candidate directly.
+   Verify the portable hash from W10 evidence. Prepare an isolated synthetic
+   profile pointed at a disposable WoW folder, not the previously used real
+   client; retain normal Desktop settings and back up targeted startup entries.
+   Start only isolated local API/web services and verify readiness before sharing
+   a URL. At this checkpoint all test services are stopped; old URLs are inactive.
+2. Launch `apps/desktop/release/FlockSync-Portable-0.5.1-x64.exe` with the protected
+   session wrapper. Save synthetic Lua exports rapidly and by rename/replacement.
+   Expect successful final-state upload, correctly placed helper and no repeated
+   feedback uploads. Disconnect the isolated API for one save: expect an explicit
+   failure, unchanged helper, then recovery on a new save/Sync Now after restoring
+   API readiness. Quit/relaunch and verify watching resumes. Report exact errors
+   and whether the web roster shows the final state.
+3. Only with explicit installation-replacement approval, back up normal settings,
+   install `apps/desktop/release/FlockSync-Setup-0.5.1-x64.exe` without automatic
+   launch, verify installed ASAR/runtime against this candidate and repeat isolated
+   sync/tray/relaunch checks. Do not infer this pass from W09 installation.
+
+Game-required/deferred:
+1. Obtain fresh approval before the test Desktop touches real game files. With
+   WoW closed, back up/hash-verify both existing AppHelper SavedVariables files.
+   Use isolated login/local server settings; do not modify normal configuration.
+2. Repeat candidate-specific reload, logout/character-switch, gear removal/restore
+   and exit -> successful sync -> login helper checks. Expect current gear/role
+   and correct helper data. Restore original gear before finishing. A new account
+   folder requires watcher restart; live multi-account testing remains deferred
+   if only one account is available.
+3. With game and test Desktop closed, restore/hash-verify helper backups, verify
+   normal config unchanged and startup entries restored, then stop identified test
+   containers. Report sync errors, unexpected repeated uploads or stale final
+   gear/helper state. Retain known-good W09 sources/install rollback until accepted.
+
+W10 remains in progress and blocked for release/distribution acceptance by these
+manual gates. Idle shutdown is covered; cancellation/draining during an active
+upload is not established by these tests. No production deployment, component
+version bump, installer replacement or publication was performed.
+
+Portable preparation follow-up: maintainer confirmed WoW/all Desktop instances
+closed and authorized the isolated test. Local API/web containers were restarted;
+`http://127.0.0.1:18708/ready` returned 200. A fresh W10-only signed-out profile
+targets the synthetic folder, not the real client. Normal config baseline hash
+was captured; the portable candidate hash was reverified. Startup restoration is
+handled by the protected wrapper on exit. GUI acceptance remains pending; the
+local URL is available only while these identified test containers remain running.
+
+Maintainer reported W10 portable login/manual Sync Now succeeded. Automatic
+watching acceptance is next: changed only the disposable W08 Tester fixture to
+HEALER with fresh timestamps while the isolated app/server were verified running.
+Awaiting maintainer confirmation of automatic success and the updated web role;
+manual Sync Now must not be used for this check.
+
+Maintainer confirmed automatic watching succeeded: Desktop automatically synced
+and the local web character showed HEALER. Next check replaces the synthetic save
+by rename with a fresh DPS record; automatic sync/final web state and absence of
+repeated feedback uploads remain to be confirmed.
+
+Maintainer confirmed rename/replacement acceptance, including automatic sync,
+the final DPS role and no idle feedback repeats. Next, only the isolated API
+container was stopped and the synthetic export changed to HEALER with fresh
+timestamps. Helper hash was captured before the outage; awaiting the explicit
+Desktop failure report before restoring the API and testing recovery.
+
+Maintainer confirmed the expected HTTP 502 during the isolated API outage.
+The synthetic helper remained byte-identical to its pre-outage hash. The isolated
+API was restarted and `/ready` returned HTTP 200; the same W10 Desktop instance
+is still running. Manual Sync Now recovery to the pending HEALER export is next;
+do not count recovery as passed until the maintainer confirms Desktop/web results.
+
+Maintainer confirmed manual Sync Now recovery succeeded without restarting
+Desktop, and the local web character showed HEALER. The next portable gate is
+tray Quit followed by a protected relaunch of the same isolated W10 profile and
+a fresh automatic save. Await full exit and startup-registration restoration
+before relaunching; persistence/restarted watching are not yet accepted.
+
+The protected portable wrapper exited successfully and reported startup entries
+restored/verified. No W10 GUI remained; normal Desktop config hash was unchanged.
+Isolated login/path/local endpoint/startup preference persisted. The same candidate
+was relaunched through the wrapper; its process and server readiness were verified.
+A fresh synthetic DPS save now tests resumed automatic watching. Awaiting maintainer
+confirmation of the automatic success and final web role.
+
+Maintainer confirmed resumed automatic watching and final DPS web role after
+the protected portable relaunch. Portable login/manual sync, automatic save,
+rename/replacement without idle repeats, outage error/helper preservation,
+manual recovery and relaunch watching have passed. Installer replacement and
+candidate-specific protected game acceptance remain pending.
+
+Maintainer approved installer replacement with Desktop/WoW closed. The portable
+wrapper restored/verified startup entries; no FlockSync/WoW processes remained.
+Normal config matched its baseline and was backed up/hash-verified locally.
+The W10 installer hash was verified and its interactive wizard opened. Previous
+installed ASAR matched the accepted W09 hash. Awaiting installation completion
+with automatic launch disabled, then installed candidate verification and
+protected isolated launch. Installation is not yet accepted.
+
+Maintainer reported installation finished. Installed executable byte-matched the
+W10 unpacked candidate; installed ASAR matched the W10 hash. Normal config was
+unchanged and local readiness returned 200. Installed Desktop was launched via
+the protected wrapper with the W10 synthetic-only profile and its process verified.
+A fresh HEALER fixture save tests installed automatic watching; maintainer GUI,
+web and tray acceptance remains pending.
+
+Maintainer confirmed installed W10 automatic sync, final HEALER web role and
+window-close/tray-reopen behavior passed. Candidate-specific protected game
+acceptance remains pending. Obtain fresh approval and full game/test Desktop
+exit before backing up real helper files or redirecting the isolated profile.
+
+Maintainer approved protected W10 real-game testing and confirmed game/Desktop
+closed. Wrapper restored/verified startup entries; no game/Desktop process
+remained and normal config hash was unchanged. Both original real account helper
+files were freshly backed up and hash-verified in the session's W10 backup folder.
+Only the isolated profile's client path was redirected to the actual client;
+the endpoint remains the local test server, verified ready. Original helper
+restoration is mandatory after game/test Desktop exit. Game acceptance is pending.
+
+Maintainer confirmed W10 real-game equipment removal and restoration through
+reload saves: automatic Desktop uploads and matching local web gear state passed,
+with original gear restored. Logout/relogin and returned-helper loading are next;
+original helper restoration and final service/config cleanup remain pending.
+
+### W10 final acceptance and cleanup - November 5
+
+Maintainer reported the exit -> automatic sync -> login check completed without
+errors and confirmed everything closed. Process checks then verified game and
+Desktop were fully stopped. Both original AppHelper files were restored from
+the fresh W10 backups and hash-verified; normal Desktop config matched its
+pre-test baseline. The protected launch wrapper had already restored/verified
+startup entries. The isolated profile was returned to the synthetic client path.
+Both identified test containers were stopped and no listener remained on port
+18708: the old test URL is inactive.
+
+W10 applicable portable, installed and real-game manual acceptance is complete.
+The installed app remains the unreleased W10 candidate (`0.5.1`), not a newly
+published release. Earlier pending statements above are chronological test steps,
+superseded by this final outcome. Reboot/startup activation, live multiple-account
+testing and cancellation/draining of active uploads remain unverified. New account
+folders require watcher restart and failed uploads need a new save/Sync Now.
+No production deployment, version bump, commit or publication occurred. W11 has
+not started.

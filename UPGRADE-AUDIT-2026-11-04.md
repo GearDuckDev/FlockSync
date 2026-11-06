@@ -220,6 +220,26 @@ refresh. Installer/portable hashes, known unsigned status, rollback and pending
 manual acceptance are in [runtime evidence](./UPGRADE-PLAN.md#electron-checkpoint---november-5-2026).
 The installed app remains the builder-only Electron 44 candidate.
 
+## W10 Chokidar follow-up - November 5, 2026
+
+Chokidar `5.0.0 -> 6.0.0` passed frozen install, workspace typecheck,
+Desktop regressions (27 passed, one optional skipped), and Windows packaging.
+Actual packaged Electron embedded Node passed three filesystem watcher tests.
+Existing watcher options/recreation satisfy v6; no production source change.
+New tests cover stable partial/rapid writes, atomic replacement, failure/retry on
+the next save, helper preservation, idle stop/restart and two synthetic account
+folders with independent helper output. Embedded Node `24.22.2` meets >=22.22.
+New directories still need watcher restart; no timed network retry was added.
+Active-upload shutdown is not covered. Applicable portable/installed/game
+acceptance subsequently passed, including automatic saves, error recovery,
+tray/relaunch and real-game reload/exit/login checks without errors.
+See [W10 evidence](./UPGRADE-PLAN.md#w10---chokidar-migration-game-gate) and
+[handoff](./UPGRADE-TESTS.md#w10-chokidar-6-candidate-handoff) for candidate identities,
+rollback and retained limitations. Original helpers/startup entries were restored
+and verified, normal configuration unchanged, and test containers stopped.
+The installed app is now the unreleased W10 candidate, still version `0.5.1`.
+The CSV row reflects Chokidar's new version only, not a full inventory refresh.
+
 ## Deprecated locked versions
 
 Registry metadata marked seven locked transitive versions deprecated:
