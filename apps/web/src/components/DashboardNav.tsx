@@ -11,6 +11,7 @@ export type Tab =
   | 'ledger'
   | 'tasks'
   | 'admin'
+  | 'characters'
   | 'theme';
 
 export type Access = 'officer' | 'admin';
@@ -30,6 +31,7 @@ export const TABS: TabItem[] = [
   { id: 'attunements', label: 'Attunements' },
   { id: 'ledger', label: 'Loot & Attendance' },
   { id: 'tasks', label: 'Officer Tasks', access: 'officer' },
+  { id: 'characters', label: 'Character Links', access: 'officer' },
   { id: 'admin', label: 'Admin Settings', access: 'admin' },
   { id: 'theme', label: 'Theme Settings' },
 ];

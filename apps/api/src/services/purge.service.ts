@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { RaidSlotAssignmentSchema } from "@flocksync/shared-types";
 import { z } from "zod";
 import { db } from "../db/index.js";
+import { auditOwnershipDeletion } from "./characterOwnershipAudit.service.js";
 import {
   attendance,
   characters,
@@ -24,10 +25,11 @@ const parseArray = (text: string): unknown[] => {
 const GuidList = z.array(z.string());
 
 /** Removes a character and every record that references it. Returns false if unknown. */
-export const purgeCharacter = (guid: string): boolean =>
+export const purgeCharacter = (guid: string, actingUserId: string): boolean =>
   db.transaction((tx) => {
     const existing = tx.select().from(characters).where(eq(characters.guid, guid)).get();
     if (!existing) return false;
+    auditOwnershipDeletion(tx, { characterGuid: guid }, actingUserId);
 
     tx.insert(deletedCharacters).values({ guid, deletedAt: Math.floor(Date.now() / 1000) })
       .onConflictDoUpdate({ target: deletedCharacters.guid, set: { deletedAt: Math.floor(Date.now() / 1000) } })

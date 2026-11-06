@@ -2,7 +2,7 @@ local addonName, ns = ...
 
 -- First-time onboarding wizard. Until Finish is clicked, nothing is scanned or
 -- broadcast (see ns.IsOnboarded).
-local PAGE_COUNT = 3
+local PAGE_COUNT = 6
 local window
 local pageIndex = 1
 
@@ -21,7 +21,7 @@ local function buildWelcome(page)
         .. "website for rosters, raid lineups and loot planning.\n\n"
         .. "In return you get your raid schedule, a guild crafter search, item tooltips "
         .. "showing who needs or can craft an item, and an LFG matcher.\n\n"
-        .. "This quick setup takes under a minute.")
+        .. "Next: privacy, role, crafting orders, group availability and your Kill List.")
 end
 
 local function buildPrivacy(page)
@@ -71,14 +71,17 @@ local function finish()
     end
     window:Hide()
     ns.BroadcastUpdate("FULL_SCAN")
+    if ns.StartKillSync then ns.StartKillSync() end
     print("FlockSync: Setup complete! Your character was shared with the guild. "
         .. "Use /fs for the FlockSync window, /fs options for settings, /fs help for commands.")
+    if window.pages[5].openAfterFinish then ns.OpenOptions("availability") end
 end
 
 local function createWindow()
     window = ns.CreateWindow("FlockSyncWalkthroughFrame", "FlockSync Setup", 450, 444)
     window.pages = {}
-    for index, build in ipairs({ buildWelcome, buildPrivacy, buildRole }) do
+    for index, build in ipairs({ buildWelcome, buildPrivacy, buildRole,
+        ns.BuildWalkthroughCrafting, ns.BuildWalkthroughAvailability, ns.BuildWalkthroughKillList }) do
         local page = CreateFrame("Frame", nil, window)
         page:SetPoint("TOPLEFT", 0, -30)
         page:SetPoint("BOTTOMRIGHT", 0, 44)

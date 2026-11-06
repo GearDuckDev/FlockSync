@@ -252,6 +252,16 @@ Migration `0001_character_auto_stale` adds `characters.auto_stale`. Addon-report
 automatically on a newer, fresh login; manual web culls clear the flag and stay
 sticky. Redeploy the API to apply it (it runs automatically on startup).
 
+The character-ownership migration adds separate link and audit tables; it
+does not infer owners, change main/alt relationships, or modify existing
+character/kill-list records. After an approved upgrade, sync the guild roster
+and have an officer/admin verify ownership through **Character Links**.
+One server hosts one configured guild. Links are scoped to that guild/realm
+and rely on the trusted collector's roster, not an external account-verification
+service. Backup/restore includes links and audit records; guild-data wipe clears
+them while retaining website accounts. Account/character deletion revokes its
+links and preserves a historical audit record.
+
 For every server upgrade, select/extract the new source while preserving
 `.env` and `data`, then run from that deployed project directory:
 

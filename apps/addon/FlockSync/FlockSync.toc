@@ -7,6 +7,9 @@
 Config.lua
 Officer.lua
 Core.lua
+KillListText.lua
+KillList.lua
+KillListActions.lua
 UpdateNotices.lua
 Cleanup.lua
 Serializer.lua
@@ -21,6 +24,9 @@ Scanner.lua
 Comms.lua
 SnapshotComms.lua
 Roster.lua
+KillListAuthority.lua
+KillListTransport.lua
+KillListSync.lua
 Ledger.lua
 RaidAssignments.lua
 Tooltips.lua
@@ -34,9 +40,13 @@ UICrafters.lua
 UILfg.lua
 UIRole.lua
 UISettings.lua
+UIKillEditor.lua
+UIKillList.lua
+WalkthroughFeatures.lua
 Walkthrough.lua
 UIOptions.lua
 UI.lua
 Minimap.lua
 Slash.lua
+KillListEntryPoints.lua
 Events.lua

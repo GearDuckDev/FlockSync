@@ -32,6 +32,7 @@ function ns.ApplyDatabaseReset(resetAt)
     FlockSyncDB.characters = {}
     FlockSyncDB.staleCharacters = {}
     FlockSyncDB.guildLedger = { loot = {}, attendance = {} }
+    FlockSyncDB.killListGuilds = nil
     FlockSyncDB.guildSnapshot = nil
     FlockSyncDB.myProfile = nil
     FlockSyncDB.exportedAt = 0

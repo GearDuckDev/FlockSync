@@ -82,10 +82,14 @@ function ns.CreateTabHost(owner, panelTop)
         end
     end
 
-    -- Packs the visible tab buttons left to right in one row.
-    function host.LayoutRow(x, y, gap)
+    -- Additional tabs wrap when a row width is provided.
+    function host.LayoutRow(x, y, gap, rowWidth)
+        local startX = x
         for _, tab in ipairs(host.tabs) do
             if not tab.hidden then
+                if rowWidth and x > startX and x + tab.button:GetWidth() > startX + rowWidth then
+                    x, y = startX, y - 26
+                end
                 tab.button:ClearAllPoints()
                 tab.button:SetPoint("TOPLEFT", x, y)
                 x = x + tab.button:GetWidth() + gap

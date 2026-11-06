@@ -1,7 +1,7 @@
 local addonName, ns = ...
 
 -- Daily-use window. Settings live in the Options window (UIOptions.lua).
-local PANEL_TOP = -52
+local PANEL_TOP = -78
 local TAB_X, TAB_Y, TAB_GAP = 10, -28, 2
 local window
 
@@ -16,9 +16,11 @@ local TAB_LABELS = {
     crafters = "Crafter Search",
     lfg = "LFG Matcher",
     professions = "Professions & Goals",
+    killlist = "Kill List",
 }
 
 local function isTabEnabled(name)
+    if name == "killlist" then return ns.KillListEnabled() end
     local key = FEATURE_KEYS[name]
     return key == nil or ns.IsEnabled(key)
 end
@@ -30,7 +32,7 @@ local function applyFeatureToggles()
     for _, tab in ipairs(window.tabs.tabs) do
         window.tabs.SetTabShown(tab.name, isTabEnabled(tab.name))
     end
-    window.tabs.LayoutRow(TAB_X, TAB_Y, TAB_GAP)
+    window.tabs.LayoutRow(TAB_X, TAB_Y, TAB_GAP, 440)
     if window:IsShown() then
         local selected = window.tabs.Find(window.tabs.selected)
         if not selected or selected.hidden then
@@ -40,12 +42,13 @@ local function applyFeatureToggles()
 end
 
 local function createWindow()
-    window = ns.CreateWindow("FlockSyncFeaturesFrame", "FlockSync", 450, 444)
+    window = ns.CreateWindow("FlockSyncFeaturesFrame", "FlockSync", 450, 474)
     local tabs = ns.CreateTabHost(window, PANEL_TOP)
     tabs.Add("schedule", TAB_LABELS.schedule, 0, TAB_Y, 100, ns.BuildSchedulePanel)
     tabs.Add("crafters", TAB_LABELS.crafters, 0, TAB_Y, 110, ns.BuildCrafterSearchPanel)
     tabs.Add("lfg", TAB_LABELS.lfg, 0, TAB_Y, 95, ns.BuildLfgPanel)
     tabs.Add("professions", TAB_LABELS.professions, 0, TAB_Y, 125, ns.BuildProfessionsPanel)
+    tabs.Add("killlist", TAB_LABELS.killlist, 0, TAB_Y, 85, ns.BuildKillPanel)
     window.tabs = tabs
 
     -- Title bar, beside the close button, so it never covers panel content.
@@ -62,6 +65,7 @@ ns.OnConfigChanged(function(key)
         end
     end
 end)
+ns.OnKillListChanged(applyFeatureToggles)
 
 -- Opens the window on a tab (or the last/first visible one). A disabled tab
 -- falls back to the first enabled tab with a hint.
@@ -70,7 +74,8 @@ function ns.OpenFeatures(tabName)
         createWindow()
     end
     if tabName and not isTabEnabled(tabName) then
-        print("FlockSync: " .. TAB_LABELS[tabName] .. " is disabled. Enable it in /fs options.")
+        print("FlockSync: " .. TAB_LABELS[tabName] .. " is disabled. Enable it in "
+            .. (tabName == "killlist" and "/fs killoptions." or "/fs options."))
         tabName = nil
     end
     window:Show()

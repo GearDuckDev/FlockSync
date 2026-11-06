@@ -12,6 +12,7 @@ import { AttunementsPage } from './AttunementsPage';
 import { LootAttendancePage } from './LootAttendancePage';
 import { OfficerTasksPage } from './OfficerTasksPage';
 import { AdminUsersPage } from './AdminUsersPage';
+import { CharacterOwnershipPage } from './CharacterOwnershipPage';
 import { ServerUpdates } from './components/admin/ServerUpdates';
 import { ServerUpdateBanner } from './components/ServerUpdateBanner';
 import { UsernameModal } from './components/UsernameModal';
@@ -72,6 +73,7 @@ export const Dashboard = (): React.JSX.Element => {
       {activeTab === 'ledger' && <LootAttendancePage data={data} />}
       {activeTab === 'theme' && <ThemeSettingsPage />}
       {activeTab === 'tasks' && <OfficerTasksPage data={data} />}
+      {activeTab === 'characters' && <CharacterOwnershipPage />}
       {activeTab === 'admin' && <div className="space-y-5"><ServerUpdates /><AdminUsersPage /></div>}
       {editingUsername && user && <UsernameModal target={user}
         onClose={() => setEditingUsername(false)} onSaved={() => setEditingUsername(false)} />}

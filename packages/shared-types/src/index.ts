@@ -124,3 +124,10 @@ export {
 export type { Backup, BackupCatalog, DatabaseAdminResult } from "./databaseAdmin.js";
 export { BackupVerificationSchema, BackupAttemptSchema, BackupHealthSchema } from "./health.js";
 export type { BackupVerification, BackupAttempt, BackupHealth } from "./health.js";
+export {
+  CharacterOwnershipSchema, SetCharacterOwnerSchema, CharacterOwnershipAuditSchema,
+  CharacterOwnershipCatalogSchema
+} from "./characterOwnership.js";
+export type {
+  CharacterOwnership, SetCharacterOwner, CharacterOwnershipAudit, CharacterOwnershipCatalog
+} from "./characterOwnership.js";

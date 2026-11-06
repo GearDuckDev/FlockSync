@@ -46,3 +46,23 @@ test('missing or malformed gear items fail validation instead of clearing saved 
     assert.match(result.error, /Validation failed: .*gear.items/);
   }
 });
+
+test('kill-list private data and local shared drafts never enter desktop uploads', () => {
+  const source = savedVariables('items = {}').replace('FlockSyncDB = {', `FlockSyncDB = {
+    killListCharacters = {
+      ["Player-Test"] = { enabled = true, entries = {
+        ["secret"] = { name = "PRIVATE_ENEMY", note = "PRIVATE_NOTE",
+          history = { "PRIVATE_HISTORY" }, lastSeenZone = "PRIVATE_ZONE" },
+      } },
+    },
+    killListGuilds = { ["guild"] = { ["draft"] = { name = "LOCAL_DRAFT" } } },
+  `);
+  const result = parseFlockSyncLua(source);
+  assert.equal(result.ok, true);
+  if (!result.ok) assert.fail(result.error);
+  const upload = JSON.stringify(result.payload);
+  for (const value of ['killListCharacters', 'killListGuilds', 'PRIVATE_ENEMY',
+    'PRIVATE_NOTE', 'PRIVATE_HISTORY', 'PRIVATE_ZONE', 'LOCAL_DRAFT']) {
+    assert.equal(upload.includes(value), false, value);
+  }
+});

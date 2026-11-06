@@ -5,7 +5,8 @@ import Database from "better-sqlite3";
 import { db, databasePath, sqliteConnection } from "../db/index.js";
 import {
   attendance, characters, deletedCharacters, lootHistory, officerTasks,
-  playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity
+  playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity,
+  characterOwnerships, characterOwnershipAudit
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
 import { checkIntegrity, createBackupUnlocked } from "./databaseBackup.js";
@@ -139,6 +140,8 @@ export const wipeDatabase = () => runExclusive(async () => {
   await writeDatabaseAdminState({ ...state, databaseResetAt });
   try {
     db.transaction((transaction) => {
+      transaction.delete(characterOwnerships).run();
+      transaction.delete(characterOwnershipAudit).run();
       transaction.delete(attendance).run();
       transaction.delete(lootHistory).run();
       transaction.delete(officerTasks).run();
