@@ -58,8 +58,8 @@ an independently approved change set with its own baseline and rollback.
 | W08 | done | Automated gates and candidate-specific game/browser/portable/installer checks passed; scoped limits below | Agent + maintainer |
 | W09 | done | Builder and Electron 45.2.3 automated/manual acceptance passed; scoped limits below | Agent + maintainer |
 | W10 | done | Chokidar 6 automated/package and applicable portable/installed/game acceptance passed; scoped limits below | Agent + maintainer |
-| W11 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
-| W12 | pending | Full release-candidate verification and explicit publication approval | Agent + maintainer |
+| W11 | done | Local CI/images/tooling/dependency audit and hosted no-publish preview passed; scoped limits below | Agent + maintainer |
+| W12 | done | Local release preparation, final builds/artifact checks and protected portable/installer acceptance passed; publication/deployment not authorized | Agent + maintainer |
 
 Recommended order and current package targets are recorded in the
 [November 4 audit](./UPGRADE-AUDIT-2026-11-04.md). W02 and W05 are complete.
@@ -676,6 +676,214 @@ W11 has not started and requires separate approval.
 6. Re-audit all direct/transitive packages and deprecations. Record retained versions,
    owning parents, support reasons and review dates; do not force "zero outdated."
 
+### W11 GitHub Actions checkpoint - November 5, 2026
+
+Maintainer approved starting W11 with "lets start"; this change set is limited
+to GitHub Actions and its addon packaging configuration. Started from clean
+checkpoint `dd2d44f`. Official latest releases were checkout `7.0.1`,
+github-script `9.0.0`, upload-artifact `7.0.2`, and BigWigs packager `2.7.0`.
+Updated the three Actions references separately to their current major channels
+(`v7`, `v9`, `v7`), linting after each. BigWigs stays `v2`, already current.
+
+Reviewed official migration notes:
+- [Checkout](https://github.com/actions/checkout#whats-new): Node 24, ESM,
+  credential storage and fork checkout restrictions; release/manual triggers,
+  full tag history and `persist-credentials: false` remain compatible.
+- [github-script](https://github.com/actions/github-script#breaking-changes):
+  Node 24 and ESM-only GitHub toolkit; existing injected objects remain compatible,
+  with no CommonJS toolkit import or conflicting `getOctokit` declaration.
+- [upload-artifact](https://github.com/actions/upload-artifact/releases/tag/v7.0.0):
+  ESM and optional direct-file upload. Retain the default archive wrapper,
+  explicit hidden-file inclusion and missing-file error behavior.
+- [BigWigs 2.7.0](https://github.com/BigWigsMods/packager/releases/tag/v2.7.0):
+  current v2 includes Forever interface handling; preview recognized Forever.
+
+Validation:
+- Existing Docker actionlint `1.7.12` passed baseline, each individual reference
+  update and the final workflow.
+- Six cases executed the exact eligibility JavaScript with v9-shaped injected
+  context: manual package, unchanged/new addon, pagination, skipped draft/current/
+  invalid/newer releases, and missing-TOC failure. Existing publish guards retained.
+- Actual BigWigs 2.7.0 preview packaging (`-d`, no upload credentials) ran in a
+  disposable Linux container with a tracked-source fixture. Exact workflow shell
+  selected stable manual/automatic and alpha/beta tags; invalid tag, mismatched
+  prerelease flag and tag/addon channel mismatch were rejected.
+- Preview initially exposed newly added root documents leaking into the addon
+  package. Added missing explicit pkgmeta exclusions, then reran successfully:
+  the exact workflow ZIP verifier passed and rejected an injected disallowed file.
+  Addon code/TOC and all runtime component versions remain unchanged.
+
+This is local verification, not a GitHub-hosted Actions run. No push, workflow
+dispatch, artifact-service upload or CurseForge publication was authorized or
+performed. Hosted preview remains a W11/release gate; see the
+[checklist](./UPGRADE-TESTS.md#w11-github-actions-preview-handoff).
+No game retest is required for these workflow-only changes. Containers were
+disposable `--rm` processes; no helper/config or live service was touched.
+No application builds or full release packaging were needed or performed.
+Images, host tools and final dependency closure have not started.
+
+Not ready to commit as completed W11: hosted preview and the remaining W11
+checkpoints are pending. Suggested scoped commit message when authorized:
+"Keep addon release packaging compatible with current build tools".
+Workflow-only changes do not need a runtime version bump. Rollback only this
+checkpoint's three action references and pkgmeta exclusions if necessary;
+preserve unrelated work and keep the archive verifier enabled.
+
+### W11 container images checkpoint - November 5, 2026
+
+Maintainer approved continuing with container images. Retained all earlier W11
+workflow changes; no production Compose invocation or credential access.
+Registry image pulls supersede the November 4 candidate estimates:
+- `nginx:alpine`: nginx 1.31.8 / Alpine 3.24.4, upstream digest
+  `sha256:b2f80f8f88146b0772fdcc7d92cea621aa8c2889fa8d07ed61d4884fcea53e09`.
+  The W08 web image already used these runtime versions; no nginx Dockerfile or
+  proxy-template adjustment was needed. Rebuilt with `--pull` for validation.
+- `alpine:3.23`: refreshed baseline 3.23.8, upstream digest
+  `sha256:f3d55900449227ae9e237ede521e7b665d53a253b42065ba90b9db9275e198ad`.
+- Backup Dockerfile now uses `alpine:3.24`, resolved 3.24.4, upstream digest
+  `sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a`.
+  Both branches install SQLite CLI 3.53.4 at this check. Tags/package repositories
+  remain mutable by existing policy; recorded digests are observations, not pins.
+
+Built/tested the refreshed 3.23 baseline before separately building the 3.24
+candidate. Both passed actual synthetic WAL-mode backup, full integrity check,
+restore into a fresh database and row verification, checksum evidence, UID/GID
+1000 and mode 600, daily retention, pre-update snapshot preservation, nested
+destination paths, incorrect storage identity, traversal and corrupt-source
+rejection without replacing the prior good snapshot. Verified UTC and the
+unchanged midnight cron expression, then accelerated only the disposable
+container's schedule to prove an actual cron-triggered backup. The same complete
+backup checks passed on emulated ARM64. This is not a real NAS permission test,
+overnight midnight observation or sustained concurrent-write stress test.
+
+Isolated existing readiness/backup-health and proxy-trust regression suites passed
+using the candidate images and the existing W08 API image. Added session-only
+checks for SPA deep links, JS assets, PWA manifest/service-worker no-cache headers,
+health and unauthenticated API routing. Verified corrupted-backup health fails,
+untrusted peers cannot spoof visitor IPs, and trusted visitors retain separate
+rate limits. No live Cloudflare Tunnel was started.
+
+Candidate image IDs:
+- web AMD64: `sha256:6fc4940497cfbcf7f7be8cee097b7c6582ddb1cee2ad2c6c8156e5214bf14b95`
+- backup AMD64: `sha256:11ede7eefbbad758ec79fcd1cc27092c149428019330739f2b4dce46099de687`
+- backup ARM64: `sha256:177e6c2ddf3a7646047b6200dbeebe68c79b470d3bd1c0489dce81177661bea8`
+
+Workspace typecheck and both deployment-packaging regressions passed. A separate
+read-only destination test failed explicitly and recorded a failed attempt.
+Refreshed the server deployment ZIP and verified the Alpine 3.24 Dockerfile and
+operator-data exclusions inside its 214 entries. Candidate SHA256:
+`C59D2FE9D6E7DC308821EA7D05210C0F313739E2992F2C3F77A22C98FD0889AE`.
+This is not a regenerated combined-release manifest or published asset.
+No full release packaging,
+desktop/addon rebuild, runtime version bump or deployment is part of this step.
+Disposable containers, networks and synthetic health volumes were removed by
+the test runners; W10 services remain stopped. No manual game retest is required.
+See [image handoff](./UPGRADE-TESTS.md#w11-container-image-handoff) for deployment
+limits and rollback. Roll back only the backup base to the tested Alpine 3.23
+branch and rebuild if needed; retain backups and operator configuration.
+
+Ready-to-commit checkpoint: W11 backup-image update and container verification,
+subject to version preparation when authorized. Suggested message: "Refresh
+server backup tooling while preserving backup safety". W11 as a whole remains
+in progress: hosted Actions preview, tooling inventory and final audit pending.
+
+### W11 local tooling review - November 5, 2026
+
+Maintainer approved the next inventory-only checkpoint. Rechecked actual CLI,
+editor, Docker Desktop executable, running container tools, Python, MSBuild/VC,
+.NET and WSL versions against official release metadata. All 18 installed editor
+extensions matched their current Windows-compatible stable Marketplace releases,
+including Container Tools and Dev Containers. The previously noted newer Dev
+Containers candidate is a prerelease, not a missing stable update. Extension
+version histories and platform/prerelease flags were checked explicitly.
+
+Detailed machine inventory and candidate updates are retained in a session-only
+`tooling-inventory.local.md`, not shared installation requirements. No host
+updates, extension/settings changes, runtime removal, application builds,
+dependency restores or services were performed. Available editor/Node/Git/Python/
+Build Tools updates are separate approved maintenance. Docker Desktop file
+version differs from running component versions; do not infer completion of a
+restart/update or replace Desktop-managed binaries independently.
+
+No .NET SDK was reported; older installed .NET runtime families include an
+end-of-support line and near-end-of-support lines. Do not remove them blindly
+or install an SDK for this TypeScript/Lua project. Standalone Lua 5.1 remains
+unavailable; installed Lua/WoW extensions do not supply that validation.
+Existing Lua diagnostic configuration was not changed.
+
+Remote OS/packages were not accessed or certified current. Remote maintenance
+requires explicit approval and an operator-provided inventory; local Docker
+checks do not prove host package currency. Host tool upgrades are not implicit
+release gates for builds already verified with the retained toolchain. Any
+future toolchain change must rerun its relevant checks before release.
+
+Ready-to-commit checkpoint: tooling review documentation only; no version bump.
+W11 is not complete: final direct/transitive/deprecation audit and GitHub-hosted
+no-publish preview remain. The next local step is the dependency audit, not an
+unsolicited machine-wide update.
+
+### W11 final dependency audit - November 5 local / November 6 UTC
+
+Read-only dependency closure is complete: all 476 unique names / 563 exact locked
+versions resolved against public registry metadata with zero errors, including
+the lockfile's package-manager document. Refreshed the existing CSV rather than
+creating a second inventory. It records 212 names / 261 stable versions below
+latest, plus immediate parent, owning project, retention reason and review date.
+Traced all 216 older/deprecated names with `pnpm why`; the package-manager pin
+is separate from installed workspace ownership.
+
+Six deprecated versions remain in current Drizzle Kit/Electron builder development
+graphs; `prebuild-install` is no longer locked. Existing parent versions are
+retained, with no arbitrary transitive overrides. New latest CORS 11.4.1, Vite
+8.3.6, Lucide 1.69.0 and pnpm 12.18.0 were all under 24 hours old at review;
+retain accepted versions pending separate release-age/changelog and affected
+regression gates. Runtime-aligned Node declaration lines remain intentional.
+The [audit](./UPGRADE-AUDIT-2026-11-04.md#w11-final-refresh---november-5-local--november-6-utc)
+details exact ownership, publication dates and limitations.
+
+No dependency/runtime source/manifest/lockfile changed; only audit documentation
+and generated CSV changed. No install or app rebuild was needed, and no new
+manual game test is required. This is not a vulnerability scan or assurance of
+zero outdated/deprecated packages. Recheck retained candidates before release.
+
+Ready-to-commit checkpoint: final dependency audit documentation, no runtime
+version bump. Suggested message: "Record tested dependency versions and remaining
+upstream tooling warnings". W11 local work is complete, but **W11 is not done**:
+the [GitHub-hosted preview](./UPGRADE-TESTS.md#w11-github-actions-preview-handoff)
+still requires authorized commit/push and a successful publish-disabled run.
+Do not silently begin W12 version/release preparation or publish to satisfy it.
+
+### W11 hosted preview acceptance - November 5 local / November 6 UTC
+
+Maintainer authorized the scoped workflow commit/push and manually dispatched
+the preview. Commit `47eb56e` contains only the workflow, pkgmeta exclusions and
+related RELEASES instructions; all remaining image/audit work is still uncommitted.
+[Run 42155373845](https://github.com/GearDuckDev/FlockSync/actions/runs/42155373845)
+completed successfully on `Dependency-Upgrade-Before-Launch` at that exact SHA.
+Checkout, release selection, eligibility, no-upload packaging, archive validation
+and artifact saving passed. Credential-requirement and CurseForge-upload steps
+were both skipped, confirming the no-publish path.
+
+Artifact `13474750550`, `FlockSync-CurseForge-0.6.0`, was downloaded and its
+SHA256 verified against GitHub's recorded digest:
+`ed2d584a1c45a3a394cc539974f03d59ebaa305e4fcfb4cefe828334e85ee7f8`.
+The outer artifact contained exactly one `FlockSync-0.6.0.zip`; independent
+inspection accepted 39 files (main addon, license/generated changelog), version
+0.6.0 / Interface 16001, with no AppHelper, root plans or app sources.
+Temporary download was removed. No release/tag/CurseForge upload or production
+deployment occurred.
+
+W11 is complete for its approved scope. Earlier pending statements above are
+chronological and superseded by this acceptance. Retained dependency warnings,
+unperformed optional host updates, remote OS currency and real production/NAS/
+overnight checks remain explicit limitations, not implicitly passed gates.
+No new game test is required by these workflow/container-only changes.
+
+Ready-to-commit checkpoint: remaining W11 backup-image/audit changes, subject to
+authorized changed-component version preparation and rebuilt affected artifacts.
+The workflow checkpoint is already committed/pushed; do not recommit it or create
+a duplicate CurseForge upload. W12 release preparation needs separate approval.
+
 ## Test recipes and mandatory acceptance
 
 Execute [UPGRADE-TESTS.md](./UPGRADE-TESTS.md) for T01-T06, including the exact
@@ -701,3 +909,67 @@ Missing required evidence blocks the wave; a skipped test is never acceptance.
 6. Failure: stop advancement, retain evidence, revert only the approved wave's
    changes without discarding unrelated work, rebuild and retest. Use known-good
    artifacts; database rollback requires the verified pre-upgrade backup.
+
+### W12 local release candidate - November 5 local / November 6 UTC
+
+Maintainer approved local W12 preparation. Rechecked published releases: v0.10.0
+is current; v0.10.1 was unused remotely. Prepared stable bundle 0.10.1 with
+Desktop 0.5.2, aligned API/web 0.7.1 and shared types 0.7.1. Main addon 0.6.0,
+AppHelper 0.2.2 and root metadata 0.2.2 remain unchanged. No addon runtime source
+changed since v0.10.0, so no addon bump. Dependency/package-manager upgrades
+remain the accepted versions; no fresh-under-24-hour candidate was installed.
+
+Full `package-release.ps1 -ReleaseVersion 0.10.1` passed required typecheck,
+API/web builds, Windows installer/portable packaging, both addon ZIPs, server
+source ZIP and manifest. Final-version regressions passed: API production 11,
+API update 14, web 16, deployment packaging two, Desktop 27 / one optional
+live-network skip. Three actual-filesystem watcher tests passed again under
+the final packaged Electron executable's Node runtime.
+
+Final AMD64 API/web images built and passed isolated readiness, backup-health,
+proxy-trust, deep-link/static asset/PWA cache/header checks with the tested
+Alpine 3.24 backup sidecar. No live tunnel or production changes. W11's full
+backup ARM64 results remain applicable; full final-version API/web ARM64 images
+were not rebuilt in W12. All test containers/networks/health volumes removed.
+
+Verified six manifest assets and exact versions, copied executable hashes, ASAR
+allowlist and byte-identical built output, addon ZIP exact source file sets and
+nesting (37 raider / 39 bundle files), and all 214 server ZIP source files against
+workspace with exclusions. Both executables are unsigned. Final ASAR SHA256:
+`3A476D0A15B46C414BD378850A983B603F5A6C832396E0813D8D6F76E88836C1`.
+
+| Asset | SHA256 |
+| --- | --- |
+| `FlockSync-Setup-0.5.2-x64.exe` | `9ac0edae5797e73d6cdf756221831c765514cf3a0195ac9b6af5164013cab357` |
+| `FlockSync-Portable-0.5.2-x64.exe` | `f67e34418cbd476ccc913876a0035170cdbc10d3625028ec768edd045c8c076f` |
+| `FlockSync_Remote_Server_Deploy.zip` | `98a407c7f14726b6386efb5bd1d64fbdfc774a946942c1ba09e875edb0b78cdc` |
+| `FlockSync-Raider-Only.zip` | `e0f069b337dd597e20c1f7c7d1e076dec1fa4f47251741dbece76f4683012b59` |
+| `FlockSync-Addon-Bundle.zip` | `971707ee723fb10d6ce30f511c8d67f296234b2271f5c373b5dd91640aaecb58` |
+| `flocksync-release.json` | `83170e0ef20b4a8c45b48ba304589141e3953b2dd9add8e2e5d9d43e8d26d618` |
+
+Updated current-only release notes, versions, upgrade/download/channel guidance
+and portable environment handoff. Machine maintenance details remain local-only.
+Final Desktop version changed after earlier manual acceptance; do not silently
+claim the previous 0.5.1 installer was the final 0.5.2 artifact.
+The [final smoke checklist](./UPGRADE-TESTS.md#w12-final-version-candidate-handoff)
+passed with maintainer reports on the exact final 0.5.2 candidates. Explicit
+installer replacement approval was obtained separately. Installed executable/
+ASAR match the final build. Fresh synthetic final API/web services verified
+automatic DPS role sync; portable login/sync/tray/relaunch and installed
+version/settings/sync/tray passed. No real game files used. Normal configuration
+hash and pre-installer startup snapshot match after cleanup. Test apps closed,
+both test containers and network removed, synthetic tmpfs database discarded.
+The installed app is now the locally accepted, not yet published 0.5.2 candidate.
+
+Ready to commit: W12 stable 0.10.1 preparation. Version preparation/builds and
+scoped final acceptance are done; do not bump again for follow-up documentation/
+testing. Suggested message: "Preserve character links after
+resets and improve desktop sync reliability". No further commit/push/tag/publication/
+deployment authorized; workflow-only checkpoint 47eb56e is the sole agent-created
+commit in this preparation. Retain prior published downloads for rollback through
+GitHub; local superseded versioned downloads are removed only after asset checks.
+Cleanup completed after verification: removed only the root release folder's
+0.5.1 installer/portable. All six 0.10.1 manifest assets remain; no published
+release/tag was removed. W12 is complete for local preparation, not publication
+or production deployment. Deferred checks and unsigned Windows status remain
+documented; no claim of full ARM64, reboot or final-version live-game acceptance.

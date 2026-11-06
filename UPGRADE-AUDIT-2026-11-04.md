@@ -6,6 +6,57 @@ revised execution order, **not approval to upgrade anything**.
 
 ## Registry results
 
+### W11 final refresh - November 5 local / November 6 UTC
+
+The CSV now reflects a complete re-query of the current lockfile: **476 unique
+package names / 563 locked versions**, including pnpm's separate toolchain
+lockfile document. All exact locked versions and `latest` tags resolved without
+errors. **212 names / 261 versions** are below their package's latest tag.
+These are not 212 independent recommended updates. The November 4 figures below
+are historical; this refresh supersedes them.
+
+The [inventory](./UPGRADE-INVENTORY-2026-11-04.csv) adds immediate parents,
+owning workspace projects, retention reasons and review date. `pnpm why` traced
+all 216 older/deprecated names; only the separately pinned package manager had
+no installed workspace owner. Latest tags on some platform-specific pnpm
+packages trail the actual locked version; exact-version existence was checked,
+and no downgrade is recommended. Version comparisons report stable numeric
+versions, not prerelease ordering or security risk.
+
+| Retained direct/toolchain item | Tested -> latest | Reason / next gate |
+| --- | --- | --- |
+| `@fastify/cors` | 11.4.0 -> 11.4.1 | Latest published November 5 at 10:05 UTC; under 24 hours old. Retain accepted API version; recheck age/changelog and CORS/API regressions before a separate update. |
+| `vite` | 8.3.5 -> 8.3.6 | Latest published November 5 at 05:40 UTC; under 24 hours old. Retain tested web/Desktop build tool; both app builds and candidate checks required for an update. |
+| `lucide-react` | 1.67.0 -> 1.69.0 | Latest published November 5 at 06:12 UTC; under 24 hours old. Retain accepted icons; separate changelog/imported-icon and browser/build checks before updating. |
+| Pinned `pnpm` | 12.16.1 -> 12.18.0 | Latest published November 5 at 00:56 UTC; under 24 hours old. This is the repository package-manager pin, not a local machine inventory. Changing it needs coordinated pin/lock/Dockerfile and deployment tests. |
+| API `@types/node` | 22.20.5 vs npm latest 26.6.6 | 22.20.5 remains current on the runtime-aligned 22.x line; transitive 24.19.2 remains current on 24.x. Do not force all consumers to 26.x. |
+
+Direct API `dotenv` is already 18.0.9; retained 16.6.1 belongs to Desktop
+packaging (`app-builder-lib` / `dotenv-expand`), not an incomplete API migration.
+Other older transitive libraries remain parent-owned within the tested graph;
+the CSV records ownership rather than introducing compatibility-breaking overrides.
+
+Six exact locked versions remain deprecated:
+
+| Package | Owning direct tool | Retention / exposure |
+| --- | --- | --- |
+| `@esbuild-kit/core-utils` 3.3.2 | `drizzle-kit` 0.31.11 via `@esbuild-kit/esm-loader` | Development/schema tool; upstream merged into tsx. Current direct tool still owns it; no override. |
+| `@esbuild-kit/esm-loader` 2.6.5 | `drizzle-kit` 0.31.11 | Same upstream development-tool dependency; revisit with the owning tool's compatible update. |
+| `boolean` 3.2.0 | `electron-builder` 26.18.0 via `@electron/get` / `global-agent` | Unsupported transitive packaging dependency; not a new app runtime dependency. |
+| `glob` 7.2.3 | `electron-builder` via `@electron/asar`, `@electron/universal`, `electron-winstaller` | Registry warns of unsupported/vulnerable old versions; retain parent graph pending compatible upstream fix, not a claim of safety. |
+| `inflight` 1.0.6 | Same builder graph via `glob` | Unsupported/memory-leak warning; parent-owned build tooling. |
+| `rimraf` 2.6.3 | Builder via `electron-winstaller` / `temp` | Unsupported pre-v4 dependency; not forced to a breaking major. |
+
+`prebuild-install` is no longer locked after the SQLite upgrade; its earlier
+deprecation entry is historical. Deprecated build tools can still affect build
+environments: their scope does not dismiss the warnings. This was a registry/
+deprecation audit, **not an advisory/CVE scan or exploitability assessment**.
+No claim of zero vulnerabilities, fully latest dependencies or perpetual currency.
+Review retained items again before release or when their owning parent updates.
+No dependencies, manifests or lockfile were changed by this audit.
+
+### Historical November 4 baseline
+
 The refreshed [CSV inventory](./UPGRADE-INVENTORY-2026-11-04.csv) covers all
 479 unique package names and 585 locked package versions in `pnpm-lock.yaml`.
 Every locked version and each package's npm `latest` tag was queried successfully.
@@ -240,6 +291,46 @@ and verified, normal configuration unchanged, and test containers stopped.
 The installed app is now the unreleased W10 candidate, still version `0.5.1`.
 The CSV row reflects Chokidar's new version only, not a full inventory refresh.
 
+## W11 GitHub Actions follow-up - November 5, 2026
+
+Rechecked official latest releases: checkout 7.0.1, github-script 9.0.0,
+upload-artifact 7.0.2; workflow references now use v7/v9/v7. BigWigs v2
+already resolves to the current 2.7.0 channel. Reviewed Node 24/ESM compatibility
+and preserved injected script APIs, read-only permissions, full history,
+disabled credential persistence, hidden ZIP inclusion and preview/upload guards.
+Local actionlint, six eligibility cases and actual no-upload BigWigs preview
+passed. Preview caught root upgrade/operations documents entering the addon ZIP;
+explicit exclusions fixed it, verified by the exact archive checker including
+a deliberate invalid-archive rejection. No addon runtime source/version changed.
+Hosted preview is pending commit/push authorization; see
+[W11 evidence](./UPGRADE-PLAN.md#w11-github-actions-checkpoint---november-5-2026)
+and [manual handoff](./UPGRADE-TESTS.md#w11-github-actions-preview-handoff).
+No workflow dispatch, upload, publication or production deployment occurred.
+Container images, host tools and npm inventory closure are not covered by this
+checkpoint; the npm CSV was not refreshed for these non-npm actions.
+
+## W11 container follow-up - November 5, 2026
+
+Hosted CI gate subsequently passed:
+[run 42155373845](https://github.com/GearDuckDev/FlockSync/actions/runs/42155373845)
+at scoped workflow commit `47eb56e`. Publishing steps were skipped, archive
+verification and artifact upload succeeded, and the downloaded artifact's digest/
+inner addon ZIP were independently verified. Earlier pending CI statements are
+superseded by [final acceptance](./UPGRADE-TESTS.md#w11-hosted-preview-final-acceptance).
+No release or CurseForge publication occurred.
+
+Pulled images supersede prior estimates: nginx:alpine resolves to nginx 1.31.8 /
+Alpine 3.24.4, already matching the earlier W08 runtime. Backup baseline Alpine
+3.23.8 and separate 3.24.4 candidate both passed scoped backup/restore, retention,
+permissions, evidence/failure and accelerated cron checks. Backup Dockerfile now
+selects the 3.24 branch; installed CLI SQLite is 3.53.4. Emulated ARM64 also passed
+the full backup checks. Rebuilt web passed isolated readiness, routing, PWA and
+proxy-trust checks with the candidate backup sidecar. No nginx source change.
+See [image evidence](./UPGRADE-PLAN.md#w11-container-images-checkpoint---november-5-2026)
+for observed digests and limits. Typecheck and packaging regressions passed.
+Real NAS/overnight acceptance and production deployment are not claimed.
+No npm version changes; host tooling and final inventory audit remain pending.
+
 ## Deprecated locked versions
 
 Registry metadata marked seven locked transitive versions deprecated:
@@ -250,25 +341,14 @@ tsx), `boolean` 3.2.0 (unsupported), `glob` 7.2.3 (unsupported), `inflight`
 owning dependency when addressing them; do not add overrides or force transitive
 versions just because they are old. This was not an `npm audit` or CVE scan.
 
-## Local and container tooling observed
+## W11 tooling review
 
-| Tool | Observed | Audit note |
-| --- | --- | --- |
-| Host Node | 24.22.0 | 24.22.2 was available in the prior host-tool check; optional host update, separate from workspace packages. |
-| pnpm | 12.16.1 | Current in the prior registry/GitHub check; retain the repository pin and `deploy --legacy` until its isolated wave. |
-| Docker Desktop | 4.97.0 | 4.98.0 was available in the prior check; host maintenance only. |
-| Docker Engine / CLI | 29.9.2 | Engine responsive; Linux x86_64. |
-| Docker Compose | 5.6.1 | 5.7.0 was available in the prior check. |
-| Buildx | 0.38.1 | 0.38.2 was available in the prior check; recheck and test Bake/build behavior before host update. |
-| VS Code | 1.145.0 | Installed at audit time. |
-| Container Tools extension | 2.5.3 | Current in the prior Marketplace check. |
-| Dev Containers extension | 0.469.0 | 0.471.0 was available in the prior Marketplace check. |
-| Locally built container bases | Node 22.23.4, nginx 1.31.8, Alpine 3.24.3 | Observed during the post-merge AMD64 builds; base tags are not immutable deployment identities. |
-| Git / Python / Lua | Git 2.56.0.windows.3; Python 3.14.7; Lua 5.1 unavailable | These host versions were not rechecked against their latest releases in this pass. No in-game/Lua result is implied. |
-
-Tool candidate versions marked "available" come from the earlier host-tool
-inventory and must be rechecked before action. No host tool was installed or
-updated here. Both Dockerfiles built for AMD64; ARM64 was not built or tested.
+Machine-specific installed versions and update recommendations are retained
+locally only, not as repository requirements or shared maintenance instructions.
+No host tools or extensions were changed. Remote OS tooling was not inspected
+or certified.
+See [tooling evidence](./UPGRADE-PLAN.md#w11-local-tooling-review---november-5-2026).
+No editor diagnostic fixes, host updates or new runtime validation are implied.
 
 ## Recommended next-wave order
 

@@ -543,3 +543,208 @@ testing and cancellation/draining of active uploads remain unverified. New accou
 folders require watcher restart and failed uploads need a new save/Sync Now.
 No production deployment, version bump, commit or publication occurred. W11 has
 not started.
+
+### W11 GitHub Actions preview handoff
+
+Hosted preparation follow-up: maintainer explicitly authorized the scoped commit,
+push and publish-disabled preview. Commit `47eb56e` pushed only the workflow,
+pkgmeta exclusions and related RELEASES instructions to
+`Dependency-Upgrade-Before-Launch`. Backup-image/audit changes remain uncommitted.
+Final actionlint/diff checks passed. The integrated browser is signed out and
+available GitHub tools do not expose dispatch; no hosted run has been started.
+Maintainer must dispatch through their signed-in browser using the settings below,
+then provide the run URL for inspection. No tag/release/upload/deployment occurred.
+
+Local checkpoint passed: baseline/final and individually upgraded actionlint
+checks; six exact eligibility-script cases; actual BigWigs 2.7.0 no-upload preview
+with the exact workflow archive verifier; valid stable/manual/alpha/beta selection
+and rejected invalid tag/channel/prerelease inputs. Injecting an extra root
+document into a test ZIP was rejected. Missing pkgmeta exclusions discovered
+during preview were added, and packaging then passed. Test fixtures used tracked
+sources and disposable local repositories/tags only, not the actual release tags.
+No upload credentials were supplied. This does not prove GitHub-hosted execution
+or artifact transfer; those remain pending.
+
+Hosted check, only after explicit commit/push authorization:
+1. Make the updated workflow and pkgmeta available on the intended remote branch.
+   In Actions choose **Package or publish CurseForge addon**, **Run workflow**,
+   select that branch, use existing stable tag `v0.10.0`, and leave **publish
+   unchecked**. Do not publish a release or create/reuse a tag for this test.
+2. Expect checkout, selection, eligibility, no-upload packaging, archive validation
+   and artifact saving to pass. Credential/upload steps must be skipped.
+3. Download the run's `FlockSync-CurseForge-0.6.0` artifact. Open its inner addon
+   ZIP and verify only main addon files, license/generated changelog; no helper,
+   root upgrade/server docs, environment configuration or application sources.
+4. Report the run URL, failed step and exact error if any. Stop on failure; do not
+   retry with publish enabled. Delete only the disposable downloaded preview if
+   desired; no production rollback is needed because nothing was deployed.
+
+No new game/manual Desktop test is needed for this change set. Runtime versions
+and normal installed Desktop are unchanged. Local validation containers exited
+and were removed; W10 test services remain stopped. W11 container image/tooling
+and final dependency audit work remains separate.
+
+### W11 container image handoff
+
+Local checks passed on refreshed Alpine 3.23 and candidate 3.24 backup images,
+including integrity/restore, evidence digests, ownership/mode, retention, retained
+pre-update snapshots, safe failure paths and actual accelerated cron. Full
+candidate backup checks also passed on emulated ARM64. Isolated readiness/
+backup-health and proxy-trust tests passed with rebuilt nginx; session-only SPA,
+PWA cache/header and API routing checks passed. Workspace typecheck and two
+deployment-packaging regressions passed. Exact images/limits are recorded in
+[W11 image evidence](./UPGRADE-PLAN.md#w11-container-images-checkpoint---november-5-2026).
+No game retest or immediate production update is required.
+
+Deployment checks deferred until separately authorized:
+1. Use the refreshed `release/FlockSync_Remote_Server_Deploy.zip` candidate,
+   not an old ZIP or a published release claim. Preserve deployed `.env` and
+   local SQLite data. Confirm the configured backup mount exists, is writable
+   and has the expected storage identity. Do not copy test data to production.
+2. From the deployed project directory use `sh deploy/update-server.sh`; expect
+   a verified pre-update backup before rebuild/recreation. Do not bypass this
+   with direct restarts. Confirm `docker compose ps` is healthy and backup logs
+   show verified snapshots; validate destination ownership and available storage.
+3. Check public login, SPA deep links, PWA loading, API readiness and the next
+   actual midnight backup. Report failing step/log, image identity and platform,
+   never token/environment values. Local cron acceleration is not evidence that
+   a production overnight run has passed.
+4. If blocked, retain the pre-update snapshot and operator settings. Rebuild the
+   previously tested Alpine 3.23 backup base as a scoped rollback; use the normal
+   updater. Database restoration is a separate authorized operation, not a default
+   response to a container-tooling problem.
+
+All local test services are stopped; isolated containers/networks/health volumes
+were cleaned up. No live tunnel, production update or release publication occurred.
+The deployment ZIP was refreshed and inspected (214 entries): backup Dockerfile
+selects Alpine 3.24 and operator-data exclusions hold. Candidate SHA256 is
+`C59D2FE9D6E7DC308821EA7D05210C0F313739E2992F2C3F77A22C98FD0889AE`.
+A separate read-only destination check confirmed explicit failure/failed-attempt
+evidence. The combined release manifest was not regenerated; this ZIP is a local
+test candidate, not an already published release asset.
+
+### W11 tooling review handoff
+
+Read-only local inventory completed and compared with official release/Marketplace
+metadata. All installed extensions match Windows-compatible stable releases;
+preview Dev Containers versions were correctly excluded. No machine tool,
+extension, setting or runtime changed, so no rebuild/retest was required.
+Detailed local inventory and update candidates are session-only.
+
+Optional host maintenance, only after separate approval:
+1. Schedule tool/editor exits and retain the known-good configuration/installers.
+   Do not reset Docker, prune volumes or uninstall old runtimes indiscriminately.
+2. Update one tool family through its supported manager. Docker Desktop's
+   executable version does not prove its running components were restarted;
+   verify these separately and keep the supported bundled set.
+3. Rerun versions and affected gates: frozen install/typecheck/build for a
+   Node/pnpm change; isolated Compose/build/backup checks for Docker; extension
+   activation for editor updates. Report exact versions/errors, not credentials.
+4. Stop on regression and restore the previous supported tool version; application
+   database rollback is not a remedy for host-tool problems.
+
+Remote OS inventory needs separate operator approval/access. Lua 5.1 CLI remains
+unavailable, and existing Lua editor warnings were not fixed in this review.
+No temporary services were started. Final dependency audit and hosted Actions
+preview remain outstanding before W11 closure.
+
+### W11 final dependency audit evidence
+
+Queried every exact locked version and latest tag: 476 names / 563 versions,
+zero registry lookup errors. Generated inventory comparisons/ownership and
+retention notes from actual lockfile/manifests, public metadata and `pnpm why`.
+216 older/deprecated names were traced; package-manager ownership is documented
+separately. Six deprecated versions remain under Drizzle Kit/Electron builder;
+`prebuild-install` is absent. New direct/toolchain latest releases under 24 hours
+old were retained as separate follow-ups, not installed.
+
+No runtime/dependency changes were made, so build/test results from preceding
+accepted candidates still apply; only documentation/CSV consistency and diff
+checks are required here. No services started. This is not a security advisory
+scan or proof all packages are latest/safe. The remaining W11 gate is the
+GitHub-hosted preview with publish disabled after explicit commit/push approval;
+follow its numbered checklist above, not a production or CurseForge upload.
+
+### W11 hosted preview final acceptance
+
+[Run 42155373845](https://github.com/GearDuckDev/FlockSync/actions/runs/42155373845)
+passed at scoped workflow commit `47eb56e`, manually dispatched on the upgrade
+branch. Checkout, selection, eligibility, no-upload packaging, archive validation
+and artifact saving succeeded. Credential/upload-to-CurseForge steps were skipped.
+Artifact `13474750550` (`FlockSync-CurseForge-0.6.0`, 55,933 bytes) was downloaded
+and matched the recorded SHA256
+`ed2d584a1c45a3a394cc539974f03d59ebaa305e4fcfb4cefe828334e85ee7f8`.
+Its wrapper contained exactly one addon ZIP; independent inspection verified
+39 permitted files and TOC version 0.6.0 / Interface 16001, without AppHelper,
+root upgrade docs or application sources. Temporary download was deleted.
+
+This supersedes earlier pending hosted-preview instructions. W11 applicable
+acceptance is complete; retained tooling/dependency/production-check limitations
+still apply. No further manual check is outstanding for this preview. No
+CurseForge publication, release/tag or production deployment occurred. Remaining
+W11 source/docs are uncommitted; W12 has not started.
+
+### W12 final-version candidate handoff
+
+Stable bundle 0.10.1 is built locally with Desktop 0.5.2 and API/web/shared 0.7.1;
+addons unchanged. Full packager/typecheck, final regressions, embedded Electron
+watcher tests and isolated final container tests passed. Exact hashes and
+remaining limits are in [W12 evidence](./UPGRADE-PLAN.md#w12-local-release-candidate---november-5-local--november-6-utc).
+This supersedes old 0.5.1 candidate filenames for final release acceptance.
+The installed app is now the accepted local 0.5.2 candidate. Test services are
+stopped; no live test URL exists.
+
+Protected acceptance procedure (completed below):
+1. Keep WoW and all normal/test Desktop instances closed. Verify
+   `release/FlockSync-Portable-0.5.2-x64.exe` against W12 evidence. Back up
+   normal settings/startup entries; use a signed-out or retained isolated test
+   profile pointed at synthetic files, never the real client. Start isolated
+   API/web final-version services only and verify readiness before sharing a URL.
+2. Launch via the protected wrapper. Confirm displayed version 0.5.2, login,
+   automatic synthetic final-state sync and correctly placed helper; verify
+   the local roster role, tray close/reopen/Quit and persisted settings on relaunch.
+   Report exact errors, not tokens. Pre-bump tests are supporting evidence, not
+   a report that this exact final executable passed manual smoke.
+3. Only with explicit replacement approval, back up normal settings and install
+   `release/FlockSync-Setup-0.5.2-x64.exe` to the existing location with automatic
+   launch unchecked. Verify installed ASAR/runtime against W12, then repeat
+   isolated launch/sync/tray checks. Do not disable Windows protections.
+4. Quit test apps, verify normal settings/startup restoration and stop only the
+   identified test containers. Retain accepted pre-bump source/public release
+   rollback; do not restore a database merely to revert an application tool.
+   Report the results before declaring final distribution acceptance.
+
+Completed November 5 local / November 6 UTC:
+- Maintainer confirmed WoW/Desktop closed and approved isolated testing.
+  Final API/web images ran in a separate network with a fresh tmpfs synthetic
+  database. Readiness and synthetic administrator login passed.
+- Exact final portable hash matched W12 evidence. Maintainer confirmed 0.5.2,
+  login and manual sync. Synthetic helper appeared in the expected account folder.
+  An isolated synthetic save changed HEALER to DPS at timestamp 1793933239;
+  authenticated roster polling confirmed the automatic upload, without Sync Now.
+- Maintainer confirmed X-to-tray, reopen and Quit, then a protected relaunch
+  retaining test login/settings, successful sync and another Quit.
+- Maintainer separately approved replacing installed 0.5.1, then confirmed
+  installation with automatic launch unchecked. Normal config was backed up
+  and hash-verified. Installed executable and ASAR byte-match the final build.
+- Protected installed launch: maintainer confirmed version/settings, sync,
+  tray reopen and Quit. Wrappers reported startup restoration success after
+  each exit; final startup entries also matched the pre-installer snapshot.
+  Normal configuration hash remained unchanged.
+- Test applications exited. Only W12's two containers and network were removed;
+  tmpfs synthetic database discarded. No temporary service or test URL remains.
+  No real client/helper files, live tunnel or production deployment were touched.
+
+Final portable/installer smoke gate passed. W12 local release preparation is
+complete; commit/publication/deployment still require separate authorization.
+
+Game-required/deferred: extensive W08-W10 candidate-specific game results are
+already recorded. No new addon source or gameplay behavior changed in W12's
+version-only preparation. Do not repeat real helper writes without fresh approval.
+Multi-account live, reboot/startup, active-upload shutdown and real NAS/overnight
+checks remain unverified. Full final-version API/web ARM64 images were not rebuilt
+in W12; W06/W11 scoped emulated ARM64 evidence is retained, not relabeled.
+
+Publication/deployment: separate explicit authorization is still required for
+commit/push/tag/GitHub release/CurseForge and production update. Use the existing
+deployment guide's backup-verifying updater when deployment is authorized.
