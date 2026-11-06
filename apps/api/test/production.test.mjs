@@ -31,7 +31,7 @@ test("migrations initialize fresh DBs, adopt legacy rows, and are idempotent", a
       }
       migrateDatabase(db);
       migrateDatabase(db);
-      assert.equal(db.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get().n, 5);
+      assert.equal(db.prepare("SELECT count(*) AS n FROM __drizzle_migrations").get().n, 7);
       assert.ok(db.pragma("table_info(character_ownerships)").some((column) => column.name === "revision"));
       assert.ok(db.pragma("table_info(character_ownership_audit)").some((column) => column.name === "actor_id"));
       const columns = db.pragma("table_info(characters)").map((c) => c.name);

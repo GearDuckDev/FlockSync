@@ -131,3 +131,10 @@ export {
 export type {
   CharacterOwnership, SetCharacterOwner, CharacterOwnershipAudit, CharacterOwnershipCatalog
 } from "./characterOwnership.js";
+export {
+  SharedKillEntrySchema, SharedKillListSchema, KillNoteSchema, KillEditRequestSchema,
+  KillRemoveRequestSchema, GuildCharacterLinkSchema
+} from "./killList.js";
+export type { SharedKillEntry, GuildCharacterLink } from "./killList.js";
+export { groupCharacters, characterGroupKey, type CharacterGroup } from "./characterGroups.js";
+export { SetGroupOwnerSchema, OwnershipGroupSchema, type SetGroupOwner } from "./characterOwnership.js";

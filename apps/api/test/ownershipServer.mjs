@@ -5,12 +5,21 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { createServer } from "node:net";
 
 export const startOwnershipServer = async (context) => {
   const directory = await mkdtemp(join(tmpdir(), "flocksync-ownership-"));
   const backups = join(directory, "backups");
   await mkdir(backups);
-  const origin = `http://127.0.0.1:${48000 + Math.floor(Math.random() * 10000)}`;
+  const reservation = createServer();
+  await new Promise((resolve, reject) => {
+    reservation.once("error", reject);
+    reservation.listen(0, "127.0.0.1", resolve);
+  });
+  const address = reservation.address();
+  assert.ok(address && typeof address !== "string");
+  await new Promise((resolve, reject) => reservation.close((error) => error ? reject(error) : resolve()));
+  const origin = `http://127.0.0.1:${address.port}`;
   let output = "";
   const child = spawn(process.execPath, [resolve("dist/server.js")], {
     env: {

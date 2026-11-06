@@ -2,11 +2,12 @@ import { randomUUID } from "node:crypto";
 import { copyFile, mkdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import Database from "better-sqlite3";
+import { sql } from "drizzle-orm";
 import { db, databasePath, sqliteConnection } from "../db/index.js";
 import {
   attendance, characters, deletedCharacters, lootHistory, officerTasks,
   playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity,
-  characterOwnerships, characterOwnershipAudit
+  characterOwnerships, characterOwnershipAudit, sharedKillTargets, groupOwnerships
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
 import { checkIntegrity, createBackupUnlocked } from "./databaseBackup.js";
@@ -106,6 +107,7 @@ export const restoreDatabaseFromFile = (sourcePath: string) => runExclusive(asyn
   await replaceDatabaseContents(sourcePath);
   const state = await readDatabaseAdminState();
   const databaseResetAt = Math.max(Math.floor(Date.now() / 1000), state.databaseResetAt + 1);
+  advanceRestoredKillEpoch(databaseResetAt);
   await writeDatabaseAdminState({ ...state, databaseResetAt });
   return { backup: safetyBackup, databaseResetAt };
 });
@@ -118,9 +120,17 @@ export const restoreLatestDatabaseBackup = (relativeDirectory: string, filename:
     await replaceDatabaseContents(sourcePath);
     const state = await readDatabaseAdminState();
     const databaseResetAt = Math.max(Math.floor(Date.now() / 1000), state.databaseResetAt + 1);
+    advanceRestoredKillEpoch(databaseResetAt);
     await writeDatabaseAdminState({ ...state, databaseResetAt });
     return { backup: safetyBackup, databaseResetAt };
   });
+
+// Restored records must cross the reset fence while retaining original authors.
+const advanceRestoredKillEpoch = (resetAt: number): void => {
+  db.update(sharedKillTargets).set({
+    updatedAt: sql`max(${sharedKillTargets.updatedAt}, ${resetAt + 1})`
+  }).run();
+};
 
 export const setDefaultBackupDirectory = async (relativeDirectory: string): Promise<void> => {
   await resolveBackupDirectory(relativeDirectory);
@@ -141,6 +151,8 @@ export const wipeDatabase = () => runExclusive(async () => {
   try {
     db.transaction((transaction) => {
       transaction.delete(characterOwnerships).run();
+      transaction.delete(groupOwnerships).run();
+      transaction.delete(sharedKillTargets).run();
       transaction.delete(characterOwnershipAudit).run();
       transaction.delete(attendance).run();
       transaction.delete(lootHistory).run();

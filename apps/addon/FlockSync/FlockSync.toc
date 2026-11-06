@@ -27,6 +27,7 @@ Roster.lua
 KillListAuthority.lua
 KillListTransport.lua
 KillListSync.lua
+KillListBridge.lua
 Ledger.lua
 RaidAssignments.lua
 Tooltips.lua
@@ -35,6 +36,7 @@ UITabs.lua
 UIAvailability.lua
 UIItemSearch.lua
 UIProfessions.lua
+MemberGroups.lua
 UIRaids.lua
 UICrafters.lua
 UILfg.lua

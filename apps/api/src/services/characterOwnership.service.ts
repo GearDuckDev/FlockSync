@@ -6,6 +6,7 @@ import {
 } from "@flocksync/shared-types";
 import { db } from "../db/index.js";
 import { characterOwnershipAudit, characterOwnerships, characters, guildIdentity, users } from "../db/schema.js";
+import { effectiveOwnerships, ownershipGroups } from "./groupOwnership.service.js";
 
 type Result = { ok: true; ownership: CharacterOwnership | null }
   | { ok: false; status: 403 | 404 | 409; error: string };
@@ -19,8 +20,7 @@ const publicOwnership = (row: typeof characterOwnerships.$inferSelect): Characte
 export const listOwnCharacters = (userId: string): CharacterOwnership[] => {
   const guild = db.select().from(guildIdentity).get();
   if (!guild) return [];
-  return db.select().from(characterOwnerships)
-    .where(and(guildScope(guild), eq(characterOwnerships.userId, userId))).all().map(publicOwnership);
+  return effectiveOwnerships().filter((row) => row.userId === userId);
 };
 
 export const getCharacterOwnershipCatalog = (): CharacterOwnershipCatalog => {
@@ -31,7 +31,8 @@ export const getCharacterOwnershipCatalog = (): CharacterOwnershipCatalog => {
     characters: guild ? db.select({
       guid: characters.guid, name: characters.name, realm: characters.realm, isActive: characters.isActive
     }).from(characters).where(eq(characters.realm, guild.realm)).orderBy(asc(characters.name)).all() : [],
-    ownerships: guild ? db.select().from(characterOwnerships).where(guildScope(guild)).all().map(publicOwnership) : [],
+    ownerships: effectiveOwnerships(),
+    groups: ownershipGroups().map(({ updatedAt: _updated, ...group }) => group),
     audit: guild ? db.select({
       id: characterOwnershipAudit.id, characterGuid: characterOwnershipAudit.characterGuid,
       characterName: characterOwnershipAudit.characterName,
@@ -57,6 +58,9 @@ export const setCharacterOwner = (guid: string, input: SetCharacterOwner, actorI
     const character = tx.select().from(characters).where(eq(characters.guid, guid)).get();
     if (!character || character.realm !== guild.realm) {
       return { ok: false, status: 404, error: "Character not found in this server's guild roster" };
+    }
+    if (ownershipGroups().some((group) => group.userId && group.characterGuids.includes(guid))) {
+      return { ok: false, status: 409, error: "Character belongs to a verified friendly-name group. Change the group owner instead" };
     }
     const current = tx.select().from(characterOwnerships)
       .where(and(guildScope(guild), eq(characterOwnerships.characterGuid, guid))).get();

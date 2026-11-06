@@ -1,6 +1,8 @@
 local network = assert(loadfile("apps/addon/test/helpers/memberRelay.lua"))()
 local source = {
     isAuthorizedOfficer = true, serverTimestamp = network.now, craftersIndex = {},
+    authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
+    characterLinks = { { characterGuid = "Goal-1", ownerKey = "WebsiteUser" } },
     goalMatches = { { itemId = 123, neededBy = {
         { characterGuid = "Goal-1", characterName = "Goal Member", classId = 1 }
     } } },
@@ -20,6 +22,7 @@ member:fire("PLAYER_LOGIN")
 network:drain()
 assert(member.ns.HasSnapshot(), "Ordinary member must automatically receive snapshot without helper")
 assert(member.ns.Snapshot.origin == "broadcast")
+assert(member.ns.Snapshot.characterLinks["Goal-1"] == "WebsiteUser", "Officer relays verified ownership")
 member.env.date = function(format, timestamp)
     assert(format == "%m-%d-%Y %H:%M", "Snapshot date must use MM-DD-YYYY and retain time")
     assert(timestamp == source.serverTimestamp)
@@ -44,6 +47,13 @@ late:fire("PLAYER_LOGIN")
 network:drain()
 assert(late.ns.Snapshot.craftersByItem[123], "Late member automatically catches up")
 assert(late.ns.Snapshot.goalsByItem[123])
+local malicious = {
+    k = "SNAP", guild = "Guild", d = { t = math.floor(network.now) + 1,
+        c = {}, g = {}, r = {}, o = { { characterGuid = "Attacker", ownerKey = "WebsiteUser" } } },
+}
+local _, chunks = member.ns.ChunkPayload(member.ns.Serialize(malicious))
+for _, chunk in ipairs(chunks) do late:fire("CHAT_MSG_ADDON", "FLOCKSNAP", chunk, "GUILD", "Member") end
+assert(late.ns.Snapshot.characterLinks["Attacker"] == nil, "Ordinary member cannot assert verified ownership")
 member.ns.Snapshot.serverTimestamp = 0
 member.ns.Snapshot.craftersByItem = {}
 member.ns.Snapshot.goalsByItem = {}
@@ -52,6 +62,19 @@ assert(member.ns.Snapshot.goalsByItem[123], "Cached guild snapshot survives relo
 member.guild = "Other Guild"
 member.ns.EnforceSnapshotGuild("Other Guild")
 assert(not member.ns.HasSnapshot(), "Guild change hides old member snapshot")
+member.ns.LoadSnapshot()
+assert(not member.ns.HasSnapshot(), "Reload must not reintroduce a previous guild's cached ownership")
 assert(next(member.ns.Snapshot.craftersByItem) == nil)
 assert(next(member.ns.Snapshot.goalsByItem) == nil)
+local switched = network:client("Switched Alt", "Guild")
+switched.env.FlockSyncDB.guildSnapshot = {
+    guild = "Guild", serverTimestamp = network.now,
+    authorizedCollectorGuild = { name = "Guild", realm = "Other Realm" },
+    characterLinks = source.characterLinks,
+}
+switched.ns.LoadSnapshot()
+assert(not switched.ns.HasSnapshot(), "Same guild name on another realm must not restore cached ownership")
+officer.env.GetRealmName = function() return "Other Realm" end
+officer.ns.EnforceSnapshotGuild("Guild")
+assert(not officer.ns.HasSnapshot(), "Realm change must hide a previously loaded helper")
 print("Member crafting/goal relay, tooltip, late join and guild isolation: passed")

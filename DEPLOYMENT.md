@@ -262,6 +262,27 @@ service. Backup/restore includes links and audit records; guild-data wipe clears
 them while retaining website accounts. Account/character deletion revokes its
 links and preserves a historical audit record.
 
+The shared kill-list migration adds guild/realm-scoped records and durable
+removal markers. Update the API, Desktop and main addon together for this
+preview; AppHelper code is unchanged. Personal entries/drafts do not upload.
+All additions remain in game; authenticated API edits/removals require an
+officer/admin or the verified owner of the author's character. There is no
+public view or web-add endpoint. The website Kill List tab now exposes
+view/search, note edits and confirmed shared removals under these permissions.
+Character Links uses the same friendly-name groups as the roster. Officers
+assign a group's website owner once; every current and future synced alt in
+that group inherits ownership, affecting member group views and kill-list
+author permissions. Review collector main/alt grouping before assigning:
+group membership changes can change access. Friendly alias renames do not
+change the underlying group identity. Existing individual links are preserved
+until explicit group assignment/revocation; no automatic migration grants.
+The additive group-ownership migration is included. Backups preserve group
+grants, account deletion revokes them, and guild-data wipe clears them.
+Backup/restore includes shared targets; restore advances their sync epochs
+past the reset fence without rewriting original authors/creation time.
+Wipe clears shared targets as well as character ownership. Preserve backups
+and do not use a production wipe/restore to test this candidate.
+
 For every server upgrade, select/extract the new source while preserving
 `.env` and `data`, then run from that deployed project directory:
 

@@ -13,6 +13,7 @@ import { LootAttendancePage } from './LootAttendancePage';
 import { OfficerTasksPage } from './OfficerTasksPage';
 import { AdminUsersPage } from './AdminUsersPage';
 import { CharacterOwnershipPage } from './CharacterOwnershipPage';
+import { KillListPage } from './KillListPage';
 import { ServerUpdates } from './components/admin/ServerUpdates';
 import { ServerUpdateBanner } from './components/ServerUpdateBanner';
 import { UsernameModal } from './components/UsernameModal';
@@ -74,6 +75,7 @@ export const Dashboard = (): React.JSX.Element => {
       {activeTab === 'theme' && <ThemeSettingsPage />}
       {activeTab === 'tasks' && <OfficerTasksPage data={data} />}
       {activeTab === 'characters' && <CharacterOwnershipPage />}
+      {activeTab === 'kills' && <KillListPage key={user?.id} />}
       {activeTab === 'admin' && <div className="space-y-5"><ServerUpdates /><AdminUsersPage /></div>}
       {editingUsername && user && <UsernameModal target={user}
         onClose={() => setEditingUsername(false)} onSaved={() => setEditingUsername(false)} />}

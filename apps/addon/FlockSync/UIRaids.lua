@@ -17,7 +17,8 @@ end
 local function sortedRaids()
     local today = todayIndex()
     local raids = {}
-    for _, raid in ipairs(ns.Snapshot.upcomingRaids) do
+    local visible, emptyText = ns.VisibleScheduleRaids()
+    for _, raid in ipairs(visible) do
         raids[#raids + 1] = raid
     end
     local function daysAway(raid)
@@ -31,7 +32,7 @@ local function sortedRaids()
         end
         return (a.startTime or "") < (b.startTime or "")
     end)
-    return raids
+    return raids, emptyText
 end
 
 local function playerStatus(raid)
@@ -110,10 +111,10 @@ function ns.BuildSchedulePanel(parent)
     panel.empty:SetPoint("TOPLEFT", 20, -56)
 
     function panel.Refresh()
-        local raids = sortedRaids()
+        local raids, emptyText = sortedRaids()
         panel.status:SetText(ns.DescribeSnapshot())
         panel.empty:SetShown(ns.HasSnapshot() and #raids == 0)
-        panel.empty:SetText("No raid teams are scheduled.")
+        panel.empty:SetText(emptyText or "No raid teams are scheduled.")
         panel.list.SetItems(raids)
     end
 
@@ -123,6 +124,8 @@ function ns.BuildSchedulePanel(parent)
         end
     end
     ns.OnSnapshotChanged(refreshIfVisible)
+    panel:RegisterEvent("GUILD_ROSTER_UPDATE")
+    panel:SetScript("OnEvent", refreshIfVisible)
     panel:SetScript("OnShow", ns.RequestGuildRoster)
     ns.RequestGuildRoster()
     return panel

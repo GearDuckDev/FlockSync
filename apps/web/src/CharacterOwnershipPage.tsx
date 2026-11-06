@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CharacterOwnershipCatalog } from '@flocksync/shared-types';
 import { useAuth } from './AuthContext';
-import { fetchCharacterOwnership, setCharacterOwner } from './lib/apiCharacterOwnership';
-import { prepareOwnershipChange } from './lib/characterOwnership';
+import { fetchCharacterOwnership, setGroupOwner } from './lib/apiCharacterOwnership';
+import { prepareGroupOwnershipChange } from './lib/characterOwnership';
 import { CharacterOwnershipPanel } from './components/CharacterOwnershipPanel';
 import { CharacterOwnershipAudit } from './components/CharacterOwnershipAudit';
 
@@ -28,24 +28,16 @@ export const CharacterOwnershipPage = (): React.JSX.Element => {
   }, [token]);
   useEffect(() => { void load(); }, [load]);
 
-  const change = async (guid: string, userId: string | null): Promise<void> => {
+  const change = async (key: string, userId: string | null): Promise<void> => {
     if (!token || !catalog || busy) return;
     setError(null);
     setNotice(null);
     try {
-      const { input, confirmation } = prepareOwnershipChange(catalog, guid, userId);
+      const { input, confirmation } = prepareGroupOwnershipChange(catalog, key, userId);
       if (!window.confirm(confirmation)) return;
       setBusy(true);
-      const updated = await setCharacterOwner(token, guid, input);
-      setCatalog((current) => current && ({
-        ...current,
-        ownerships: [
-          ...current.ownerships.filter((entry) => entry.characterGuid !== guid),
-          ...(updated ? [updated] : [])
-        ]
-      }));
-      setNotice('Character ownership saved.');
-      setCatalog(await fetchCharacterOwnership(token));
+      setCatalog(await setGroupOwner(token, input));
+      setNotice('Friendly-name group ownership saved.');
     } catch (err) {
       fail(err);
     } finally {
@@ -59,8 +51,9 @@ export const CharacterOwnershipPage = (): React.JSX.Element => {
           <h2 className="text-lg font-semibold">Character Links</h2>
           <p className="text-sm text-slate-400">
             Officers and admins verify ownership of characters in this server&apos;s synced guild roster.
-            Each user may own multiple characters; each character has only one owner.
-            Main/alt names are not proof of ownership and are not changed here.
+            Assign a friendly-name group to a website user to link all its current and future synced characters.
+            Labels alone are not verified ownership: an officer must assign the group first.
+            Main/alt grouping changes can then change inherited access. Renaming a friendly label does not change its owner.
           </p>
         </div>
         <button disabled={busy} onClick={() => void load()}

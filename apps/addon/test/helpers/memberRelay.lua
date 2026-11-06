@@ -5,6 +5,7 @@ function network:client(name, guild, helper)
     self.clients[#self.clients + 1] = client
     env._G, env.FlockSyncDB, env.FlockSyncHelperDB = env, {}, helper
     env.GetServerTime = function() return math.floor(self.now) end
+    env.GetRealmName = function() return "Realm" end
     env.IsInGuild = function() return client.guild ~= nil end
     env.CreateFrame = function()
         local frame = { events = {} }
@@ -38,6 +39,13 @@ function network:client(name, guild, helper)
     ns.GetPlayerFullName = function() return name end
     ns.IsOnboarded = function() return client.onboarded ~= false end
     ns.IsPlayerOfficer = function() return false end
+    ns.KillGuildMember = function(sender)
+        for _, peer in ipairs(self.clients) do
+            if peer.name == sender and peer.guild == client.guild and peer.online then
+                return { officer = peer.env.FlockSyncHelperDB ~= nil }
+            end
+        end
+    end
     ns.IsEnabled = function() return true end
     ns.CacheAddonReleases, ns.CompactAddonReleases = function() end, function() end
     for _, module in ipairs({ "Serializer", "Snapshot", "SnapshotComms", "Tooltips" }) do

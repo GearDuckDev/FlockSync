@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { transformWithOxc } from 'vite';
-import { prepareOwnershipChange } from '../src/lib/characterOwnership.ts';
+import { prepareOwnershipChange, prepareGroupOwnershipChange } from '../src/lib/characterOwnership.ts';
 
 const compiled = new Map();
 for (const name of ['CharacterOwnershipPanel', 'CharacterOwnershipAudit', 'DashboardNav']) {
@@ -35,6 +35,9 @@ const catalog = {
     { guid: 'second', name: 'Second Last', realm: 'Realm', isActive: false }
   ],
   ownerships: [{ characterGuid: 'first', userId: 'alice', revision, updatedAt: 1 }],
+  groups: [
+    { key: 'first', label: 'Killjoy', characterGuids: ['first', 'second'], userId: 'alice', revision }
+  ],
   audit: []
 };
 
@@ -61,8 +64,25 @@ test('responsive ownership controls show all characters, current owner and disab
   assert.match(html, /Second Last/);
   assert.match(html, /Inactive/);
   assert.match(html, /value="alice" selected/);
-  assert.equal((html.match(/<select disabled/g) ?? []).length, 2);
+  assert.match(html, /Killjoy/);
+  assert.match(html, /including future alts/);
+  assert.equal((html.match(/<select disabled/g) ?? []).length, 1);
   assert.equal(TABS.find((tab) => tab.id === 'characters').access, 'officer');
+});
+
+test('friendly-group changes confirm all characters, previous owners and automatic future ownership', () => {
+  const prepared = prepareGroupOwnershipChange(catalog, 'first', 'bob');
+  assert.equal(prepared.input.groupKey, 'first');
+  assert.equal(prepared.input.expectedRevision, revision);
+  assert.deepEqual(prepared.input.expectedMembers, [
+    { characterGuid: 'first', revision }, { characterGuid: 'second', revision: null }
+  ]);
+  assert.equal(prepared.input.confirmReassignment, true);
+  assert.match(prepared.confirmation, /Killjoy/);
+  assert.match(prepared.confirmation, /First Last: Alice/);
+  assert.match(prepared.confirmation, /Second Last: Unlinked/);
+  assert.match(prepared.confirmation, /future synced/);
+  assert.match(prepareGroupOwnershipChange(catalog, 'first', null).confirmation, /future characters will not inherit/);
 });
 
 test('audit renders historical names safely instead of substituting current usernames', () => {

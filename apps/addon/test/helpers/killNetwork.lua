@@ -1,7 +1,8 @@
 local network = { now = 100, clients = {}, timers = {}, sent = {}, notices = {} }
 function network:client(name, guid, rank)
     local env = setmetatable({}, { __index = _G })
-    local client = { env = env, ns = {}, name = name, guid = guid, rank = rank, guild = "Guild", online = true }
+    local client = { env = env, ns = {}, name = name, guid = guid, rank = rank,
+        guild = "Guild", online = true, frames = {} }
     self.clients[#self.clients + 1] = client
     env._G = env
     env.FlockSyncDB = { config = { hasCompletedOnboarding = true }, profiles = {},
@@ -22,7 +23,11 @@ function network:client(name, guid, rank)
             peer.online, nil, nil, nil, nil, nil, nil, nil, peer.guid
     end
     env.CreateFrame = function()
-        return { RegisterEvent = function() end, SetScript = function() end }
+        local frame = { events = {} }
+        function frame:RegisterEvent(event) self.events[event] = true end
+        function frame:SetScript(_, callback) self.callback = callback end
+        client.frames[#client.frames + 1] = frame
+        return frame
     end
     env.C_Timer = { After = function(delay, callback)
         self.timers[#self.timers + 1] = { at = self.now + delay, callback = callback }
@@ -50,6 +55,11 @@ function network:client(name, guid, rank)
         "KillListAuthority", "KillListTransport", "KillListSync" }) do
         local chunk = assert(loadfile("apps/addon/FlockSync/" .. module .. ".lua"))
         setfenv(chunk, env)("FlockSync", ns)
+    end
+    function client:fire(event, ...)
+        for _, frame in ipairs(self.frames) do
+            if frame.events[event] then frame.callback(frame, event, ...) end
+        end
     end
     return client
 end

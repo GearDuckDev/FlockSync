@@ -9,6 +9,7 @@ ns.Snapshot = {
     craftersIndex = {},
     serverTimestamp = 0,
     origin = nil,
+    characterLinks = {},
 }
 
 local listeners = {}
@@ -73,6 +74,12 @@ rebuild = function(source, origin)
     snapshot.craftersIndex = {}
     snapshot.serverTimestamp = source.serverTimestamp or 0
     snapshot.origin = origin
+    snapshot.characterLinks = {}
+    for _, link in ipairs(type(source.characterLinks) == "table" and source.characterLinks or {}) do
+        if type(link) == "table" and isText(link.characterGuid) and isText(link.ownerKey) then
+            snapshot.characterLinks[link.characterGuid] = link.ownerKey
+        end
+    end
 
     for _, entry in ipairs(type(source.craftersIndex) == "table" and source.craftersIndex or {}) do
         if validCrafter(entry) then
@@ -116,6 +123,9 @@ end
 -- The desktop-written helper file only counts on a PC linked to the desktop app.
 local function helperSource()
     local helper = FlockSyncHelperDB
+    local guild = type(helper) == "table" and helper.authorizedCollectorGuild
+    if type(guild) == "table" and (guild.name ~= ns.CurrentGuildName()
+        or guild.realm ~= GetRealmName()) then return nil end
     if type(helper) == "table" and helper.isAuthorizedOfficer == true
         and timestampOf(helper) > 0 then
         return helper
@@ -128,6 +138,11 @@ end
 function ns.LoadSnapshot()
     local helper = helperSource()
     local cached = type(FlockSyncDB.guildSnapshot) == "table" and FlockSyncDB.guildSnapshot or nil
+    local guild = cached and cached.authorizedCollectorGuild
+    if cached and (cached.guild ~= ns.CurrentGuildName() or (type(guild) == "table"
+        and (guild.name ~= ns.CurrentGuildName() or guild.realm ~= GetRealmName()))) then
+        cached = nil
+    end
     if helper and timestampOf(helper) >= timestampOf(cached) then
         rebuild(helper, "helper")
     elseif cached and timestampOf(cached) > 0 then
@@ -156,10 +171,11 @@ end
 -- FlockSyncDB is account-wide, so a cached broadcast may belong to another
 -- character's guild; hide it (without deleting it) once our guild is known.
 function ns.EnforceSnapshotGuild(guildName)
-    if ns.Snapshot.origin ~= "broadcast" or not currentSource
-        or currentSource.guild == guildName then
-        return
-    end
+    if not currentSource then return end
+    local guild = currentSource.authorizedCollectorGuild
+    local wrongScope = type(guild) == "table"
+        and (guild.name ~= guildName or guild.realm ~= GetRealmName())
+    if not wrongScope and (ns.Snapshot.origin ~= "broadcast" or currentSource.guild == guildName) then return end
     rebuild({ serverTimestamp = 0 }, nil)
     currentSource = nil
 end

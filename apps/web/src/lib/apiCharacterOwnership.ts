@@ -1,6 +1,6 @@
 import {
   CharacterOwnershipCatalogSchema, CharacterOwnershipSchema,
-  type CharacterOwnership, type CharacterOwnershipCatalog, type SetCharacterOwner
+  type CharacterOwnership, type CharacterOwnershipCatalog, type SetCharacterOwner, type SetGroupOwner
 } from '@flocksync/shared-types';
 import { z } from 'zod';
 import { request } from './api';
@@ -18,3 +18,8 @@ export const setCharacterOwner = async (
     `/api/character-ownership/${encodeURIComponent(guid)}`,
     { method: 'PUT', body: JSON.stringify(input) }, token
   ));
+
+export const setGroupOwner = async (token: string, input: SetGroupOwner): Promise<CharacterOwnershipCatalog> =>
+  CharacterOwnershipCatalogSchema.parse(await request('/api/character-ownership/group', {
+    method: 'PUT', body: JSON.stringify(input)
+  }, token));

@@ -1,4 +1,4 @@
-import type { Character } from '@flocksync/shared-types';
+import { characterGroupKey, type Character } from '@flocksync/shared-types';
 import { groupRoster, type RosterGroup } from './roster';
 
 export interface Human {
@@ -7,8 +7,7 @@ export interface Human {
   characters: Character[];
 }
 
-export const humanKey = (g: RosterGroup): string =>
-  g.orphan && g.main.mainCharacterName ? `name:${g.main.mainCharacterName.trim().toLowerCase()}` : g.main.guid;
+export const humanKey = (g: RosterGroup): string => characterGroupKey(g);
 
 /** One entry per real player: a Main plus all of its linked alts. */
 export const buildHumans = (roster: Character[]): Human[] => {

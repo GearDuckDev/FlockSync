@@ -62,6 +62,11 @@ function ns.MergeKillWire(raw, member, snapshot)
         end
         return false
     end
+    if old and old.deleted and not entry.deleted
+        and (entry.createdAt ~= entry.updatedAt or entry.createdAt <= old.updatedAt) then
+        print("FlockSync: Removed target requires a new addition; ignored an old edit.")
+        return false
+    end
     if not snapshot then
         if entry.actorGuid ~= member.guid then return false end
         if not member.officer then

@@ -19,6 +19,19 @@ export const SetCharacterOwnerSchema = z.object({
 }).strict();
 export type SetCharacterOwner = z.infer<typeof SetCharacterOwnerSchema>;
 
+export const SetGroupOwnerSchema = SetCharacterOwnerSchema.extend({
+  groupKey: IdSchema,
+  expectedMembers: z.array(z.object({
+    characterGuid: IdSchema, revision: z.string().uuid().nullable()
+  }).strict()).min(1).max(5000)
+}).strict();
+export type SetGroupOwner = z.infer<typeof SetGroupOwnerSchema>;
+
+export const OwnershipGroupSchema = z.object({
+  key: IdSchema, label: z.string().min(1), characterGuids: z.array(IdSchema),
+  userId: IdSchema.nullable(), revision: z.string().uuid().nullable()
+}).strict();
+
 export const CharacterOwnershipAuditSchema = z.object({
   id: z.string().uuid(),
   characterGuid: IdSchema,
@@ -30,7 +43,8 @@ export const CharacterOwnershipAuditSchema = z.object({
   actorId: IdSchema,
   actorUsername: z.string().min(1),
   changedAt: EpochSchema,
-  reason: z.enum(["ASSIGNED", "REASSIGNED", "REVOKED", "USER_DELETED", "CHARACTER_DELETED"])
+  reason: z.enum(["ASSIGNED", "REASSIGNED", "REVOKED", "USER_DELETED", "CHARACTER_DELETED",
+    "GROUP_ASSIGNED", "GROUP_REASSIGNED", "GROUP_REVOKED"])
 }).strict();
 export type CharacterOwnershipAudit = z.infer<typeof CharacterOwnershipAuditSchema>;
 
@@ -41,6 +55,7 @@ export const CharacterOwnershipCatalogSchema = z.object({
     guid: IdSchema, name: z.string().min(1), realm: z.string().min(1), isActive: z.boolean()
   }).strict()),
   ownerships: z.array(CharacterOwnershipSchema),
+  groups: z.array(OwnershipGroupSchema).default([]),
   audit: z.array(CharacterOwnershipAuditSchema)
 }).strict();
 export type CharacterOwnershipCatalog = z.infer<typeof CharacterOwnershipCatalogSchema>;

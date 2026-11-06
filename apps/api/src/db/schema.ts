@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   integer,
+  primaryKey,
   sqliteTable,
   text
 } from "drizzle-orm/sqlite-core";
@@ -136,6 +137,14 @@ export const characterOwnerships = sqliteTable("character_ownerships", {
   updatedAt: integer("updated_at").notNull()
 });
 
+export const groupOwnerships = sqliteTable("group_ownerships", {
+  guildKey: text("guild_key").notNull(),
+  groupKey: text("group_key").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  revision: text("revision").notNull(),
+  updatedAt: integer("updated_at").notNull()
+}, (table) => [primaryKey({ columns: [table.guildKey, table.groupKey] })]);
+
 // Audit identity snapshots deliberately outlive account/character deletion and renaming.
 export const characterOwnershipAudit = sqliteTable("character_ownership_audit", {
   id: text("id").primaryKey(),
@@ -151,7 +160,8 @@ export const characterOwnershipAudit = sqliteTable("character_ownership_audit", 
   actorUsername: text("actor_username").notNull(),
   changedAt: integer("changed_at").notNull(),
   reason: text("reason", {
-    enum: ["ASSIGNED", "REASSIGNED", "REVOKED", "USER_DELETED", "CHARACTER_DELETED"]
+    enum: ["ASSIGNED", "REASSIGNED", "REVOKED", "USER_DELETED", "CHARACTER_DELETED",
+      "GROUP_ASSIGNED", "GROUP_REASSIGNED", "GROUP_REVOKED"]
   }).notNull()
 });
 
@@ -161,3 +171,17 @@ export const charactersRelations = relations(characters, ({ one }) => ({
     references: [users.id]
   })
 }));
+
+export const sharedKillTargets = sqliteTable("shared_kill_targets", {
+  guildKey: text("guild_key").notNull(),
+  targetKey: text("target_key").notNull(),
+  name: text("name").notNull(),
+  realm: text("realm").notNull(),
+  note: text("note").notNull(),
+  author: text("author").notNull(),
+  authorGuid: text("author_guid").notNull(),
+  actorGuid: text("actor_guid").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  deleted: integer("deleted", { mode: "boolean" }).notNull()
+}, (table) => [primaryKey({ columns: [table.guildKey, table.targetKey] })]);

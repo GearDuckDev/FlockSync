@@ -1,0 +1,82 @@
+import { and, eq } from "drizzle-orm";
+import { SharedKillEntrySchema, type SharedKillEntry } from "@flocksync/shared-types";
+import { db } from "../db/index.js";
+import { guildIdentity, sharedKillTargets, users } from "../db/schema.js";
+import { effectiveOwnerships } from "./groupOwnership.service.js";
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export class KillSyncConflict extends Error {}
+const guildKey = (guild: { name: string; realm: string }): string => `${guild.realm}\u001f${guild.name}`;
+const targetKey = (name: string, realm: string): string => `${realm.toLowerCase()}\u001f${name.toLowerCase()}`;
+const condition = (guild: { name: string; realm: string }, name: string, realm: string) =>
+  and(eq(sharedKillTargets.guildKey, guildKey(guild)), eq(sharedKillTargets.targetKey, targetKey(name, realm)));
+const entryOf = (row: typeof sharedKillTargets.$inferSelect): SharedKillEntry => {
+  const { guildKey: _guild, targetKey: _target, ...entry } = row;
+  return SharedKillEntrySchema.parse(entry);
+};
+
+export const listSharedKills = (includeDeleted = false): SharedKillEntry[] => {
+  const guild = db.select().from(guildIdentity).get();
+  if (!guild) return [];
+  return db.select().from(sharedKillTargets).where(eq(sharedKillTargets.guildKey, guildKey(guild))).all()
+    .filter((row) => includeDeleted || !row.deleted).map(entryOf);
+};
+
+// Only the authenticated officer upload path calls this; member authorship is
+// attested by that collector's validated guild traffic, not by a web self-claim.
+export const upsertSharedKills = (
+  tx: Transaction, entries: SharedKillEntry[], guild: { name: string; realm: string },
+  resetAt: number, now: number
+): void => {
+  for (const entry of entries) {
+    if (entry.updatedAt <= resetAt) continue;
+    if (entry.realm !== guild.realm || entry.updatedAt > now + 30) {
+      throw new Error("Kill-list entry is outside the collector guild, reset or clock boundary");
+    }
+    const old = tx.select().from(sharedKillTargets).where(condition(guild, entry.name, entry.realm)).get();
+    if (old && entry.updatedAt <= old.updatedAt) {
+      if (entry.updatedAt === old.updatedAt && (entry.note !== old.note || entry.deleted !== old.deleted
+        || entry.authorGuid !== old.authorGuid || entry.actorGuid !== old.actorGuid
+        || entry.createdAt !== old.createdAt)) {
+        throw new KillSyncConflict("Equal-time kill-list conflict; retry the intended change in a later second");
+      }
+      continue;
+    }
+    if (old?.deleted && !entry.deleted
+      && (entry.createdAt !== entry.updatedAt || entry.createdAt <= old.updatedAt)) {
+      throw new KillSyncConflict("Removed targets require a new in-game addition, not an old edit");
+    }
+    if (old && !old.deleted && (entry.authorGuid !== old.authorGuid || entry.createdAt !== old.createdAt)) {
+      throw new KillSyncConflict("Kill-list author/creation identity cannot change on an active entry");
+    }
+    tx.insert(sharedKillTargets).values({
+      ...entry, guildKey: guildKey(guild), targetKey: targetKey(entry.name, entry.realm)
+    }).onConflictDoUpdate({
+      target: [sharedKillTargets.guildKey, sharedKillTargets.targetKey], set: entry
+    }).run();
+  }
+};
+
+type Mutation = { ok: true; entry: SharedKillEntry }
+  | { ok: false; status: 403 | 404 | 409; error: string };
+export const changeSharedKill = (
+  userId: string, input: { name: string; realm: string; expectedUpdatedAt: number }, note?: string
+): Mutation => db.transaction((tx): Mutation => {
+  const actor = tx.select().from(users).where(eq(users.id, userId)).get();
+  const guild = tx.select().from(guildIdentity).get();
+  if (!actor) return { ok: false, status: 403, error: "Account unavailable" };
+  if (!guild) return { ok: false, status: 404, error: "Guild kill list unavailable" };
+  const old = tx.select().from(sharedKillTargets).where(condition(guild, input.name, input.realm)).get();
+  if (!old || old.deleted) return { ok: false, status: 404, error: "Shared target not found" };
+  if (actor.role === "MEMBER") {
+    const ownership = effectiveOwnerships().find((row) => row.characterGuid === old.authorGuid && row.userId === actor.id);
+    if (!ownership) return { ok: false, status: 403, error: "Only the verified owner of the author's character can change this entry" };
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (old.updatedAt !== input.expectedUpdatedAt || now <= old.updatedAt) {
+    return { ok: false, status: 409, error: "Target changed or was just edited. Refresh, wait one second and retry" };
+  }
+  const entry = { ...entryOf(old), note: note ?? "", deleted: note === undefined, updatedAt: now };
+  tx.update(sharedKillTargets).set(entry).where(condition(guild, input.name, input.realm)).run();
+  return { ok: true, entry };
+});

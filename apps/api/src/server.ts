@@ -16,6 +16,7 @@ import { themesRoutes } from "./routes/themes.routes.js";
 import { databaseAdminRoutes } from "./routes/databaseAdmin.routes.js";
 import { healthRoutes } from "./routes/health.routes.js";
 import { characterOwnershipRoutes } from "./routes/characterOwnership.routes.js";
+import { killListRoutes } from "./routes/killList.routes.js";
 
 export const buildServer = async () => {
   const app = Fastify({
@@ -53,6 +54,7 @@ export const buildServer = async () => {
   await app.register(tasksRoutes, { prefix: "/api" });
   await app.register(usersRoutes, { prefix: "/api" });
   await app.register(characterOwnershipRoutes, { prefix: "/api" });
+  await app.register(killListRoutes, { prefix: "/api" });
   await app.register(updatesRoutes, { prefix: "/api" });
   await app.register(themesRoutes, { prefix: "/api" });
   await app.register(databaseAdminRoutes, { prefix: "/api/admin" });

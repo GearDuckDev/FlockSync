@@ -5,10 +5,12 @@ import type {
 } from "@flocksync/shared-types";
 import { db } from "../db/index.js";
 import { characters, deletedCharacters, guildIdentity } from "../db/schema.js";
+import { effectiveOwnerships } from "./groupOwnership.service.js";
 import { and, eq } from "drizzle-orm";
 import { upsertAttendance, upsertLoot } from "./ledgerSync.service.js";
 import { buildGuildSnapshot } from "./snapshot.service.js";
 import { readDatabaseAdminState } from "./databaseAdminState.js";
+import { listSharedKills, upsertSharedKills } from "./killList.service.js";
 
 const attunementsEpoch = (character: Character): number =>
   Math.max(0, ...(character.attunements ?? []).map((chain) => chain.updatedAt));
@@ -169,6 +171,9 @@ export const processOfficerSync = async (
       }
     }
 
+    if (payload.collectorGuild && payload.exportedAt > databaseResetAt) {
+      upsertSharedKills(transaction, payload.sharedKillList ?? [], payload.collectorGuild, databaseResetAt, now);
+    }
     upsertLoot(transaction, (payload.lootHistory ?? [])
       .filter((record) => databaseResetAt === 0 || record.timestamp > databaseResetAt));
     upsertAttendance(transaction, (payload.attendanceHistory ?? [])
@@ -181,11 +186,18 @@ export const processOfficerSync = async (
     .where(and(eq(characters.isActive, false), eq(characters.autoStale, false)))
     .all();
 
+  const guild = db.select().from(guildIdentity).get();
+  const sameGuild = guild && payload.collectorGuild
+    && guild.name === payload.collectorGuild.name && guild.realm === payload.collectorGuild.realm;
+  const characterLinks = sameGuild ? effectiveOwnerships().map((row) => ({
+    characterGuid: row.characterGuid, ownerKey: row.userId
+  })) : [];
   return {
     isAuthorizedOfficer: true,
     culledCharacterGuids: inactiveCharacters.map((character) => character.guid),
     serverTimestamp: now,
     databaseResetAt,
+    ...(sameGuild ? { sharedKillList: listSharedKills(true), characterLinks } : {}),
     ...buildGuildSnapshot()
   };
 };
