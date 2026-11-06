@@ -89,21 +89,19 @@ broadcasts. Server operators supply their own environment, tunnel, domain and
 backup location; the package does not install host-specific monitoring.
 
 ### Verification and publication status
-W01-W11 upgrade evidence and scoped maintainer acceptance are recorded in
-[UPGRADE-PLAN.md](./UPGRADE-PLAN.md) and [UPGRADE-TESTS.md](./UPGRADE-TESTS.md).
 The pre-version-bump candidates passed offline regressions and applicable
 portable/installed/game tests, including reload equipment removal/restoration,
 logout/sync/login, helper loading, upload-failure recovery and tray/relaunch.
 Original helper files and startup entries were restored and verified; normal
 Desktop settings were unchanged. All local test services are stopped.
 
-W11 backup checks passed on AMD64 and emulated ARM64, including actual accelerated
+Backup checks passed on AMD64 and emulated ARM64, including actual accelerated
 cron and restore into a fresh database. Routing, readiness, backup-health,
 proxy trust, SPA and PWA serving checks passed. The hosted
 [no-publish workflow preview](https://github.com/GearDuckDev/FlockSync/actions/runs/42155373845)
 passed, including downloaded artifact inspection; CurseForge publication was skipped.
 
-**W12 final-version automated builds and artifact verification passed.** The full
+**Final-version automated builds and artifact verification passed.** The full
 release packager passed workspace typecheck, API/web builds, Windows packaging
 and all ZIP/manifest generation. Final tests: 11 API production, 14 API updates,
 16 web and two deployment-packaging regressions; Desktop 27 passed with one
@@ -113,8 +111,7 @@ readiness/backup-health/proxy tests passed, including SPA/PWA serving.
 All six manifest assets were inspected: copied executable hashes match, packaged
 Desktop output matches its build, addon ZIPs byte-match unchanged sources, and
 all 214 server ZIP source files match the workspace with required exclusions.
-**Final 0.5.2 portable and installed smoke acceptance passed**, recorded in
-[the W12 checklist](./UPGRADE-TESTS.md#w12-final-version-candidate-handoff).
+**Final 0.5.2 portable and installed smoke acceptance passed.**
 The maintainer confirmed version, login/sync, tray reopen/Quit and portable
 relaunch with retained settings. Automatic synthetic role sync reached the final
 0.7.1 server without manual upload. Installed executable/ASAR match the verified
@@ -122,9 +119,9 @@ candidate. Normal settings/startup entries were preserved; all test services
 stopped and disposable synthetic database removed. No real game files were used
 in these final smoke checks.
 No new release, tag or production deployment has been created.
-Retained warnings and fresh-release-age holds are documented in the
-[dependency audit](./UPGRADE-AUDIT-2026-11-04.md). This is not a zero-vulnerability
-claim. Live multiple-account, reboot/startup activation, active-upload shutdown
+Some transitive dependency deprecations remain in upstream build tools;
+untested newer dependency releases were not adopted. This is not a
+zero-vulnerability claim. Live multiple-account, reboot/startup activation, active-upload shutdown
 cancellation, real NAS/overnight scheduling and independent total-host outage
 checks are not established by these tests. Lua 5.1 standalone tests were not rerun;
 unchanged addon runtime files do not justify claiming them passed.
@@ -146,7 +143,8 @@ Start with [.github/copilot-instructions.md](./.github/copilot-instructions.md),
 [README.md](./README.md). Inspect current branch/status, package/TOC versions,
 manifest contents and actual publication state. v0.10.0 is published; v0.10.1
 was unused at preparation. Do not reuse published tags or infer ZIP freshness
-from its name. Scope/evidence/checkpoints live in the active upgrade plan.
+from its name. Temporary work trackers and local inventories are not part of
+the repository or release downloads.
 
 #### Build definitions and packages
 The committed lockfile is format 9.0; repository/container pnpm is **12.16.1**.
