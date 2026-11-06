@@ -24,7 +24,9 @@
     "ItemRefTooltip",
     "ShoppingTooltip1",
     "ShoppingTooltip2",
-    "DEFAULT_CHAT_FRAME"
+    "DEFAULT_CHAT_FRAME",
+    "Minimap",
+    "UIParent"
   ],
   "Lua.workspace.library": [
     "apps/addon/FlockSync",

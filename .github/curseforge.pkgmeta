@@ -29,6 +29,8 @@ ignore:
   - README.md
   - RELEASES.md
   - RELEASE-NOTES.md
+  - SECURITY-HEALTH-PLAN.md
+  - SERVER-OPERATIONS.md
   - docker-compose.yml
   - Dockerfile.api
   - Dockerfile.web

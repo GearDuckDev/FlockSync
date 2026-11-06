@@ -1,4 +1,4 @@
-FROM alpine:3.23
+FROM alpine:3.24
 RUN apk add --no-cache sqlite
 COPY deploy/backup-sqlite.sh /usr/local/bin/backup-sqlite
 COPY deploy/start-backup-cron.sh /usr/local/bin/start-backup-cron

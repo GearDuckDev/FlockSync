@@ -9,24 +9,23 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.10.0` (prepared; not published) |
-| Desktop | `0.5.1` |
-| API + web / server | `0.7.0` |
+| Combined GitHub tag | `v0.10.1` (local preparation; v0.10.0 is published) |
+| Desktop | `0.5.2` |
+| API + web / server | `0.7.1` |
 | Main addon | `0.6.0` |
 | AppHelper | `0.2.2` |
-| Shared types | `0.7.0` |
+| Shared types | `0.7.1` |
 | Root package | `0.2.2` |
 
 ### Changes in this release
 
-- Server 0.7.0 adds sign-in/registration abuse controls, explicit proxy trust,
-  database readiness, verified backup health, and bounded resource usage.
-- Backup storage identity checks are optional and require operator setup;
-  existing paths/settings are preserved. Request safeguards retain valid
-  128 MiB restore support through nginx, subject to edge-service limits.
-- API/web advance together from 0.6.1 to 0.7.0; shared types advance from
-  0.6.0 to 0.7.0. Desktop 0.5.1, main addon 0.6.0, AppHelper 0.2.2, and root
-  metadata 0.2.2 are unchanged. Existing current desktop/addons need no reinstall.
+- Server 0.7.1 preserves main/alt links on fresh uploads after a database reset.
+- Desktop 0.5.2 refreshes its runtime, watcher and Windows packaging; API/web
+  and shared validation/build dependencies are updated with scoped regression
+  and maintainer acceptance. Backup tooling advances to Alpine 3.24.
+- API/web and shared types advance from 0.7.0 to 0.7.1; Desktop from 0.5.1
+  to 0.5.2. Main addon 0.6.0, AppHelper 0.2.2 and root metadata 0.2.2 remain
+  unchanged. Current addon/helper installations need no reinstall.
 - Notifications are excluded from this branch; remote Kuma access is optional,
   separately configured infrastructure, not an installed release feature.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
@@ -45,7 +44,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.10.0
+   .\scripts\package-release.ps1 -ReleaseVersion 0.10.1
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -64,16 +63,16 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.10.0 -m "FlockSync 0.10.0"
-   git push origin v0.10.0
+   git tag -a v0.10.1 -m "FlockSync 0.10.1"
+   git push origin v0.10.1
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.10.0`.
-   - Title: `FlockSync 0.10.0`.
+   - Tag: `v0.10.1`.
+   - Title: `FlockSync 0.10.1`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.10.0`, leave it **unchecked**; this is a normal Release-channel
+     For `v0.10.1`, leave it **unchecked**; this is a normal Release-channel
      publication, not a declaration of 1.0 completeness.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
@@ -88,8 +87,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.5.1-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.5.1-x64.exe` | Windows portable app |
+| `FlockSync-Setup-0.5.2-x64.exe` | Windows installer |
+| `FlockSync-Portable-0.5.2-x64.exe` | Windows portable app |
 | `FlockSync_Remote_Server_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |
@@ -226,6 +225,20 @@ hidden `.curseforge-release` directory. Keep `include-hidden-files: true` on
 that step; upload-artifact otherwise skips dot-prefixed directories. If an
 older run failed only at artifact saving, check the preceding CurseForge upload
 step and the project's files before publishing again to avoid duplicate uploads.
+
+The workflow uses checkout v7, github-script v9 and upload-artifact v7 on
+GitHub-hosted `ubuntu-latest` (Node 24 actions; runner >=2.327.1). Keep the
+default zipped artifact format: the downloaded artifact wraps the addon ZIP.
+The github-script step uses injected `github`, `core` and `exec` objects;
+do not replace them with CommonJS imports of the ESM-only Actions GitHub package.
+BigWigs remains on its v2 channel (2.7.0 at the November 5 check).
+
+Keep `.github/curseforge.pkgmeta` exclusions current when adding root documents.
+The archive verifier intentionally rejects extra files, including upgrade plans
+and server operations documents. After workflow changes, run a manual preview
+with **publish unchecked** on the branch containing the changes, using an
+existing matching-channel release tag. Local packaging does not establish that
+GitHub's artifact service or runner integration passed.
 
 Automatic runs skip a main addon version already present in an earlier published
 combined GitHub release, preventing server/desktop-only releases from re-uploading
