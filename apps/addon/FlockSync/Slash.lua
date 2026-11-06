@@ -11,6 +11,9 @@ local HELP = {
     { "/fs prof", "Professions & Gear Goals" },
     { "/fs craft", "Guild Crafter Search" },
     { "/fs raid | schedule", "Your raid schedule" },
+    { "/fs kill | kill add [player name]", "View kill lists or add a target (local preview)" },
+    { "/fs killoptions", "Enable Kill List and configure your personal list" },
+    { "/fs availability", "Set timezone, days and hours for group play" },
     { "/fs minimap", "Show/hide the minimap button" },
     { "/fs debug officer [off]", "Force Officer Mode for this session (testing)" },
     { "/fs help", "Show this list" },
@@ -62,6 +65,8 @@ local ROUTES = {
     craft = function() ns.OpenFeatures("crafters") end,
     raid = openSchedule,
     schedule = openSchedule,
+    killoptions = function() ns.OpenOptions("killlist") end,
+    availability = function() ns.OpenOptions("availability") end,
     help = printHelp,
     minimap = function()
         ns.SetConfigToggle("showMinimap", not ns.IsEnabled("showMinimap"))
@@ -79,6 +84,10 @@ function ns.HandleSlashCommand(msg)
         return
     end
     local command = words[1] or ""
+    if command == "kill" then
+        ns.KillSlash((msg or ""):match("^%s*%S+%s*(.-)%s*$") or "")
+        return
+    end
     if command == "debug" then
         if words[2] == "officer" then
             setDebugOfficer(words[3] ~= "off")

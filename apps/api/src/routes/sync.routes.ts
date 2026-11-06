@@ -12,6 +12,7 @@ import { purgeCharacter } from "../services/purge.service.js";
 import { releaseCatalog } from "../services/releases.service.js";
 import { db } from "../db/index.js";
 import { guildIdentity } from "../db/schema.js";
+import { KillSyncConflict } from "../services/killList.service.js";
 
 export const syncRoutes: FastifyPluginAsync = async (app) => {
   app.get("/guild", { preHandler: app.authenticate }, async () => {
@@ -33,8 +34,25 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
       && payload.data.collectorGuild.realm !== payload.data.officerCharacter.realm) {
       return reply.code(400).send({ error: "Collector guild realm must match the synced character" });
     }
+    if (payload.data.sharedKillList?.length && (!payload.data.collectorGuild
+      || payload.data.sharedKillList.some((entry) => entry.realm !== payload.data.collectorGuild?.realm
+        || entry.updatedAt > Math.floor(Date.now() / 1000) + 30))) {
+      return reply.code(400).send({ error: "Shared kills require collector guild identity, matching realm and valid clock" });
+    }
+    if (payload.data.sharedKillObservations?.length && (!payload.data.collectorGuild
+      || payload.data.sharedKillObservations.some((entry) => entry.realm !== payload.data.collectorGuild?.realm
+        || entry.timestamp > Math.floor(Date.now() / 1000) + 30))) {
+      return reply.code(400).send({ error: "Observations require matching collector guild/realm and valid clock" });
+    }
 
-    const result = await processOfficerSync(payload.data, request.user.id);
+    let result: Awaited<ReturnType<typeof processOfficerSync>>;
+    try {
+      result = await processOfficerSync(payload.data, request.user.id);
+    } catch (error) {
+      if (!(error instanceof KillSyncConflict)) throw error;
+      request.log.warn({ by: request.user.id, error: error.message }, "Kill-list upload conflict");
+      return reply.code(409).send({ error: error.message });
+    }
     const addonReleases = releaseCatalog.cachedAddonReleases((error) => {
       app.log.warn({ err: error }, "Addon release metadata unavailable; sync remains successful");
     });
@@ -62,7 +80,7 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
   app.delete<{ Params: { guid: string } }>("/roster/:guid", {
     preHandler: [app.authenticate, app.requireOfficer]
   }, async (request, reply) => {
-    if (!purgeCharacter(request.params.guid)) {
+    if (!purgeCharacter(request.params.guid, request.user.id)) {
       return reply.code(404).send({ error: "Character not found" });
     }
     return reply.code(204).send();

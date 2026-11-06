@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   integer,
+  primaryKey,
   sqliteTable,
   text
 } from "drizzle-orm/sqlite-core";
@@ -127,9 +128,69 @@ export const usersRelations = relations(users, ({ many }) => ({
   updatedCharacters: many(characters)
 }));
 
+export const characterOwnerships = sqliteTable("character_ownerships", {
+  characterGuid: text("character_guid").primaryKey().references(() => characters.guid, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  guildName: text("guild_name").notNull(),
+  guildRealm: text("guild_realm").notNull(),
+  revision: text("revision").notNull(),
+  updatedAt: integer("updated_at").notNull()
+});
+
+export const groupOwnerships = sqliteTable("group_ownerships", {
+  guildKey: text("guild_key").notNull(),
+  groupKey: text("group_key").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  revision: text("revision").notNull(),
+  updatedAt: integer("updated_at").notNull()
+}, (table) => [primaryKey({ columns: [table.guildKey, table.groupKey] })]);
+
+// Audit identity snapshots deliberately outlive account/character deletion and renaming.
+export const characterOwnershipAudit = sqliteTable("character_ownership_audit", {
+  id: text("id").primaryKey(),
+  characterGuid: text("character_guid").notNull(),
+  characterName: text("character_name").notNull(),
+  guildName: text("guild_name").notNull(),
+  guildRealm: text("guild_realm").notNull(),
+  previousUserId: text("previous_user_id"),
+  previousUsername: text("previous_username"),
+  userId: text("user_id"),
+  username: text("username"),
+  actorId: text("actor_id").notNull(),
+  actorUsername: text("actor_username").notNull(),
+  changedAt: integer("changed_at").notNull(),
+  reason: text("reason", {
+    enum: ["ASSIGNED", "REASSIGNED", "REVOKED", "USER_DELETED", "CHARACTER_DELETED",
+      "GROUP_ASSIGNED", "GROUP_REASSIGNED", "GROUP_REVOKED"]
+  }).notNull()
+});
+
 export const charactersRelations = relations(characters, ({ one }) => ({
   updatedByOfficer: one(users, {
     fields: [characters.updatedByOfficerId],
     references: [users.id]
   })
 }));
+
+export const sharedKillTargets = sqliteTable("shared_kill_targets", {
+  guildKey: text("guild_key").notNull(),
+  targetKey: text("target_key").notNull(),
+  name: text("name").notNull(),
+  realm: text("realm").notNull(),
+  note: text("note").notNull(),
+  author: text("author").notNull(),
+  authorGuid: text("author_guid").notNull(),
+  actorGuid: text("actor_guid").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  deleted: integer("deleted", { mode: "boolean" }).notNull()
+}, (table) => [primaryKey({ columns: [table.guildKey, table.targetKey] })]);
+
+export const killObservations = sqliteTable("kill_observations", {
+  guildKey: text("guild_key").notNull(),
+  id: text("id").notNull(),
+  targetKey: text("target_key").notNull(),
+  kind: text("kind").notNull(),
+  timestamp: integer("timestamp").notNull(),
+  payload: text("payload").notNull()
+}, (table) => [primaryKey({ columns: [table.guildKey, table.id] })]);

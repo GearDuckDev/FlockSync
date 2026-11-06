@@ -29,6 +29,34 @@
       "when": 1793157249992,
       "tag": "0003_lying_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793938779157,
+      "tag": "0004_bitter_forge",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793940789563,
+      "tag": "0005_sad_kree",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793943112500,
+      "tag": "0006_gigantic_mordo",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793943953407,
+      "tag": "0007_ambiguous_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

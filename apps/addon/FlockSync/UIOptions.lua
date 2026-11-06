@@ -1,7 +1,7 @@
 local addonName, ns = ...
 
 -- Settings window: Role & Main, availability/lockouts, display and feature toggles.
-local PANEL_TOP = -52
+local PANEL_TOP = -78
 local window, rolePanel
 
 local function countTracked()
@@ -108,11 +108,12 @@ local function buildRolePanel(container)
 end
 
 local function createWindow()
-    window = ns.CreateWindow("FlockSyncOptionsFrame", "FlockSync Options", 450, 444)
+    window = ns.CreateWindow("FlockSyncOptionsFrame", "FlockSync Options", 450, 474)
     local tabs = ns.CreateTabHost(window, PANEL_TOP)
     tabs.Add("role", "Role & Main", 10, -28, 110, buildRolePanel)
     tabs.Add("availability", "Availability & Lockouts", 122, -28, 165, ns.BuildAvailabilityPanel)
     tabs.Add("settings", "Display & Features", 289, -28, 150, ns.BuildSettingsPanel)
+    tabs.Add("killlist", "Kill List", 10, -54, 85, ns.BuildKillSettings)
     window.tabs = tabs
 end
 

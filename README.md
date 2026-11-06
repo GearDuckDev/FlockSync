@@ -76,6 +76,103 @@ Shared views depend on the last received snapshot, not a continuous website
 connection. Profession recipes require opening each profession window in game.
 Item search is a bounded local cache, not a complete game-item database.
 
+#### Kill List guild-sharing preview and setup
+
+The six-page first-time walkthrough now explains crafting orders, group-play
+availability and the optional Kill List. **Accepting Orders** (the
+**Accepting Guild Crafting Requests** checkbox in `/fs prof`) defaults on for
+characters without a saved choice; existing opt-outs stay off. Open each
+profession window to share its recipes. This is a crafting-availability flag,
+not an automated order/trade system.
+
+The availability page explains account-wide timezone, days and play hours for
+raids, dungeons and PvP. By default, Finish opens the existing availability
+editor; uncheck that option to skip it. Use `/fs availability` later.
+Unset availability defaults are not published as your schedule.
+
+Enable Kill List per character with `/fs killoptions`, then use `/fs kill`,
+`/fs kill add [player name]`, or the enemy-player portrait action. Without a
+typed name the add command uses your current enemy-player target when readable.
+Enter the full **First Last** player name. The current realm is automatic and
+is not shown as a separate field; saved realm identity remains internal.
+
+- Shared and Personal start unchecked; choose either or both to enable OK.
+  Selecting **Guild Shared** sends the target and note to online guildmates
+  when you save; no separate Publish step for new additions. Existing legacy
+  drafts stay private until you explicitly Publish them.
+  If current guild-roster identity is unavailable or the sending queue is
+  full, saving reports an error and leaves the editor open; neither destination
+  is added if both were selected. Retry when the roster/queue is ready.
+  Personal entries are character-local and excluded from messages and uploads.
+- Reasons allow 500 Unicode characters. The list shows at most 80 characters
+  including truncation; notes do not appear in tooltips.
+- Personal reasons are editable. Shared-draft reasons require officer status;
+  officers or the original creator can remove shared entries. Live guild edits
+  require current guild-roster officer rank. A website role alone does not grant
+  in-game message authority. Removal asks for
+  confirmation and affects only that list. Same-second changes require retry.
+- Disabling Personal keeps entries but ignores personal-only targets; disabling
+  Kill List preserves entries and hides its tab; shared sync continues.
+- Login/finishing setup requests catch-up. `/fs kill sync` retries (once per
+  minute). Guild-rank officers can relay the complete verified live list;
+  members can reannounce only their own unedited additions/removals. At least
+  one online client retaining an eligible copy is needed for immediate recovery.
+  Published shared entries now persist through officer Desktop sync; personal
+  entries and drafts never upload. Server recovery requires the collector's
+  logout -> successful Desktop sync -> login sequence, then automatic guild relay.
+- Removal markers persist so old copies cannot restore removed entries.
+  Equal-time conflicts are rejected; an officer must retry the intended change
+  in a later second. Local drafts conflicting with a guild entry are preserved:
+  remove the unwanted draft, then request sync to receive the guild record.
+- Messages are chunked/throttled on a separate guild prefix. Sending can take
+  time for long notes/lists; stay online until delivery. Queue-full errors leave
+  the local change unsent and ask for retry. Catch-up failure is reported.
+- The authenticated API lets all signed-in users view shared entries.
+  Officers/admins can edit/remove any; members can edit/remove only entries
+  authored by their currently verified linked characters. No website additions:
+  add and publish targets in game. Use the website **Kill List** tab to search,
+  edit notes or confirm a shared removal. Refresh after conflicts before retrying.
+- Readable enemy players are detected on target, mouseover, focus and nameplate
+  events, not periodic scans. Popup and sound default on after opt-in and have
+  separate settings, with a 60-second cooldown per target. Remote reports
+  update last-seen data but never trigger local nearby alerts. Nothing can
+  detect players the client does not expose.
+- Optional nameplate skulls are local overlays, default off. They are not raid
+  marks and never target players or invoke protected marking APIs.
+- Each entry shows its latest reported zone/time (`MM-DD-YYYY HH:MM`, local
+  timezone) and a History button. Hide history independently from reporting.
+  Turn off **Share sightings and battles** to keep new reports character-local;
+  turning it back on does not publish that private interval's history.
+  Personal-only observations/history stay character-local; shared drafts do
+  not generate shared reports.
+- Battle attribution uses readable `PARTY_KILL` participant GUIDs or your own
+  fresh death recap with explicit fatal damage and readable identities.
+  Unreadable/secret data, nonfatal hits, stale recaps, unknown enemies and
+  ambiguous killers are skipped, never guessed. Pet kills without a readable
+  party/guild player identity and deaths without sufficient evidence are not
+  attributed. Client-specific event/recap support requires game acceptance.
+- Published sightings and verified battles travel through the same bounded
+  guild transport and collector Desktop/server/helper path. Login catch-up
+  starts automatically, newest observations first after target records; large
+  histories may take substantial online time. A native guild-rank officer can
+  recover reports retained by other clients or the server. These are
+  roster-attested client reports, not a server-verified combat log.
+- Battle history retains 90 days and at most 5,000 guild events; each target
+  retains one latest sighting. Duplicate battle reports within five seconds
+  from the same killer/victim are combined. Removing/recreating a target does
+  not attach its old history to the new creation. Permanent target removal
+  markers are not subject to history retention.
+
+**Release behavior:** friendly-player portrait additions are disabled. Target-based
+`/fs kill add` requires a readable enemy player; NPCs and unreadable data are
+excluded. Typed names remain supported without proving hostility. Existing saved
+entries are preserved, including previous test entries; remove unwanted test
+entries through the UI. Friendly players do not trigger sightings, alerts or skulls.
+
+Existing users are not forced through setup again. To revisit it, use
+**Reset First-Time Walkthrough** in Options > Display & Features; scanning and
+broadcasting pause until Finish. Existing saved choices are preserved.
+
 ### On the web
 | Tab | Purpose |
 | --- | --- |
@@ -87,6 +184,8 @@ Item search is a bounded local cache, not a complete game-item database.
 | Attunements | Group by the main's step; expand initially collapsed alts to see their individual progress |
 | Loot & Attendance | Recorded loot and 30/60/90-day attendance, counting mains and alts as one player |
 | Officer Tasks | Character-linked task board for officers/admins |
+| Character Links | Officers/admins verify website owners of synced guild characters, with confirmed reassignment and audit history |
+| Kill List | All signed-in users view published targets; officers/admins or verified authors edit notes and remove targets |
 | Admin Settings | Account roles, database backup/restore, persistent backup folders, guild-data wipe, and server update notices |
 | Theme Settings | Custom UI/page colors, optional backgrounds, custom uploads, admin defaults, and personal overrides |
 
@@ -95,6 +194,119 @@ sync. Guild identity is stored in SQLite and included in subsequent backups:
 restore brings back that snapshot's guild name, while wipe clears it until a new
 collector sync. Older backups have no guild identity; sync a collector and refresh
 the dashboard to populate it.
+
+### Verified character ownership (preview)
+
+In **Character Links**, officers/admins select the website owner for a
+**friendly-name group**, using the same grouping and alias as Roster & Gear.
+For example, "Killjoy" lists its main and every synced alt beneath one owner
+control, including inactive characters. One user may own several groups;
+each character has one effective owner. Verify the player's identity before
+confirming; members cannot self-claim groups. Officers do not gain access to admin-only account
+creation, roles, email lists, or database controls.
+
+Assignment/reassignment confirms every current character and its previous
+owner. **Future synced alts automatically inherit the assigned group's owner**.
+This intentionally trusts the collector's main/alt grouping after an officer
+has assigned the group; moving characters between groups can change access.
+Renaming the friendly alias does not change ownership, and merely sharing the
+same friendly label does not merge separate groups. A changed main/group key
+may require reassignment. Review grouping when managing access.
+
+Use **Revoke all group links** to remove the group grant and current links;
+future alts will no longer inherit it. Old per-character links remain visible
+until an officer explicitly assigns/revokes their group; upgrades do not
+silently convert them into automatic group grants.
+If someone else changed ownership or group membership, refresh/review before retrying;
+changes within the same server second ask you to wait. The latest 100 audit
+events show the acting officer, time, character and old/new usernames; older
+events remain in SQLite. Renaming or deleting accounts/characters does not
+rewrite past audit identities; deletions revoke links and add audit events.
+This does not rewrite historical kill-list authors.
+
+Links are scoped to this server's configured guild/realm and trusted uploaded
+roster, not independently verified against a game-server account service.
+Collectors cannot choose the website owner, but future group membership from
+their synced roster inherits an existing officer-approved grant. The group
+grant is audited against every current character; inherited future membership
+is derived from the current roster, not a separate officer verification.
+Backups preserve group grants, links and
+audit history; a guild-data wipe clears both. No characters are auto-linked
+when upgrading without an existing group grant. Desktop returns guild-scoped character/owner keys (not emails,
+passwords or website account privileges) for the in-game schedule filter.
+Guild redistribution of these links requires a current guild-roster officer;
+a website-only officer role does not grant guild-message editing authority.
+
+### Member group views
+
+Website members see only Team Builder groups and recruitment callouts containing
+one of their verified linked characters, either assigned or on the bench.
+All linked characters count, across raid, dungeon and PvP groups. Main/alt
+labels alone do not grant access without an officer-approved group owner or
+individual link. Unlinked users see instructions to ask an
+officer/admin for Character Links; linked users without memberships see an
+explicit empty state, not an unrelated or previously selected lineup.
+Officers/admins retain all groups and management controls.
+
+Use the dashboard **Refresh** button after ownership/membership changes.
+Data also refreshes on browser focus and every minute; stale selected member
+lineups disappear when membership is revoked. Loading/errors hide member groups
+until verified links are available. This is a **display filter, not private
+delivery**: the API and in-game snapshots may still deliver all guild groups,
+as designed. Weekly guild availability, crafting and gear-goal views remain
+guild-wide; they are not restricted by group membership.
+
+In-game Raid Schedule uses the same verified owner keys: membership of any
+linked character, including standby, makes its raid visible. Unlinked members
+see linking/sync instructions; current guild-roster officers see all raids.
+The existing in-game schedule snapshot contains RAID teams only; website
+dungeon/PvP groups remain available on the website, not newly added here.
+Changes reach the game after logout -> successful Desktop sync -> login and
+officer relay, not immediately when changing a website link.
+
+The existing in-game officer snapshot relay delivers crafting recipes and
+gear-goal matches to ordinary members without Desktop/AppHelper or collector
+permissions, including tooltip information. Login requests catch-up automatically;
+an online collector with a desktop-sourced snapshot is needed. Simulated Lua
+clients verify relay, late joins, caching and guild isolation; the maintainer
+also accepted live-client crafting/goal relay before the persistence changes.
+The new persistence/ownership return still needs its own live-client acceptance.
+
+### Shared kill-list persistence preview
+
+Use matching candidate API, Desktop and main addon builds. Desktop uploads only
+published records from the collector's guild/realm and returns durable shared
+records, including removal markers. Keep WoW logged out while Desktop writes
+AppHelper; log back in afterward. The ordinary member needs neither Desktop nor
+AppHelper. New Guild Shared additions send automatically on save; subsequent delivery/
+login catch-up is automatic, with `/fs kill sync` only an optional recovery tool.
+Native guild-roster officers must be online to redistribute server-returned
+changes. A website-only collector can upload/load its own helper but cannot
+assert roster-officer authority to peers.
+
+The website **Kill List** tab searches names, realms, authors and reasons.
+It never displays personal records or drafts. No web-add control is provided.
+Note edits allow 500 Unicode characters; shared removals require confirmation.
+All signed-in users may view; officer/admin controls apply to all entries;
+members see controls only for original authors currently linked to them
+(including inherited group links). The API rechecks ownership at mutation time.
+The page refreshes on focus, every minute and with **Refresh Kill List**;
+loading or failed link checks disable member editing. Concurrent changes fail
+explicitly and keep the draft; refresh, then cancel/reopen the editor before
+retrying if the underlying entry changed.
+
+Upserts require strictly newer server-second timestamps. Equal-time conflicts
+fail explicitly; refresh/retry the intended change later. A stale copy or an
+old creation edited after deletion cannot restore a target: re-add in game.
+Original author/creation identity is retained by note edits. The server trusts
+authenticated collectors to attest guild messages; this is not game-account
+cryptographic verification. Do not treat website links as in-game officer grants.
+
+SQLite backups include shared records/removals. Restore advances their sync
+timestamps past the restore reset fence while retaining author/creation
+identity; guild-data wipe clears them. Normal sync never deletes a server entry
+merely because it was absent from an upload. Lists are validated/bounded to
+5,000 records per upload/return; larger sets need a future paged transport.
 
 ### Database administration
 

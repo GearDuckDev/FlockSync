@@ -5,6 +5,7 @@ import { luaToJs, parseLuaAssignment, LuaParseError } from './luaTable';
 import { normalizeAvailability, normalizeLockouts } from './luaTracking';
 import { normalizeGearGoals, normalizeProfessions } from './luaProfessions';
 import { normalizeAttunements, normalizeLedger } from './luaLedger';
+import { sharedKillsFromLua } from './luaKillList';
 
 export type ParseResult =
   | { ok: true; payload: OfficerSyncPayload }
@@ -83,6 +84,7 @@ export const parseFlockSyncLua = (source: string): ParseResult => {
     exportedAt: db.exportedAt,
     ...(db.collectorGuild === undefined ? {} : { collectorGuild: db.collectorGuild }),
     characters,
+    ...sharedKillsFromLua(db),
     ...normalizeLedger(db.guildLedger),
   });
   if (!result.success) {

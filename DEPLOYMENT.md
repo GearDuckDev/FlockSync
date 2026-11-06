@@ -252,6 +252,60 @@ Migration `0001_character_auto_stale` adds `characters.auto_stale`. Addon-report
 automatically on a newer, fresh login; manual web culls clear the flag and stay
 sticky. Redeploy the API to apply it (it runs automatically on startup).
 
+The character-ownership migration adds separate link and audit tables; it
+does not infer owners, change main/alt relationships, or modify existing
+character/kill-list records. After an approved upgrade, sync the guild roster
+and have an officer/admin verify ownership through **Character Links**.
+One server hosts one configured guild. Links are scoped to that guild/realm
+and rely on the trusted collector's roster, not an external account-verification
+service. Backup/restore includes links and audit records; guild-data wipe clears
+them while retaining website accounts. Account/character deletion revokes its
+links and preserves a historical audit record.
+
+The shared kill-list migration adds guild/realm-scoped records and durable
+removal markers. Update the API, Desktop and main addon together for this
+preview; AppHelper code is unchanged. Personal entries/drafts do not upload.
+New additions selected as Guild Shared send their target and note automatically
+on save. Older local drafts remain private until explicitly published. A missing
+guild roster identity or full sending queue rejects the entire add (including
+the personal copy if both were selected); the editor reports the error for retry.
+All additions remain in game; authenticated API edits/removals require an
+officer/admin or the verified owner of the author's character. There is no
+public view or web-add endpoint. The website Kill List tab now exposes
+view/search, note edits and confirmed shared removals under these permissions.
+Character Links uses the same friendly-name groups as the roster. Officers
+assign a group's website owner once; every current and future synced alt in
+that group inherits ownership, affecting member group views and kill-list
+author permissions. Review collector main/alt grouping before assigning:
+group membership changes can change access. Friendly alias renames do not
+change the underlying group identity. Existing individual links are preserved
+until explicit group assignment/revocation; no automatic migration grants.
+The additive group-ownership migration is included. Backups preserve group
+grants, account deletion revokes them, and guild-data wipe clears them.
+Backup/restore includes shared targets; restore advances their sync epochs
+past the reset fence without rewriting original authors/creation time.
+Wipe clears shared targets as well as character ownership. Preserve backups
+and do not use a production wipe/restore to test this candidate.
+
+The additive `kill_observations` migration stores only published-target
+observations: one latest sighting per target and at most 5,000 guild battle
+events from the latest 90 days. The authenticated Kill List page shows
+last-seen zones/times and read-only battle history; permission to edit targets
+is unchanged. Reports are trusted collector/client claims, not independently
+verified game combat. Personal lists, personal observations and shared drafts
+are excluded by the Desktop allowlist. Target removal also retires its reports;
+old creation history cannot be attached to a re-added target.
+
+Update the API/web, Desktop and main addon as one candidate. An old API that
+omits observation return data causes a visible Desktop error, preserving the
+previous helper file rather than claiming success. AppHelper code is unchanged.
+Backups include observation history and restore preserves original evidence
+timestamps (it does not rewrite a past battle as a new one). Guild-data wipe
+clears shared observations, and pre-reset uploads cannot restore them.
+Game checks still need real client evidence: restricted event values and death
+recap fields can prevent attribution; the addon does not guess a killer or
+bypass restrictions.
+
 For every server upgrade, select/extract the new source while preserving
 `.env` and `data`, then run from that deployed project directory:
 

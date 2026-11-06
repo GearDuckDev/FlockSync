@@ -1,12 +1,15 @@
 ## Interface: 16001
 ## Title: FlockSync
 ## Author: GearDuckDev
-## Version: 0.6.0
+## Version: 1.0.0
 ## SavedVariables: FlockSyncDB
 
 Config.lua
 Officer.lua
 Core.lua
+KillListText.lua
+KillList.lua
+KillListActions.lua
 UpdateNotices.lua
 Cleanup.lua
 Serializer.lua
@@ -21,6 +24,10 @@ Scanner.lua
 Comms.lua
 SnapshotComms.lua
 Roster.lua
+KillListAuthority.lua
+KillListTransport.lua
+KillListSync.lua
+KillListBridge.lua
 Ledger.lua
 RaidAssignments.lua
 Tooltips.lua
@@ -29,14 +36,25 @@ UITabs.lua
 UIAvailability.lua
 UIItemSearch.lua
 UIProfessions.lua
+MemberGroups.lua
 UIRaids.lua
 UICrafters.lua
 UILfg.lua
 UIRole.lua
 UISettings.lua
+UIKillEditor.lua
+UIKillList.lua
+UIKillHistory.lua
+WalkthroughFeatures.lua
 Walkthrough.lua
 UIOptions.lua
 UI.lua
 Minimap.lua
 Slash.lua
+KillListEntryPoints.lua
+KillObservations.lua
+KillObservationSync.lua
+KillDetection.lua
+KillAlerts.lua
+KillBattles.lua
 Events.lua

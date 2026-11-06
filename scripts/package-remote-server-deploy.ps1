@@ -23,7 +23,8 @@ function Copy-DeployFolder {
         $relative = $item.FullName.Substring($Source.Length).TrimStart('\', '/')
         $segments = $relative -split '[\\/]'
         if (@($segments | Where-Object {
-            $_ -in $excludedNames -or $_ -like "*.local" -or $_ -like "*.local.*"
+            $_ -in $excludedNames -or $_ -like "*.local" -or $_ -like "*.local.*" -or
+            $_ -like "*tracker*.md" -or $_ -like "*.tmp" -or $_ -like "*.bak"
         }).Count -gt 0) { continue }
         # Reject links and any descendants of junctions, even on older PowerShell.
         $ancestor = $item

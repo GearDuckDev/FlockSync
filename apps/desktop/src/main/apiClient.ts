@@ -23,8 +23,9 @@ const request = async (url: string, init: RequestInit): Promise<ApiResult<unknow
     const res = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
     const body: unknown = await res.json().catch(() => null);
     if (!res.ok) {
-      const msg =
-        typeof body === 'object' && body !== null && 'message' in body ? String(body.message) : res.statusText;
+      const msg = typeof body === 'object' && body !== null
+        ? 'error' in body ? String(body.error) : 'message' in body ? String(body.message) : res.statusText
+        : res.statusText;
       return { ok: false, error: `HTTP ${res.status}: ${msg}` };
     }
     return { ok: true, data: body };
@@ -56,5 +57,12 @@ export const apiSync = async (
   });
   if (!res.ok) return res;
   const parsed = ServerReturnPayloadSchema.safeParse(res.data);
+  if (parsed.success && payload.sharedKillList !== undefined
+    && (parsed.data.sharedKillList === undefined || parsed.data.characterLinks === undefined)) {
+    return { ok: false, error: 'Server omitted shared kill-list/character-link data. Update the server before syncing this candidate.' };
+  }
+  if (parsed.success && payload.sharedKillObservations !== undefined && parsed.data.sharedKillObservations === undefined) {
+    return { ok: false, error: 'Server omitted shared observations. Update the server before syncing this candidate.' };
+  }
   return parsed.success ? { ok: true, data: parsed.data } : { ok: false, error: 'Unexpected sync response from server' };
 };

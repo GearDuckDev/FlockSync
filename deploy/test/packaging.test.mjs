@@ -27,6 +27,8 @@ test("deployment packaging includes portable setup files and excludes operator s
     "deploy/host.local.md", "deploy/host.local/private.conf",
     "deploy/notes.local.md/private.txt", "deploy/SavedVariables/FlockSync.lua",
     "deploy/release/old.zip",
+    "deploy/random-TRACKER.md", "apps/api/private-tracker.md",
+    "deploy/session.tmp", "apps/web/config.bak",
   ];
   try {
     await mkdir(dirname(script), { recursive: true });
@@ -60,6 +62,8 @@ test("Git ignores private environments and overrides, but keeps portable templat
     ".env", ".env.staging", "apps/api/.env.test",
     "docker-compose.override.yml", "compose.override.yaml", "host.local.md",
     "data/flocksync.db", "apps/api/backup.sqlite3-shm", "apps/api/server.log",
+    "docs/random-TRACKER.md", "docs/progress-tracker.md", "deploy/session.tmp",
+    "apps/web/config.bak",
   ];
   const publicPaths = [".env.example", "apps/api/.env.example", "pnpm-lock.yaml",
     "deploy/test/resource-test.override.yml"];

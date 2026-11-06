@@ -133,5 +133,12 @@ function ns.GetProfile()
     if type(profile.gear) ~= "table" then
         profile.gear = newProfile().gear
     end
+    if profile.acceptingRequests == nil then
+        profile.acceptingRequests = true
+        -- Existing scanned recipes must publish the new default, not an old epoch.
+        if type(profile.professions) == "table" then
+            profile.professions.updatedAt = math.max(GetServerTime(), (profile.professions.updatedAt or 0) + 1)
+        end
+    end
     return profile
 end

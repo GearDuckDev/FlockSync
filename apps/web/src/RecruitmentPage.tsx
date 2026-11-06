@@ -5,6 +5,8 @@ import type { DashboardData } from './hooks/useDashboardData';
 import { buildCallouts, buildHeatmap, type Callout } from './lib/recruitment';
 import { DAYS } from './lib/schedule';
 import { RoleBadge } from './components/Badges';
+import { useAuth } from './AuthContext';
+import { memberGroupNotice } from './lib/memberGroups';
 
 const ROLES: Role[] = ['TANK', 'HEALER', 'DPS'];
 
@@ -20,6 +22,8 @@ const SEVERITY: Record<Callout['severity'], { icon: typeof AlertTriangle; cls: s
 };
 
 export const RecruitmentPage = ({ data }: { data: DashboardData }): React.JSX.Element => {
+  const { user } = useAuth();
+  const canManage = user?.role === 'ADMIN' || user?.role === 'OFFICER';
   const { heatmap, unset, humans } = useMemo(() => buildHeatmap(data.roster), [data.roster]);
   const callouts = useMemo(() => buildCallouts(data.raids, data.roster), [data.raids, data.roster]);
 
@@ -60,7 +64,8 @@ export const RecruitmentPage = ({ data }: { data: DashboardData }): React.JSX.El
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Recruitment Needs</h2>
-        {callouts.length === 0 && <p className="text-sm text-slate-500">Create raid teams in the Team Builder to see recruitment gaps.</p>}
+        {!canManage && <p className="text-sm text-slate-400">{memberGroupNotice(data.loading, data.linkedCharacters.length, data.raids.length)}</p>}
+        {canManage && callouts.length === 0 && <p className="text-sm text-slate-500">Create raid teams in the Team Builder to see recruitment gaps.</p>}
         {callouts.map((c) => {
           const { icon: Icon, cls } = SEVERITY[c.severity];
           return (

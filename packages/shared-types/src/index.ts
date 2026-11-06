@@ -124,3 +124,18 @@ export {
 export type { Backup, BackupCatalog, DatabaseAdminResult } from "./databaseAdmin.js";
 export { BackupVerificationSchema, BackupAttemptSchema, BackupHealthSchema } from "./health.js";
 export type { BackupVerification, BackupAttempt, BackupHealth } from "./health.js";
+export {
+  CharacterOwnershipSchema, SetCharacterOwnerSchema, CharacterOwnershipAuditSchema,
+  CharacterOwnershipCatalogSchema
+} from "./characterOwnership.js";
+export type {
+  CharacterOwnership, SetCharacterOwner, CharacterOwnershipAudit, CharacterOwnershipCatalog
+} from "./characterOwnership.js";
+export {
+  SharedKillEntrySchema, SharedKillListSchema, MAX_SHARED_KILL_ENTRIES, KillNoteSchema, KillEditRequestSchema,
+  KillRemoveRequestSchema, GuildCharacterLinkSchema
+} from "./killList.js";
+export type { SharedKillEntry, GuildCharacterLink } from "./killList.js";
+export { groupCharacters, characterGroupKey, type CharacterGroup } from "./characterGroups.js";
+export { SetGroupOwnerSchema, OwnershipGroupSchema, type SetGroupOwner } from "./characterOwnership.js";
+export { KillObservationSchema, KillObservationsSchema, type KillObservation } from "./killObservations.js";
