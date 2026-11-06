@@ -30,7 +30,8 @@
   ],
   "Lua.workspace.library": [
     "apps/addon/FlockSync",
-    "apps/addon/FlockSync_AppHelper"
+    "apps/addon/FlockSync_AppHelper",
+    "~\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core"
   ],
 "github.copilot.chat.codeGeneration.useInstructionFiles": true,
 "Lua.runtime.builtin": {

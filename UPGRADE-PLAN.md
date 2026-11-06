@@ -15,9 +15,12 @@ Related: [release checklist](./RELEASES.md), [deployment](./DEPLOYMENT.md),
   a time. Offline-testable does not mean behavior-free or automatically approved.
 - November 4, 2026 is the hoped-for game launch, not a confirmed deadline.
   Calendar dates never unlock game gates or authorize version 1.0.
-- The maintainer currently cannot perform in-game testing. Keep game-gated waves
-  blocked until access returns and T06 can be completed; do not infer acceptance
-  from offline tests or earlier availability.
+- Game access returned November 4; guild testing was reported November 5.
+  Baseline T06 reports cover capture, collection, upload, helper loading and
+  member relay. See the [evidence and limits](./UPGRADE-TESTS.md#maintainer-evidence---november-4-5-2026).
+  Candidate identities and remaining coverage are not fully established.
+  Each changed wave still requires its own applicable acceptance; baseline
+  reports do not approve or validate future migrations.
 - No addon changes, game-format changes, or bulk `update --latest` in early waves.
   Preserve Lua 5.1 / Interface 16001. Cloudflared is already handled; exclude it.
 - Never promise zero behavior changes. Record expected invariants and test them.
@@ -52,15 +55,15 @@ an independently approved change set with its own baseline and rollback.
 | W05 | done | All six API library migrations passed offline gates; see package evidence | Agent |
 | W06 | done | better-sqlite3 13.0.3 passed Windows, AMD64/ARM64 container, and rollback gates | Agent |
 | W07 | done | TypeScript 7 and runtime-aligned Node declarations passed offline gates | Agent |
-| W08 | blocked | In-game testing unavailable; shared-validation migration needs T06 | Agent + maintainer |
-| W09 | blocked | In-game testing unavailable; desktop distribution needs T06 | Agent + maintainer |
-| W10 | blocked | In-game testing unavailable; watcher acceptance needs T06 | Agent + maintainer |
+| W08 | pending | Game available; explicit migration approval and candidate-specific T06 required | Agent + maintainer |
+| W09 | pending | W08, explicit approval, packaging/runtime and candidate-specific T06 required | Agent + maintainer |
+| W10 | pending | W09, explicit approval, watcher and candidate-specific T06 required | Agent + maintainer |
 | W11 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
 | W12 | pending | Full release-candidate verification and explicit publication approval | Agent + maintainer |
 
 Recommended order and current package targets are recorded in the
 [November 4 audit](./UPGRADE-AUDIT-2026-11-04.md). W02 and W05 are complete.
-W06 and later waves remain approval-gated or blocked as listed above.
+W06-W07 are complete; W08 and later waves remain approval-gated as listed above.
 
 Agent: implement approved scope, add missing regressions, run tests/builds, record
 results and limitations. Maintainer: approve scope, operate/test real game and
@@ -324,8 +327,31 @@ skipped, 0 failed) passed. The deployment ZIP was refreshed with the updated
 API/shared-types manifests and lockfile; AMD64 API and web Docker builds and
 isolated container readiness, auth, SPA fallback, and API restart-persistence
 checks passed. No game, installer packaging, live deployment, commit, push or
-publication occurred. The separate W08 contract migration remains blocked on
-in-game testing.
+publication occurred during W07 implementation. Game access subsequently returned;
+see the November 4-5 baseline T06 evidence below. W08 still requires separate
+approval and acceptance of its changed contracts.
+
+### Baseline game checkpoint - November 5, 2026
+
+Maintainer reports now cover solo and remote gear/availability, rank-based and
+website-authorized collection, upload rejection across guild/realm and guildless
+boundaries, helper loading, main/alt grouping, member relay and update notices.
+Reload-notice repetition is explicitly acceptable either way. See the
+[T06 evidence](./UPGRADE-TESTS.md#maintainer-evidence---november-4-5-2026)
+for the distinction between server authorization and local aggregation, missing
+candidate identities, unverified live stale-write rejection, single-account
+coverage and the known premature reload prompt.
+
+Documentation checkpoint: record the reported evidence without changing runtime
+behavior, versions or artifacts. Acceptance gate: review the documentation diff
+and check whitespace; no runtime build is required for documentation-only edits.
+Suggested commit: `Record live guild sync testing and remaining checks`.
+This is not final release acceptance or permission to publish.
+
+Next implementation checkpoint, only after explicit W08 approval: recheck the
+Zod target/compatibility, migrate coordinated consumers, pass T01-T05 and repeat
+applicable T06 checks against identified candidate artifacts. Do not start W09
+or W10 as part of that checkpoint.
 
 ## W08 - Shared Zod migration: game gate
 
