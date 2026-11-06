@@ -36,7 +36,7 @@ simulated. The two sets are labeled separately.
 ### Addon: useful item tooltips
 ![In-game item tooltip showing guild gear-goal and crafter information](./docs/screenshots/addon-tooltip.png)
 
-### Web: roster and linked characters
+### Web: roster and characters
 ![Web roster showing mains, alts, roles, and availability using demo data](./docs/screenshots/web-roster.png)
 
 ### Web: plan the lineup
@@ -109,11 +109,9 @@ is not shown as a separate field; saved realm identity remains internal.
   Personal entries are character-local and excluded from messages and uploads.
 - Reasons allow 500 Unicode characters. The list shows at most 80 characters
   including truncation; notes do not appear in tooltips.
-- Personal reasons are editable. Shared-draft reasons require officer status;
-  officers or the original creator can remove shared entries. Live guild edits
-  require current guild-roster officer rank. A website role alone does not grant
-  in-game message authority. Removal asks for
-  confirmation and affects only that list. Same-second changes require retry.
+- Personal reasons are editable. Any current online guild member can add,
+  edit, remove, and publish shared targets in game. Removal asks for confirmation
+  and affects only that list. Same-second changes require retry.
 - Disabling Personal keeps entries but ignores personal-only targets; disabling
   Kill List preserves entries and hides its tab; shared sync continues.
 - Login/finishing setup requests catch-up. `/fs kill sync` retries (once per
@@ -130,11 +128,10 @@ is not shown as a separate field; saved realm identity remains internal.
 - Messages are chunked/throttled on a separate guild prefix. Sending can take
   time for long notes/lists; stay online until delivery. Queue-full errors leave
   the local change unsent and ask for retry. Catch-up failure is reported.
-- The authenticated API lets all signed-in users view shared entries.
-  Officers/admins can edit/remove any; members can edit/remove only entries
-  authored by their currently verified linked characters. No website additions:
-  add and publish targets in game. Use the website **Kill List** tab to search,
-  edit notes or confirm a shared removal. Refresh after conflicts before retrying.
+- The authenticated API lets any signed-in user add shared targets, edit their
+  reasons, or remove them. Use the website **Kill List** tab to search existing
+  entries and make changes; collector sync returns website changes to the game.
+  Refresh after conflicts before retrying.
 - Readable enemy players are detected on target, mouseover, focus and nameplate
   events, not periodic scans. Popup and sound default on after opt-in and have
   separate settings, with a 60-second cooldown per target. Remote reports
@@ -187,8 +184,7 @@ broadcasting pause until Finish. Existing saved choices are preserved.
 | Attunements | Group by the main's step; expand initially collapsed alts to see their individual progress |
 | Loot & Attendance | Recorded loot and 30/60/90-day attendance, counting mains and alts as one player |
 | Officer Tasks | Character-linked task board for officers/admins |
-| Character Links | Officers/admins verify website owners of synced guild characters, with confirmed reassignment and audit history |
-| Kill List | All signed-in users view published targets; officers/admins or verified authors edit notes and remove targets |
+| Kill List | Signed-in users add targets, edit reasons, and remove shared entries |
 | Admin Settings | Account roles, database backup/restore, persistent backup folders, guild-data wipe, and server update notices |
 | Theme Settings | Custom UI/page colors, optional backgrounds, custom uploads, admin defaults, and personal overrides |
 
@@ -198,57 +194,21 @@ restore brings back that snapshot's guild name, while wipe clears it until a new
 collector sync. Older backups have no guild identity; sync a collector and refresh
 the dashboard to populate it.
 
-### Verified character ownership
+### Existing character ownership links
 
-In **Character Links**, officers/admins select the website owner for a
-**friendly-name group**, using the same grouping and alias as Roster & Gear.
-For example, "Killjoy" lists its main and every synced alt beneath one owner
-control, including inactive characters. One user may own several groups;
-each character has one effective owner. Verify the player's identity before
-confirming; members cannot self-claim groups. Officers do not gain access to admin-only account
-creation, roles, email lists, or database controls.
-
-Assignment/reassignment confirms every current character and its previous
-owner. **Future synced alts automatically inherit the assigned group's owner**.
-This intentionally trusts the collector's main/alt grouping after an officer
-has assigned the group; moving characters between groups can change access.
-Renaming the friendly alias does not change ownership, and merely sharing the
-same friendly label does not merge separate groups. A changed main/group key
-may require reassignment. Review grouping when managing access.
-
-Use **Revoke all group links** to remove the group grant and current links;
-future alts will no longer inherit it. Old per-character links remain visible
-until an officer explicitly assigns/revokes their group; upgrades do not
-silently convert them into automatic group grants.
-If someone else changed ownership or group membership, refresh/review before retrying;
-changes within the same server second ask you to wait. The latest 100 audit
-events show the acting officer, time, character and old/new usernames; older
-events remain in SQLite. Renaming or deleting accounts/characters does not
-rewrite past audit identities; deletions revoke links and add audit events.
-This does not rewrite historical kill-list authors.
-
-Links are scoped to this server's configured guild/realm and trusted uploaded
-roster, not independently verified against a game-server account service.
-Collectors cannot choose the website owner, but future group membership from
-their synced roster inherits an existing officer-approved grant. The group
-grant is audited against every current character; inherited future membership
-is derived from the current roster, not a separate officer verification.
-Backups preserve group grants, links and
-audit history; a guild-data wipe clears both. No characters are auto-linked
-when upgrading without an existing group grant. Desktop returns guild-scoped character/owner keys (not emails,
-passwords or website account privileges) for the in-game schedule filter.
-Guild redistribution of these links requires a current guild-roster officer;
-a website-only officer role does not grant guild-message editing authority.
+The Character Links dashboard controls have been removed. Existing verified
+ownership records remain stored and continue to govern member-filtered group
+views, but the web app no longer provides controls to assign or revoke them.
+Kill List permissions no longer depend on character ownership.
 
 ### Member group views
 
 Website members see only Team Builder groups and recruitment callouts containing
-one of their verified linked characters, either assigned or on the bench.
+One of their verified linked characters, either assigned or on the bench.
 All linked characters count, across raid, dungeon and PvP groups. Main/alt
-labels alone do not grant access without an officer-approved group owner or
-individual link. Unlinked users see instructions to ask an
-officer/admin for Character Links; linked users without memberships see an
-explicit empty state, not an unrelated or previously selected lineup.
+labels alone do not grant access without an existing verified ownership link.
+Unlinked users see no groups; linked users without memberships see an explicit
+empty state, not an unrelated or previously selected lineup.
 Officers/admins retain all groups and management controls.
 
 Use the dashboard **Refresh** button after ownership/membership changes.
@@ -288,15 +248,12 @@ changes. A website-only collector can upload/load its own helper but cannot
 assert roster-officer authority to peers.
 
 The website **Kill List** tab searches names, realms, authors and reasons.
-It never displays personal records or drafts. No web-add control is provided.
-Note edits allow 500 Unicode characters; shared removals require confirmation.
-All signed-in users may view; officer/admin controls apply to all entries;
-members see controls only for original authors currently linked to them
-(including inherited group links). The API rechecks ownership at mutation time.
-The page refreshes on focus, every minute and with **Refresh Kill List**;
-loading or failed link checks disable member editing. Concurrent changes fail
-explicitly and keep the draft; refresh, then cancel/reopen the editor before
-retrying if the underlying entry changed.
+It never displays personal records or private drafts. Any signed-in user may
+add targets, edit reasons (up to 500 Unicode characters), or remove shared
+entries; shared removals require confirmation. Collector sync returns web
+changes to the game. The page refreshes on focus, every minute and with
+**Refresh Kill List**. Concurrent changes fail explicitly and keep the draft;
+refresh, then cancel/reopen the editor before retrying if the entry changed.
 
 Upserts require strictly newer server-second timestamps. Equal-time conflicts
 fail explicitly; refresh/retry the intended change later. A stale copy or an

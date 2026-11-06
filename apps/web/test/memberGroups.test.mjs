@@ -31,7 +31,7 @@ test('ownership revocation/reassignment immediately changes the filtered result 
 
 test('unlinked/loading/no-membership states explain next actions without exposing group names', () => {
   assert.match(memberGroupNotice(true, 0, 0), /Checking/);
-  assert.match(memberGroupNotice(false, 0, 0), /officer or admin.*Character Links/);
+  assert.match(memberGroupNotice(false, 0, 0), /Character-link management is not available/);
   assert.match(memberGroupNotice(false, 1, 0), /None of your verified/);
   assert.match(memberGroupNotice(false, 2, 1), /including bench/);
 });

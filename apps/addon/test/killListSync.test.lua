@@ -15,20 +15,39 @@ assert(officer.ns.KillStore("shared")[key].note == string.rep("n", 500))
 assert(other.ns.KillStore("shared")[key], "Disabled/non-collector clients still receive shared data")
 assert(not other.ns.KillListEnabled())
 assert(next(other.ns.KillStore("personal")) == nil, "Personal copies never transmit")
+local webEntry = {
+    name = "Web Enemy", realm = "Realm", note = "Added on the website", author = "Web.User",
+    authorGuid = "web-user-id", actorGuid = "web-user-id", createdAt = math.floor(net.now),
+    updatedAt = math.floor(net.now), deleted = false,
+}
+net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = webEntry })
+assert(other.ns.KillStore("shared")["realm\031web enemy"], "Web-attributed names are valid shared entries")
+other.ns.SetKillSetting("enabled", true)
+net.now = net.now + 1
+assert(other.ns.ChangeKillTarget(item(other, "realm\031web enemy"), "Web target edit", false))
+net:drain()
+assert(member.ns.KillStore("shared")["realm\031web enemy"].note == "Web target edit",
+    "Guild members can edit web-created entries without author-character links")
 local sends = #net.sent
 assert(member.ns.SaveKillTarget("Private Player", "Realm", "PRIVATE_ONLY", false, true))
 net:drain()
 assert(#net.sent == sends and not officer.ns.KillStore("shared")["realm\031private player"],
     "Personal-only save must not send a guild message")
 other.ns.SetKillSetting("enabled", true)
-assert(not other.ns.ChangeKillTarget(item(other, key), "Forged", false))
+net.now = net.now + 1
+assert(other.ns.ChangeKillTarget(item(other, key), "Other member edit", false))
+net:drain()
+assert(member.ns.KillStore("shared")[key].note == "Other member edit")
 officer.ns.SetKillSetting("enabled", true)
 net.now = net.now + 1
 assert(officer.ns.ChangeKillTarget(item(officer, key), "Officer edit", false))
 net:drain()
 assert(member.ns.KillStore("shared")[key].note == "Officer edit")
 assert(member.ns.KillStore("personal")[key].note == string.rep("n", 500))
-assert(not member.ns.ChangeKillTarget(item(member, key), "Creator cannot edit", false))
+net.now = net.now + 1
+assert(member.ns.ChangeKillTarget(item(member, key), "Creator edit", false))
+net:drain()
+assert(other.ns.KillStore("shared")[key].note == "Creator edit")
 local stale = {}
 for field, value in pairs(officer.ns.KillStore("shared")[key]) do stale[field] = value end
 other.online = false
@@ -50,6 +69,7 @@ local forged = {}
 for field, value in pairs(stale) do forged[field] = value end
 forged.updatedAt = math.floor(net.now)
 forged.note = "Spoofed officer"
+forged.actorGuid = "P999"
 net:inject(other, member, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = forged })
 assert(other.ns.KillStore("shared")[key].deleted, "Members cannot provide authoritative snapshots")
 net:inject(other, member, { v = 1, guild = other.ns.KillGuildKey(), kind = "UPDATE", entry = forged })

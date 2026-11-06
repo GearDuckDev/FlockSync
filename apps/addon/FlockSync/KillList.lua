@@ -67,7 +67,7 @@ end
 
 function ns.CanChangeKill(item, removing)
     if item.destination == "shared" and item.entry.sharedLive then
-        return ns.KillLiveOfficer() or (removing and item.entry.authorGuid == UnitGUID("player"))
+        return ns.KillLiveMember() ~= nil
     end
     return item.destination == "personal" or ns.KillOfficer()
         or (removing and item.entry.authorGuid == UnitGUID("player"))

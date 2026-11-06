@@ -86,10 +86,11 @@ Collectors only catch broadcasts while logged in.
   individual progress visible when expanded.
 - 🛠️ **Crafters and goals:** browse guild recipes and shared gear targets.
 - 📋 **Loot, attendance, and tasks:** review recorded activity and officer follow-up.
-- 🔗 **Character Links:** let officers assign a website owner to a verified
-  main/alt group, with confirmed changes and an audit history.
-- ⚔️ **Guild Kill List:** search shared targets and sightings; authorized
-  officers and verified authors can update notes or remove entries.
+- 🔗 **Member group views:** existing verified character links filter which
+  team lineups members can see. Character-link management is not available in
+  the web dashboard.
+- ⚔️ **Guild Kill List:** signed-in users can add shared targets, edit notes,
+  and remove entries; in-game shared changes require a current online guild member.
 - 🎨 **Themes:** optional Alliance/Horde/World of Warcraft or custom PNG/JPEG
   backgrounds, opacity controls, admin defaults, and personal overrides.
   Custom UI and page background colors are linked by default, with a toggle

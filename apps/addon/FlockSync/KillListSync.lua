@@ -26,9 +26,9 @@ function ns.PublishKillDraft(item)
         print("FlockSync: This shared draft is no longer available.")
         return false
     end
-    local member = ns.KillGuildMember(ns.GetPlayerFullName())
-    if not member or (not member.officer and entry.authorGuid ~= member.guid) then
-        print("FlockSync: Guild roster unavailable, or only the creator/guild officer can publish this draft.")
+    local member = ns.KillLiveMember()
+    if not member then
+        print("FlockSync: A current online guild member is required to publish this draft.")
         return false
     end
     -- Publishing creates the live record now; offline drafts never masquerade as old guild events.

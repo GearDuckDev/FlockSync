@@ -33,15 +33,15 @@ assert(not member.ns.KillStore("personal")["realm\031roster player"])
 member.online = true
 assert(member.ns.PublishKillDraft(item)); net:drain()
 assert(officer.ns.KillStore("shared")[key])
--- A current-roster demotion cannot edit, even if a local website flag claims officer.
+-- Any current guild member may edit; website officer claims do not affect in-game rank checks.
 officer.rank = 5
 officer.env.FlockSyncHelperDB = {
     isAuthorizedOfficer = true, authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
 }
 local officerItem = { key = key, destination = "shared", entry = officer.ns.KillStore("shared")[key] }
 net.now = net.now + 1
-assert(not officer.ns.ChangeKillTarget(officerItem, "Unauthorized edit", false))
-assert(not officer.ns.CanChangeKill(officerItem, false))
+assert(officer.ns.ChangeKillTarget(officerItem, "Member edit", false))
+assert(officer.ns.CanChangeKill(officerItem, false))
 officer.rank = 1
 -- Exact duplicate parts and incomplete transfers remain bounded and eventually expire.
 local unknown = net:client("Late Member", "P3", 5)
@@ -71,4 +71,4 @@ net.now = net.now + 61
 unknown.ns.StartKillSync(); net:drain()
 assert(unknown.ns.KillStore("shared")[key])
 assert(not unknown.ns.KillListEnabled())
-print("Guild sync queue limits, guild changes, roster demotion, reassembly expiry, resets and opt-out passed")
+print("Guild sync queue limits, member edits, guild changes, reassembly expiry, resets and opt-out passed")

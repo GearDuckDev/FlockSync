@@ -62,16 +62,14 @@ function ns.ChangeKillTarget(item, note, removing)
     local store = ns.KillStore(item.destination)
     local entry = store and store[item.key]
     if not entry or entry.deleted or entry ~= item.entry then return fail("Target changed or is no longer available.") end
-    if not ns.CanChangeKill(item, removing) then return fail("Only officers edit shared notes; officers or the creator remove targets.") end
+    if not ns.CanChangeKill(item, removing) then return fail("A current online guild member is required to change shared targets.") end
     local target, message = ns.ValidateKillTarget(entry.name, entry.realm, note)
     if not target then return fail(message) end
     local now = GetServerTime()
     if now <= entry.updatedAt then return fail("Target just changed. Wait one second and retry.") end
     if item.destination == "shared" and entry.sharedLive then
-        local member = ns.KillGuildMember(ns.GetPlayerFullName())
-        if not member or (not member.officer and (not removing or member.guid ~= entry.authorGuid)) then
-            return fail("Live shared changes require current guild-roster authority. Website-only grants arrive in C-03.")
-        end
+        local member = ns.KillLiveMember()
+        if not member then return fail("A current online guild member is required to change shared targets.") end
         local updated = {}
         for key, value in pairs(entry) do updated[key] = value end
         updated.actorGuid, updated.updatedAt = member.guid, now

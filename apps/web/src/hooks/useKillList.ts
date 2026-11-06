@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SharedKillEntry, KillObservation } from '@flocksync/shared-types';
-import { fetchOwnCharacters } from '../lib/apiCharacterOwnership';
-import { changeKillEntry, fetchKillList, fetchKillObservations } from '../lib/apiKillList';
+import { changeKillEntry, createKillEntry, fetchKillList, fetchKillObservations } from '../lib/apiKillList';
 
 export const useKillList = (token: string | null) => {
   const [entries, setEntries] = useState<SharedKillEntry[]>([]);
   const [observations, setObservations] = useState<KillObservation[]>([]);
-  const [owned, setOwned] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,15 +16,13 @@ export const useKillList = (token: string | null) => {
     const id = ++generation.current;
     setLoading(true);
     setError(null);
-    setOwned(new Set());
     try {
-      const [list, links, reports] = await Promise.all([
-        fetchKillList(token), fetchOwnCharacters(token), fetchKillObservations(token)
+      const [list, reports] = await Promise.all([
+        fetchKillList(token), fetchKillObservations(token)
       ]);
       if (id !== generation.current) return;
       setEntries(list);
       setObservations(reports);
-      setOwned(new Set(links.map((link) => link.characterGuid)));
     } catch (err) {
       if (id === generation.current) {
         setEntries([]);
@@ -66,7 +62,6 @@ export const useKillList = (token: string | null) => {
       return true;
     } catch (err) {
       if (id === generation.current) {
-        setOwned(new Set());
         setError(err instanceof Error ? err.message : 'Kill List change failed');
       }
       return false;
@@ -75,5 +70,26 @@ export const useKillList = (token: string | null) => {
       if (id === generation.current) setSaving(false);
     }
   };
-  return { entries, observations, owned, loading, saving, error, notice, load, change };
+  const add = async (name: string, note: string): Promise<boolean> => {
+    if (!token || mutating.current) return false;
+    mutating.current = true;
+    const id = ++generation.current;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const created = await createKillEntry(token, name, note);
+      if (id !== generation.current) return false;
+      setEntries((rows) => [...rows, created]);
+      setNotice('Shared target added. Collector sync will return it to the game.');
+      return true;
+    } catch (err) {
+      if (id === generation.current) setError(err instanceof Error ? err.message : 'Kill List add failed');
+      return false;
+    } finally {
+      mutating.current = false;
+      if (id === generation.current) setSaving(false);
+    }
+  };
+  return { entries, observations, loading, saving, error, notice, load, change, add };
 };

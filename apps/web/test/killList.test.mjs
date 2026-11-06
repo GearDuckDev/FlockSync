@@ -6,11 +6,11 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { transformWithOxc } from 'vite';
 import { KillNoteSchema } from '@flocksync/shared-types';
-import { mayChangeKill } from '../src/lib/killList.ts';
 
 const url = new URL('../src/components/KillListCard.tsx', import.meta.url);
 const historyUrl = new URL('../src/components/KillObservationHistory.tsx', import.meta.url);
-const transformed = new Map(await Promise.all([url, historyUrl].map(async (file) =>
+const createUrl = new URL('../src/components/KillListCreateForm.tsx', import.meta.url);
+const transformed = new Map(await Promise.all([url, historyUrl, createUrl].map(async (file) =>
   [file.href, (await transformWithOxc(readFileSync(file, 'utf8'), file.pathname, { jsx: { runtime: 'automatic' } })).code])));
 const hook = registerHooks({
   resolve(specifier, context, next) {
@@ -22,24 +22,26 @@ const hook = registerHooks({
 });
 const { KillListCard } = await import(url.href);
 const { KillObservationHistory, observationDate } = await import(historyUrl.href);
+const { KillListCreateForm } = await import(createUrl.href);
 hook.deregister();
 const entry = {
   name: '<script>Enemy One</script>', realm: 'Realm', author: 'Author One', authorGuid: 'author',
   actorGuid: 'officer', note: '<img src=x onerror=alert(1)>', createdAt: 1, updatedAt: 2, deleted: false
 };
-test('Kill List controls follow officer or current linked-author permission only', () => {
-  assert.equal(mayChangeKill(entry, true, new Set()), true);
-  assert.equal(mayChangeKill(entry, false, new Set(['author'])), true);
-  assert.equal(mayChangeKill(entry, false, new Set(['officer'])), false);
-  assert.equal(mayChangeKill(entry, false, new Set()), false);
-  const render = (editable) => renderToStaticMarkup(createElement(KillListCard, {
-    entry, observations: [], editable, disabled: false, change: () => { throw new Error('render cannot change data'); }
+test('signed-in Kill List users can edit or remove entries and add a target', () => {
+  const html = renderToStaticMarkup(createElement(KillListCard, {
+    entry, observations: [], disabled: false, change: () => { throw new Error('render cannot change data'); }
   }));
-  assert.match(render(true), /Edit note/);
-  assert.match(render(true), /Remove/);
-  assert.doesNotMatch(render(false), /Edit note|>Remove</);
-  assert.doesNotMatch(render(true), /<script>|<img/);
-  assert.match(render(true), /&lt;script&gt;/);
+  assert.match(html, /Edit note/);
+  assert.match(html, /Remove/);
+  assert.doesNotMatch(html, /<script>|<img/);
+  assert.match(html, /&lt;script&gt;/);
+  const form = renderToStaticMarkup(createElement(KillListCreateForm, {
+    disabled: false, onAdd: async () => { throw new Error('render must not submit'); }
+  }));
+  assert.match(form, /Character name/);
+  assert.match(form, /Reason \(optional; up to 500 characters\)/);
+  assert.match(form, /Add target/);
 });
 test('history scopes creation identity, escapes evidence, shows latest sighting and paginates initial battles', () => {
   const common = { name: entry.name, realm: entry.realm, targetCreatedAt: entry.createdAt,

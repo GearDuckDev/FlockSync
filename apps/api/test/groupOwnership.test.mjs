@@ -3,7 +3,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { test } from "node:test";
 import { startOwnershipServer } from "./ownershipServer.mjs";
 
-test("friendly groups link all current/future alts atomically, drive kill rights and revoke safely", async (t) => {
+test("friendly groups link all current/future alts atomically and revoke safely", async (t) => {
   const { call, admin, create } = await startOwnershipServer(t);
   const alice = await create("group-alice"), bob = await create("group-bob");
   const now = Math.floor(Date.now() / 1000);
@@ -51,17 +51,19 @@ test("friendly groups link all current/future alts atomically, drive kill rights
   assert.equal(returned.status, 200);
   assert.equal(returned.body.characterLinks.find((row) => row.characterGuid === "future").ownerKey, alice.user.id);
   assert.equal((await call("GET", "/character-ownership/mine", alice.token)).body.length, 3);
-  assert.equal((await call("PATCH", "/kill-list", alice.token, {
+  const memberEdit = await call("PATCH", "/kill-list", alice.token, {
     name: entry.name, realm: entry.realm, expectedUpdatedAt: entry.updatedAt, note: "Auto-linked author edit"
-  })).status, 200);
+  });
+  assert.equal(memberEdit.status, 200, "Kill-list editing does not depend on character ownership");
   await sync({ ...payload, characters: [{
     ...future, mainCharacterGuid: "different-main", mainCharacterName: "Different Main", lastSeenAt: now + 1
   }] });
   assert.equal((await call("GET", "/character-ownership/mine", alice.token)).body.length, 2,
     "Leaving the verified group immediately removes inherited ownership");
+  while (Math.floor(Date.now() / 1000) <= memberEdit.body.updatedAt) await delay(50);
   assert.equal((await call("PATCH", "/kill-list", alice.token, {
-    name: entry.name, realm: entry.realm, expectedUpdatedAt: now, note: "Must not edit"
-  })).status, 403);
+    name: entry.name, realm: entry.realm, expectedUpdatedAt: memberEdit.body.updatedAt, note: "Still allowed after unlinking"
+  })).status, 200);
   await sync({ ...payload, characters: [{ ...future, lastSeenAt: now + 2 }] });
   assert.equal((await call("PUT", "/aliases/main", admin.token, { alias: "Renamed Friendly" })).status, 200);
   data = await catalog();

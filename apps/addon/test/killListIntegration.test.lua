@@ -21,9 +21,12 @@ local menus = {}
 Menu = { ModifyMenu = function(tag, callback)
     menus[tag] = callback
 end }
-for _, name in ipairs({ "Config", "Core", "KillListText", "KillList", "KillListActions", "KillObservations", "UIList",
+for _, name in ipairs({ "Config", "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions", "KillObservations", "UIList",
     "UITabs", "UISettings", "UIKillEditor", "UIKillList", "UIKillHistory", "UIOptions", "UI", "Slash", "KillListEntryPoints" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
+end
+ns.KillGuildMember = function()
+    return guild and { guid = "Player-1", officer = false } or nil
 end
 ui.fire("ADDON_LOADED", "FlockSync")
 FlockSyncDB.config.hasCompletedOnboarding = true
@@ -68,7 +71,7 @@ local row
 for _, widget in ipairs(ui.widgets) do
     if widget.item and widget.item.destination == "shared" then row = widget; break end
 end
-assert(row and not row.edit:IsEnabled() and row.remove:IsEnabled())
+assert(row and row.edit:IsEnabled() and row.remove:IsEnabled())
 assert(not row.publish:IsShown(), "New automatically shared entry has no Publish button")
 assert(row.name:GetText() == "Enemy Mixed Case", "List shows the full name without a realm suffix")
 ui.click(row.history)

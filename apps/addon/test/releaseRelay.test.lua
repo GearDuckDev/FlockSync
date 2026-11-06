@@ -26,6 +26,17 @@ if not testNS then
     function GetRealmName() return "Realm" end
     function IsInGuild() return true end
     function GetGuildInfo() return "FlockGuild", "Officer", 1 end
+    local guildRoster = {
+        { name = "ReleaseOfficer", rank = 1, guid = "Officer-1" },
+        { name = "OtherOfficer", rank = 1, guid = "OtherOfficer-1" },
+        { name = "SecondOfficer", rank = 1, guid = "SecondOfficer-1" },
+    }
+    function GetNumGuildMembers() return #guildRoster end
+    function GetGuildRosterInfo(index)
+        local member = guildRoster[index]
+        return member.name, nil, member.rank, nil, nil, nil, nil, nil, true,
+            nil, nil, nil, nil, nil, nil, nil, member.guid
+    end
     C_Timer = {
         After = function(_, callback) timers[#timers + 1] = callback end,
         NewTicker = function(_, callback)
@@ -49,7 +60,7 @@ if not testNS then
     }
     for _, mod in ipairs({
         "Config", "Officer", "Core", "UpdateNotices", "Serializer",
-        "Snapshot", "Roster", "Comms", "SnapshotComms",
+        "Snapshot", "Roster", "KillListText", "KillListAuthority", "Comms", "SnapshotComms",
     }) do
         assert(loadfile("apps/addon/FlockSync/" .. mod .. ".lua"))("FlockSync", testNS)
     end

@@ -9,26 +9,25 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v1.0.0` (local preparation only; not publication) |
-| Desktop | `1.0.0` |
-| API + web / server | `1.0.0` |
-| Main addon | `1.0.0` |
-| AppHelper | `1.0.0` (version alignment; runtime unchanged) |
-| Shared types | `1.0.0` |
+| Combined GitHub tag | `v1.0.1` (local preparation only; not publication) |
+| Desktop | `1.0.0` (unchanged) |
+| API + web / server | `1.0.1` |
+| Main addon | `1.0.1` |
+| AppHelper | `1.0.0` (unchanged) |
+| Shared types | `1.0.1` |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
-- Guild Shared kill-list additions send names and notes automatically on save;
-  personal entries remain private and old drafts require explicit sharing.
-- Adds local enemy alerts, optional local skulls, last-seen locations and
-  shared battle history with collector/server persistence and website management.
-- Friendly-name groups can be linked to website owners with future-alt inheritance.
-- All component versions align to 1.0.0 at the maintainer's explicit request.
-  Friendly-entry TEST mode is off; existing saved entries are preserved.
-- Hostile-player manual tests were waived by the maintainer, not verified in
-  game. Final-version installation/smoke acceptance remains a distribution gate.
-  Do not present a version number as proof of complete combat attribution.
+- Removes the Character Links management screen from the website. Existing
+  ownership links are retained and continue to control member group visibility.
+- Any signed-in website user can add shared Kill List targets, edit their
+  reasons, and remove targets.
+- Any online guild member can add, edit reasons, and remove shared Kill List
+  targets in game. Guild-roster identity checks and officer-only snapshot relay
+  remain in place.
+- Final in-game acceptance remains a distribution gate; see
+  [RELEASE-NOTES.md](./RELEASE-NOTES.md).
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 

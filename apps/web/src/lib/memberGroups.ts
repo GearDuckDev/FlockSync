@@ -12,6 +12,6 @@ export const visibleMemberGroups = (
 export const memberGroupNotice = (loading: boolean, linkedCount: number, groupCount: number): string =>
   loading ? 'Checking your linked characters and group memberships...'
     : linkedCount === 0
-      ? 'Ask a guild officer or admin to link your website account to your characters in Character Links. No groups are shown until ownership is verified.'
+      ? 'No linked characters are available to this account. Character-link management is not available in the web app.'
       : groupCount === 0 ? 'None of your verified linked characters are assigned or benched in a group.'
         : 'Showing groups containing any of your verified linked characters, including bench membership. Only officers and admins can edit.';

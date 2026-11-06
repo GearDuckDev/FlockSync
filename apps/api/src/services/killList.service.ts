@@ -4,7 +4,7 @@ import {
 } from "@flocksync/shared-types";
 import { db } from "../db/index.js";
 import { guildIdentity, sharedKillTargets, users } from "../db/schema.js";
-import { effectiveOwnerships } from "./groupOwnership.service.js";
+import { readDatabaseAdminState } from "./databaseAdminState.js";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export class KillSyncConflict extends Error {}
@@ -22,6 +22,44 @@ export const listSharedKills = (includeDeleted = false): SharedKillEntry[] => {
   if (!guild) return [];
   return db.select().from(sharedKillTargets).where(eq(sharedKillTargets.guildKey, guildKey(guild))).all()
     .filter((row) => includeDeleted || !row.deleted).map(entryOf);
+};
+
+type CreateMutation = { ok: true; entry: SharedKillEntry }
+  | { ok: false; status: 403 | 404 | 409; error: string };
+const formatKillName = (name: string): string =>
+  name.replace(/(^|\s)(\S)/gu, (_match, prefix: string, initial: string) => `${prefix}${initial.toUpperCase()}`);
+
+export const createSharedKill = async (
+  userId: string, input: { name: string; note: string }
+): Promise<CreateMutation> => {
+  const { databaseResetAt } = await readDatabaseAdminState();
+  return db.transaction((tx): CreateMutation => {
+    const actor = tx.select().from(users).where(eq(users.id, userId)).get();
+    const guild = tx.select().from(guildIdentity).get();
+    if (!actor) return { ok: false, status: 403, error: "Account unavailable" };
+    if (!guild) return { ok: false, status: 404, error: "Guild kill list unavailable" };
+    const name = formatKillName(input.name);
+    const old = tx.select().from(sharedKillTargets).where(condition(guild, name, guild.realm)).get();
+    if (old && !old.deleted) return { ok: false, status: 409, error: "Target already exists" };
+    const now = Math.max(Math.floor(Date.now() / 1000), databaseResetAt + 1);
+    if (old && now <= old.updatedAt) {
+      return { ok: false, status: 409, error: "Target was just removed. Wait one second and retry" };
+    }
+    if (!old && tx.select().from(sharedKillTargets).where(eq(sharedKillTargets.guildKey, guildKey(guild))).all().length
+      >= MAX_SHARED_KILL_ENTRIES) {
+      return { ok: false, status: 409, error: `Guild kill list is limited to ${MAX_SHARED_KILL_ENTRIES} targets` };
+    }
+    const entry = SharedKillEntrySchema.parse({
+      name, realm: guild.realm, note: input.note, author: actor.username,
+      authorGuid: actor.id, actorGuid: actor.id, createdAt: now, updatedAt: now, deleted: false
+    });
+    tx.insert(sharedKillTargets).values({
+      ...entry, guildKey: guildKey(guild), targetKey: targetKey(name, guild.realm)
+    }).onConflictDoUpdate({
+      target: [sharedKillTargets.guildKey, sharedKillTargets.targetKey], set: entry
+    }).run();
+    return { ok: true, entry };
+  });
 };
 
 // Only the authenticated officer upload path calls this; member authorship is
@@ -76,15 +114,13 @@ export const changeSharedKill = (
   if (!guild) return { ok: false, status: 404, error: "Guild kill list unavailable" };
   const old = tx.select().from(sharedKillTargets).where(condition(guild, input.name, input.realm)).get();
   if (!old || old.deleted) return { ok: false, status: 404, error: "Shared target not found" };
-  if (actor.role === "MEMBER") {
-    const ownership = effectiveOwnerships().find((row) => row.characterGuid === old.authorGuid && row.userId === actor.id);
-    if (!ownership) return { ok: false, status: 403, error: "Only the verified owner of the author's character can change this entry" };
-  }
   const now = Math.floor(Date.now() / 1000);
   if (old.updatedAt !== input.expectedUpdatedAt || now <= old.updatedAt) {
     return { ok: false, status: 409, error: "Target changed or was just edited. Refresh, wait one second and retry" };
   }
-  const entry = { ...entryOf(old), note: note ?? "", deleted: note === undefined, updatedAt: now };
+  const entry = {
+    ...entryOf(old), actorGuid: actor.id, note: note ?? "", deleted: note === undefined, updatedAt: now
+  };
   tx.update(sharedKillTargets).set(entry).where(condition(guild, input.name, input.realm)).run();
   return { ok: true, entry };
 });

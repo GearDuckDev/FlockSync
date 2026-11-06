@@ -15,9 +15,13 @@ end
 ns.KillLiveOfficer = function() return guild ~= nil and rank <= 2 end
 ns.SendKillEntry = function() return true end
 FlockSyncDB = { config = {}, characters = {}, profiles = {}, accountCharacters = {}, staleCharacters = {} }
-for _, name in ipairs({ "Core", "KillListText", "KillList", "KillListActions" }) do
+for _, name in ipairs({ "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
+ns.KillGuildMember = function()
+    return guild and { guid = guid, officer = rank <= 2 } or nil
+end
+ns.KillLiveOfficer = function() return guild ~= nil and rank <= 2 end
 local function add(note, shared, personal) return ns.SaveKillTarget("Enemy Name", realm, note, shared, personal) end
 assert(not ns.KillListEnabled())
 assert(not add("", true, false))
@@ -32,6 +36,8 @@ for _, text in ipairs({ "\128", "\192\128", "\237\160\128", "\244\144\128\128", 
 end
 assert(ns.KillPreview(string.rep(unicode, 81)) == string.rep(unicode, 77) .. "...")
 assert(ns.KillPreview("a\nb|c") == "a b||c")
+assert(ns.ValidateKillAuthor("website.user"))
+assert(not ns.ValidateKillAuthor("bad|author"))
 assert(add("Reason", true, true))
 local key = "realm\031enemy name"
 local personal, shared = ns.KillStore("personal"), ns.KillStore("shared")
@@ -43,7 +49,8 @@ assert(not ns.ChangeKillTarget(privateItem, "Too soon", false))
 now = 101
 assert(ns.ChangeKillTarget(privateItem, "Private edit", false))
 assert(shared[key].note == "Reason")
-assert(not ns.ChangeKillTarget(sharedItem, "Creator cannot edit", false))
+assert(ns.ChangeKillTarget(sharedItem, "Member edit", false))
+sharedItem.entry = shared[key]
 ns.SetKillSetting("personalEnabled", false)
 assert(#ns.KillEntries() == 1 and personal[key])
 ns.SetKillSetting("personalEnabled", true)
@@ -63,7 +70,7 @@ rank, now = 1, 102
 assert(ns.ChangeKillTarget(sharedItem, "Officer edit", false))
 sharedItem.entry = shared[key]
 assert(shared[key].authorGuid == "Player-1")
-guid, rank, now = "Player-1", 5, 103
+guid, rank, now = "Player-2", 5, 103
 assert(ns.ChangeKillTarget(sharedItem, "", true))
 assert(shared[key].deleted and personal[key].note == "Private edit")
 assert(not add("Too soon", true, false))
@@ -80,6 +87,7 @@ ns.SetKillSetting("enabled", false)
 assert(#ns.KillEntries() == 0 and personal[key])
 ns.CacheAddonReleases, ns.RegisterAccountCharacter = function() end, function() end
 assert(loadfile("apps/addon/FlockSync/Snapshot.lua"))("FlockSync", ns)
+guid = "Player-1"
 assert(ns.ApplyDatabaseReset(104))
 assert(FlockSyncDB.killListGuilds == nil and ns.KillStore("personal")[key])
 guid = "Player-2"

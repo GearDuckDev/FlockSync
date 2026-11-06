@@ -18,6 +18,11 @@ function ns.KillLiveOfficer()
     return member ~= nil and member.officer
 end
 
+function ns.KillLiveMember()
+    local member = ns.KillGuildMember(ns.GetPlayerFullName())
+    return member and member.guid == UnitGUID("player") and member or nil
+end
+
 local function epoch(value)
     return type(value) == "number" and value >= 0 and value % 1 == 0
         and value <= GetServerTime() + 30
@@ -33,7 +38,7 @@ function ns.ValidateKillWire(entry)
     if entry.updatedAt <= (FlockSyncDB.databaseResetAt or 0) then return nil end
     local target = ns.ValidateKillTarget(entry.name, entry.realm, entry.note)
     if not target or target.name ~= entry.name or target.realm ~= entry.realm
-        or entry.realm ~= GetRealmName() or not ns.ValidateKillTarget(entry.author, entry.realm, "") then return nil end
+        or entry.realm ~= GetRealmName() or not ns.ValidateKillAuthor(entry.author) then return nil end
     if entry.deleted and entry.note ~= "" then return nil end
     return {
         name = entry.name, realm = entry.realm, note = entry.note, author = entry.author,
@@ -67,14 +72,7 @@ function ns.MergeKillWire(raw, member, snapshot)
         print("FlockSync: Removed target requires a new addition; ignored an old edit.")
         return false
     end
-    if not snapshot then
-        if entry.actorGuid ~= member.guid then return false end
-        if not member.officer then
-            if entry.authorGuid ~= member.guid then return false end
-            if not entry.deleted and entry.createdAt ~= entry.updatedAt then return false end
-            if ns.NormalizeCharacterName(entry.author) ~= ns.NormalizeCharacterName(member.name) then return false end
-        end
-    end
+    if not snapshot and entry.actorGuid ~= member.guid then return false end
     if old and not old.deleted and (entry.authorGuid ~= old.authorGuid or entry.createdAt ~= old.createdAt) then
         if not snapshot or entry.createdAt <= old.updatedAt then return false end
     end

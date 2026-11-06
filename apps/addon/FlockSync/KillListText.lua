@@ -26,6 +26,12 @@ function ns.KillTextLength(text)
     return ends and #ends or nil
 end
 
+function ns.ValidateKillAuthor(author)
+    local length = ns.KillTextLength(author)
+    if not length or length < 1 or length > 80 or author:find("[%c|]") then return nil end
+    return author
+end
+
 function ns.KillDisplayText(text)
     return (text:gsub("|", "||"))
 end

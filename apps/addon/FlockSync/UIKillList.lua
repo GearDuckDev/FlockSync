@@ -30,7 +30,8 @@ end
 function ns.BuildKillSettings(parent)
     local text = ns.AddPanelText(parent, "GameFontHighlightSmall", 400)
     text:SetPoint("TOPLEFT", 22, -14)
-    text:SetText("Selecting Guild Shared sends the target and note when saved. Existing legacy drafts "
+    text:SetText("Selecting Guild Shared sends the target and note when saved. Any online guild member may "
+        .. "add, edit, or remove shared targets. Existing legacy drafts "
         .. "stay private until Publish. Shared entries sync "
         .. "with online guildmates, even when this tab is disabled. Local alerts have a "
         .. "60-second per-target cooldown; remote sightings never trigger them.\n\n"
@@ -46,7 +47,7 @@ function ns.BuildKillPanel(parent)
     panel:SetAllPoints(parent)
     local notice = ns.AddPanelText(panel, "GameFontHighlightSmall", 400)
     notice:SetPoint("TOPLEFT", 20, -10)
-    notice:SetText("Guild Shared sends on save. Old drafts need Publish. Guild catch-up is automatic.")
+    notice:SetText("Guild Shared sends on save. Any online guild member may edit or remove shared targets. Old drafts need Publish.")
     local add = ns.AddPanelButton(panel, "Add target", 110, function() ns.OpenKillEditor() end)
     add:SetPoint("TOPLEFT", 20, -45)
     local settings = ns.AddPanelButton(panel, "Settings", 90, function() ns.OpenOptions("killlist") end)

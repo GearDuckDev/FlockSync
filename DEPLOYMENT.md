@@ -254,8 +254,9 @@ sticky. Redeploy the API to apply it (it runs automatically on startup).
 
 The character-ownership migration adds separate link and audit tables; it
 does not infer owners, change main/alt relationships, or modify existing
-character/kill-list records. After an approved upgrade, sync the guild roster
-and have an officer/admin verify ownership through **Character Links**.
+character/kill-list records. Existing ownership links and audit data remain
+stored, but the web dashboard no longer provides controls to assign or revoke
+them. Existing links still determine member group visibility.
 One server hosts one configured guild. Links are scoped to that guild/realm
 and rely on the trusted collector's roster, not an external account-verification
 service. Backup/restore includes links and audit records; guild-data wipe clears
@@ -269,17 +270,15 @@ New additions selected as Guild Shared send their target and note automatically
 on save. Older local drafts remain private until explicitly published. A missing
 guild roster identity or full sending queue rejects the entire add (including
 the personal copy if both were selected); the editor reports the error for retry.
-All additions remain in game; authenticated API edits/removals require an
-officer/admin or the verified owner of the author's character. There is no
-public view or web-add endpoint. The website Kill List tab now exposes
-view/search, note edits and confirmed shared removals under these permissions.
-Character Links uses the same friendly-name groups as the roster. Officers
-assign a group's website owner once; every current and future synced alt in
-that group inherits ownership, affecting member group views and kill-list
-author permissions. Review collector main/alt grouping before assigning:
-group membership changes can change access. Friendly alias renames do not
-change the underlying group identity. Existing individual links are preserved
-until explicit group assignment/revocation; no automatic migration grants.
+Any current online guild member can add, edit, remove, or publish shared
+targets in game; guild roster identity is still required. Any signed-in website
+user can add shared targets, edit notes, and remove entries. There is no public
+view. Website changes return through collector sync. Officers/admins retain
+the guild relay role for server-returned snapshots.
+Existing character links continue to filter member group views, but the web
+dashboard no longer provides Character Links management controls. Existing
+individual links and audit history are preserved; no automatic migration grants
+ownership. Group membership changes can still change access for existing links.
 The additive group-ownership migration is included. Backups preserve group
 grants, account deletion revokes them, and guild-data wipe clears them.
 Backup/restore includes shared targets; restore advances their sync epochs

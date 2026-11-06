@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { startOwnershipServer } from "./ownershipServer.mjs";
 
-test("officer persists guild kills; linked-author edits/removals are enforced and tombstones survive stale uploads", async (t) => {
+test("officer persists guild kills; signed-in members can edit/remove and tombstones survive stale uploads", async (t) => {
   const { call, admin, create } = await startOwnershipServer(t);
   const alice = await create("kill-alice"), bob = await create("kill-bob");
   const now = Math.floor(Date.now() / 1000);
@@ -22,28 +22,20 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
   const upload = (value = payload) => call("POST", "/sync", admin.token, value);
   assert.equal((await call("GET", "/kill-list")).status, 401);
   assert.equal((await call("POST", "/sync", alice.token, payload)).status, 403);
-  assert.equal((await call("POST", "/kill-list", alice.token, entry)).status, 404, "No web add route");
   const persisted = await upload();
   assert.equal(persisted.status, 200);
   assert.deepEqual(persisted.body.sharedKillList, [entry]);
   assert.deepEqual((await call("GET", "/kill-list", bob.token)).body, [entry], "All signed-in users can view");
   const edit = { name: entry.name, realm: entry.realm, expectedUpdatedAt: entry.updatedAt, note: "Member edit" };
-  assert.equal((await call("PATCH", "/kill-list", alice.token, edit)).status, 403, "Unlinked cannot edit");
-  assert.equal((await call("PUT", `/character-ownership/${character.guid}`, admin.token, {
-    userId: alice.user.id, expectedRevision: null, confirmReassignment: false
-  })).status, 200);
-  assert.equal((await call("PATCH", "/kill-list", bob.token, edit)).status, 403);
-  assert.equal((await call("DELETE", "/kill-list", bob.token, {
-    name: entry.name, realm: entry.realm, expectedUpdatedAt: entry.updatedAt
-  })).status, 403);
   const edited = await call("PATCH", "/kill-list", alice.token, edit);
   assert.equal(edited.status, 200);
   assert.equal(edited.body.authorGuid, character.guid);
+  assert.equal(edited.body.actorGuid, alice.user.id);
   assert.equal(edited.body.createdAt, entry.createdAt);
   assert.equal((await call("PATCH", "/kill-list", alice.token, edit)).status, 409);
   const returned = await upload();
   assert.equal(returned.body.sharedKillList[0].note, "Member edit", "Stale game snapshot cannot undo web edit");
-  assert.deepEqual(returned.body.characterLinks, [{ characterGuid: character.guid, ownerKey: alice.user.id }]);
+  assert.deepEqual(returned.body.characterLinks, [], "Kill-list changes do not create character ownership links");
   assert.equal((await upload({ ...payload, sharedKillList: [{ ...entry, updatedAt: now + 999 }] })).status, 400);
   assert.equal((await upload({ ...payload, sharedKillList: [{ ...entry, realm: "Other" }] })).status, 400);
   assert.equal((await upload({ ...payload, collectorGuild: undefined })).status, 400);
@@ -57,22 +49,19 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
   const third = { ...entry, name: "Enemy Three", note: "Third", authorGuid: "Another-Author" };
   const fourth = { ...entry, name: "Enemy Four", note: "Fourth" };
   assert.equal((await upload({ ...payload, sharedKillList: [second, third, fourth] })).status, 200);
-  assert.equal((await call("PATCH", "/kill-list", alice.token, {
+  const thirdEdit = await call("PATCH", "/kill-list", alice.token, {
     ...edit, name: third.name
-  })).status, 403, "A linked member cannot edit other authors");
+  });
+  assert.equal(thirdEdit.status, 200, "A signed-in member can edit another author's target without a character link");
   const removed = await call("DELETE", "/kill-list", alice.token, {
     name: second.name, realm: second.realm, expectedUpdatedAt: second.updatedAt
   });
   assert.equal(removed.status, 200);
   assert.equal(removed.body.deleted, true);
-  const officerEdit = await call("PATCH", "/kill-list", admin.token, {
-    ...edit, name: third.name, note: "Officer has full control"
-  });
-  assert.equal(officerEdit.status, 200);
   const stale = await upload({ ...payload, sharedKillList: [entry, second, third] });
   assert.equal(stale.status, 200);
   assert.equal(stale.body.sharedKillList.find((row) => row.name === second.name).deleted, true);
-  assert.equal(stale.body.sharedKillList.find((row) => row.name === third.name).note, "Officer has full control");
+  assert.equal(stale.body.sharedKillList.find((row) => row.name === third.name).note, "Member edit");
   assert.equal((await upload({
     ...payload, sharedKillList: [{ ...second, updatedAt: removed.body.updatedAt + 1 }]
   })).status, 409, "A later edit to an old creation cannot resurrect a tombstone");
@@ -116,6 +105,58 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
   const replay = await upload();
   assert.equal(replay.status, 200);
   assert.deepEqual((await call("GET", "/kill-list", bob.token)).body, [], "Pre-reset game export cannot resurrect kills");
+});
+
+test("any authenticated account can add, edit and remove shared targets without character ownership", async (t) => {
+  const { call, admin, create } = await startOwnershipServer(t);
+  const alice = await create("kill-add-alice"), bob = await create("kill-add-bob");
+  const now = Math.floor(Date.now() / 1000);
+  const character = {
+    guid: "Officer-1", name: "Officer One", realm: "Realm", classId: 1, level: 60, isActive: true,
+    role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: now - 20 },
+    gear: { items: [], updatedAt: now - 20 }, lastSeenAt: now - 20
+  };
+  assert.equal((await call("POST", "/sync", admin.token, {
+    addonVersion: "test", collectorGuild: { name: "Guild", realm: "Realm" },
+    exportedAt: now, officerCharacter: character, characters: []
+  })).status, 200);
+  assert.equal((await call("POST", "/kill-list", undefined, { name: "Web Target", note: "" })).status, 401);
+  assert.equal((await call("POST", "/kill-list", alice.token, { name: "", note: "" })).status, 400);
+  assert.equal((await call("POST", "/kill-list", alice.token, { name: "Bad[Target]", note: "" })).status, 400);
+  const added = await call("POST", "/kill-list", alice.token, { name: "web target", note: "Added online" });
+  assert.equal(added.status, 201);
+  assert.equal(added.body.name, "Web Target");
+  assert.equal(added.body.author, alice.user.username);
+  assert.equal(added.body.authorGuid, alice.user.id);
+  assert.equal(added.body.actorGuid, alice.user.id);
+  assert.equal(added.body.realm, "Realm");
+  assert.equal((await call("POST", "/kill-list", bob.token, { name: "Web Target", note: "" })).status, 409);
+  const synced = await call("POST", "/sync", admin.token, {
+    addonVersion: "test", collectorGuild: { name: "Guild", realm: "Realm" },
+    exportedAt: Math.floor(Date.now() / 1000), officerCharacter: character, characters: []
+  });
+  assert.equal(synced.status, 200);
+  assert.ok(synced.body.sharedKillList.some((entry) => entry.name === "Web Target"),
+    "Web additions return through collector sync");
+
+  while (Math.floor(Date.now() / 1000) <= added.body.updatedAt) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const edited = await call("PATCH", "/kill-list", bob.token, {
+    name: added.body.name, realm: added.body.realm, expectedUpdatedAt: added.body.updatedAt, note: "Changed by another member"
+  });
+  assert.equal(edited.status, 200);
+  assert.equal(edited.body.authorGuid, alice.user.id);
+  assert.equal(edited.body.actorGuid, bob.user.id);
+  while (Math.floor(Date.now() / 1000) <= edited.body.updatedAt) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const removed = await call("DELETE", "/kill-list", admin.token, {
+    name: added.body.name, realm: added.body.realm, expectedUpdatedAt: edited.body.updatedAt
+  });
+  assert.equal(removed.status, 200);
+  assert.equal(removed.body.deleted, true);
+  assert.deepEqual((await call("GET", "/kill-list", alice.token)).body, []);
 });
 
 test("shared kill catalog rejects additions beyond the return-payload limit", async (t) => {
