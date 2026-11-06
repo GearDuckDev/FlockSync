@@ -230,6 +230,20 @@ that step; upload-artifact otherwise skips dot-prefixed directories. If an
 older run failed only at artifact saving, check the preceding CurseForge upload
 step and the project's files before publishing again to avoid duplicate uploads.
 
+The workflow uses checkout v7, github-script v9 and upload-artifact v7 on
+GitHub-hosted `ubuntu-latest` (Node 24 actions; runner >=2.327.1). Keep the
+default zipped artifact format: the downloaded artifact wraps the addon ZIP.
+The github-script step uses injected `github`, `core` and `exec` objects;
+do not replace them with CommonJS imports of the ESM-only Actions GitHub package.
+BigWigs remains on its v2 channel (2.7.0 at the November 5 check).
+
+Keep `.github/curseforge.pkgmeta` exclusions current when adding root documents.
+The archive verifier intentionally rejects extra files, including upgrade plans
+and server operations documents. After workflow changes, run a manual preview
+with **publish unchecked** on the branch containing the changes, using an
+existing matching-channel release tag. Local packaging does not establish that
+GitHub's artifact service or runner integration passed.
+
 Automatic runs skip a main addon version already present in an earlier published
 combined GitHub release, preventing server/desktop-only releases from re-uploading
 the unchanged addon. This checks GitHub history, not CurseForge upload status;
