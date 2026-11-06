@@ -88,7 +88,37 @@ officer.guild = "Another Guild"
 net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = forged })
 assert(other.ns.KillStore("shared")[key].note == "Re-add", "Non-guild senders are rejected")
 officer.guild = "Guild"
+-- Authorized snapshots repair stale creation identities, even when the new generation was edited before catch-up.
+net.now = net.now + 1
+assert(officer.ns.SaveKillTarget("Catch Up Player", "Realm", "Initial", true, false))
+net:drain()
+local catchUpKey = "realm\031catch up player"
+other.online, late.online = false, false
+net.now = net.now + 1
+assert(officer.ns.ChangeKillTarget(item(officer, catchUpKey), "", true))
+net:drain()
+local removed = officer.ns.KillStore("shared")[catchUpKey]
+net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = removed })
+assert(other.ns.KillStore("shared")[catchUpKey].deleted, "One stale client knows the removal")
+net.now = net.now + 1
+assert(officer.ns.SaveKillTarget("Catch Up Player", "Realm", "Re-added", true, false))
+net:drain()
+net.now = net.now + 1
+assert(officer.ns.ChangeKillTarget(item(officer, catchUpKey), "Edited before sync", false))
+net:drain()
+local current = officer.ns.KillStore("shared")[catchUpKey]
+other.online, late.online = true, true
+net:inject(late, officer, { v = 1, guild = late.ns.KillGuildKey(), kind = "UPDATE", entry = current })
+assert(late.ns.KillStore("shared")[catchUpKey].note == "Initial",
+    "Ordinary updates cannot replace an existing creation identity")
+net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = current })
+net:inject(late, officer, { v = 1, guild = late.ns.KillGuildKey(), kind = "SNAP", entry = current })
+assert(other.ns.KillStore("shared")[catchUpKey].note == "Edited before sync",
+    "Snapshots can catch up a re-add that was edited after creation")
+assert(late.ns.KillStore("shared")[catchUpKey].createdAt == current.createdAt,
+    "Snapshots can supersede an active entry when the removal and re-add were both missed")
 -- No channel confusion; oversized/incomplete chunks do not produce entries.
+sentBefore = #net.sent
 net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "UPDATE", entry = forged }, "WHISPER")
 other.ns.ReceiveKillChunk("FLOCKKILL", "100n1:1:999:" .. string.rep("x", 200), "GUILD", "Officer Two-Realm")
 other.ns.ReceiveKillChunk("FLOCKKILL", string.rep("x", 251), "GUILD", "Officer Two-Realm")
