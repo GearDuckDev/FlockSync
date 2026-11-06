@@ -267,3 +267,129 @@ W08 applicable manual acceptance is complete alongside the automated checks.
 Enabling Windows startup, reboot behavior, multi-account game coverage and
 fresh ARM64 execution were not tested. No new claim is made for those surfaces.
 No release publication or production server update was performed.
+
+### W09 Electron 45 candidate handoff
+
+Electron `45.2.3` candidates replaced the local builder-only files under the
+same `0.5.1` filenames. Hashes and actual runtime smoke results are recorded in
+[Electron evidence](./UPGRADE-PLAN.md#electron-checkpoint---november-5-2026).
+The installed app is still the earlier builder-only Electron `44.8.0` candidate.
+No manual acceptance or installation of Electron 45 has yet occurred.
+
+Portable follow-up November 5: maintainer reported all protected Electron 45
+portable steps passed: retained synthetic login/local endpoint/path,
+sync/helper output, test roster and tray close/reopen/Quit. The profile was
+returned to the synthetic folder before launch; no real-game files were used.
+The wrapper reported startup entries restored and verified, process inspection
+confirmed exit and test containers were stopped. A fresh normal-config backup
+was copied and hash-verified before the pending installer check. Installer,
+fresh-game/helper and native GitHub update-fetch acceptance remain pending.
+
+Installer follow-up: maintainer installed without auto-launch. Installed
+runtime executable and ASAR hashes both matched the Electron 45 candidate;
+ASAR alone was not used to identify runtime. Protected installed launch
+passed synthetic login/endpoint/path, sync/helper output, test roster and
+tray close/reopen/Quit by maintainer report. Startup restoration was verified
+by the wrapper; normal config remained hash-identical to the fresh backup.
+Test apps/API/web were stopped. Installed app is now the unreleased Electron
+45.2.3 candidate, still component version `0.5.1`. Fresh-game/helper and
+native GitHub update-fetch checks remain pending.
+
+Native public-fetch follow-up: Electron 45.2.3 `net.fetch` fetched the public
+GitHub releases API and redirected `flocksync-release.json` download for
+`v0.10.0`, both HTTP 200; schema version and manifest/tag agreement passed.
+This confirms native HTTPS/download access, not an installer update or full
+updater UI acceptance. The isolated smoke exited; no settings, startup entries
+or game files were changed. Fresh-game/helper acceptance remains pending.
+
+1. Close WoW and normal Desktop before setup. Verify the new executable hashes;
+   ASAR alone is insufficient because its JavaScript is unchanged.
+2. Verify isolated settings point at the synthetic account folder, startup off
+   and a checked local endpoint before using the protected portable launcher.
+   The previous test URL is inactive until its services are restarted/verified.
+3. Check saved login/path, sync/helper output, roster, tray close/reopen/Quit and
+   relaunch persistence. Check updates deliberately and report any network error;
+   the offline updater suite and loopback fetch smoke do not prove GitHub access.
+4. With replacement approval and normal settings/startup backup, install without
+   auto-launch. Verify installed executable against the packaged runtime, not
+   just ASAR; repeat protected installed checks.
+5. Obtain approval before real-game use, make fresh verified helper backups
+   while WoW is closed, and repeat capture -> upload -> helper login.
+6. Quit test apps, restore/verify startup entries and original helpers with
+   WoW closed, verify normal settings, then stop identified test services.
+   Report errors/candidate hashes. Keep reboot/startup and multi-account limits
+   explicit; do not mark W09 done before this runtime-specific acceptance.
+
+### W09 final acceptance - November 5
+
+After native public-fetch acceptance, maintainer approved the Electron 45
+game/helper test. Fresh helper/`.bak` backups were hash-verified before use.
+Maintainer reported all steps passed: real export sync to isolated website,
+normal role/main and addon loading, equipment removal/restoration through
+reload-triggered uploads and exit -> sync -> helper login. Original gear was
+restored and game/test Desktop fully closed.
+Startup restoration was verified by the wrapper; original helpers were restored
+and hash-verified, normal Desktop configuration remained unchanged, and manual
+API/web containers were stopped. The local test URL is inactive.
+
+W09 applicable acceptance is complete. Installed Desktop remains the unreleased
+Electron 45.2.3 / builder 26.18.0 candidate, component version `0.5.1`.
+Reboot/startup activation, multiple live account folders and updater-driven
+installation remain unverified. No production server deployment occurred.
+
+### W09 builder-only candidate handoff
+
+November 5 portable result: maintainer reported all protected-launch steps
+passed for the builder-only portable hash in W09 evidence: retained synthetic
+login/local endpoint/path, sync/helper update, test roster and tray
+close/reopen/Quit. Wrapper reported original startup entries restored and
+verified; no FlockSync/game processes remained. Test API/web containers were
+stopped. A fresh normal-config backup was copied and hash-verified without
+displaying contents before the next installer check. Installer and applicable
+game/helper acceptance remain pending.
+
+Installer follow-up: maintainer installed the W09 builder-only candidate
+without launching automatically. Installed ASAR matched
+`774AFF548923E556AAE97EEF6E83C83E3E2BA93BE8D65347B37BA9558CB21FBF`.
+Protected installed launch passed saved synthetic login/endpoint/path,
+sync/helper update, test roster and tray close/reopen/Quit by maintainer report.
+Wrapper reported startup restoration verified; normal config remained
+hash-identical to the fresh pre-install backup. Game/Desktop were closed and
+manual test containers stopped afterward. The installed binary is now the
+unreleased W09 builder-only build, still version `0.5.1`/Electron `44.8.0`.
+Fresh-game/helper follow-up: maintainer approved the isolated game test and
+reported all steps passed, original gear restored and WoW fully closed:
+real export sync, fresh equipment removal/restoration through reload saves,
+and exit -> sync -> helper login. The test Desktop logout/relogin used only
+the synthetic account and local endpoint. The wrapper reported startup entries
+restored/verified. With game/Desktop confirmed closed, both original helper
+files were restored and hash-verified against the fresh W09 backup. Normal
+Desktop config remained unchanged; API/web test containers were stopped.
+The local URL is inactive. Builder-only applicable manual acceptance is complete;
+the separate Electron runtime upgrade and its acceptance have not started.
+
+The builder-only candidates have new hashes in [W09 evidence](./UPGRADE-PLAN.md#w09---desktop-runtime-and-packaging-game-gate)
+but unchanged `0.5.1` filenames. Electron is still `44.8.0`; these are not the
+W08 candidates tested earlier. Windows reports them unsigned. No new test
+services have been started for W09; the old localhost URL is inactive.
+
+1. Keep WoW and normal Desktop closed before launch preparation. Do not launch
+   the candidate directly with normal settings or disable Windows protection.
+   Preserve the working installation and verify the candidate hash first.
+2. Prepare isolated synthetic settings/account folder and verify an isolated
+   API/web endpoint before login. Back up FlockSync-specific startup entries
+   locally before each packaged launch and restore/verify on exit. Never display
+   normal Desktop config or registry contents as test evidence.
+3. Launch the portable using the protected wrapper; verify login, manual sync,
+   helper update and test roster. Quit/relaunch to check persistence, then check
+   tray close/reopen/Quit and restore startup entries. Report exact errors.
+4. With explicit replacement approval and normal settings backed up, install
+   the installer, disabling automatic launch. Verify installed ASAR against
+   the candidate, then repeat isolated launch/IPC/sync/tray checks.
+5. Before touching real game files, obtain explicit approval and verify original
+   helper backups while WoW is closed. Repeat fresh capture/upload/helper login
+   as applicable, restore helpers safely, and retain known-good rollback files.
+6. Quit test apps, verify startup/config restoration and stop only the identified
+   test services. Record manual outcomes and candidate identities before starting
+   the separate Electron upgrade. Do not claim reboot/startup activation or
+   unavailable multi-account coverage passed.

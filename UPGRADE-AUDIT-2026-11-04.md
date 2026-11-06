@@ -195,6 +195,31 @@ Candidate hashes and limitations are in [W08 evidence](./UPGRADE-PLAN.md#w08---s
 Candidate-specific manual acceptance remains pending; W08 is in progress,
 not complete. No production deployment or release publication occurred.
 
+## W09 builder follow-up - November 5, 2026
+
+Explicitly approved W09 began from clean checkpoint `e51799e`. Electron-builder
+is now `26.18.0`; Electron `44.8.0` and Chokidar `5.0.0` are unchanged.
+Frozen install, workspace typecheck, desktop build, installer/portable packaging,
+25 desktop tests and ASAR content checks passed; one opt-in test was skipped.
+Both executables are unsigned; no signing credential was configured.
+The inventory builder row reflects this update only. Registry currently reports
+Electron `45.2.3`; its eventual target must be rechecked after builder acceptance.
+Manual acceptance is pending. See [W09 evidence](./UPGRADE-PLAN.md#w09---desktop-runtime-and-packaging-game-gate)
+for hashes, changelog, rollback and handoff. No installation or deployment was
+performed for these new candidates.
+
+## W09 Electron follow-up - November 5, 2026
+
+Electron `44.8.0 -> 45.2.3` passed frozen install, workspace typecheck,
+desktop packaging and regressions (25 passed, one optional skipped).
+Builder `26.18.0` and Chokidar `5.0.0` remain unchanged. Actual-runtime smoke
+verified sandboxed built preload/IPC and native loopback fetch on Electron
+45.2.3 / Node 24.22.2 / Chromium 156.0.8078.80. No source changes were required.
+The CSV Electron row reflects the rechecked stable target, not a full inventory
+refresh. Installer/portable hashes, known unsigned status, rollback and pending
+manual acceptance are in [runtime evidence](./UPGRADE-PLAN.md#electron-checkpoint---november-5-2026).
+The installed app remains the builder-only Electron 44 candidate.
+
 ## Deprecated locked versions
 
 Registry metadata marked seven locked transitive versions deprecated:

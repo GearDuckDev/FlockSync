@@ -56,7 +56,7 @@ an independently approved change set with its own baseline and rollback.
 | W06 | done | better-sqlite3 13.0.3 passed Windows, AMD64/ARM64 container, and rollback gates | Agent |
 | W07 | done | TypeScript 7 and runtime-aligned Node declarations passed offline gates | Agent |
 | W08 | done | Automated gates and candidate-specific game/browser/portable/installer checks passed; scoped limits below | Agent + maintainer |
-| W09 | pending | W08, explicit approval, packaging/runtime and candidate-specific T06 required | Agent + maintainer |
+| W09 | done | Builder and Electron 45.2.3 automated/manual acceptance passed; scoped limits below | Agent + maintainer |
 | W10 | pending | W09, explicit approval, watcher and candidate-specific T06 required | Agent + maintainer |
 | W11 | pending | Approval; CI, images, remaining tools and inventory closure | Agent + maintainer |
 | W12 | pending | Full release-candidate verification and explicit publication approval | Agent + maintainer |
@@ -454,12 +454,144 @@ work and do not restore a production database merely to revert this dependency.
 
 ## W09 - Desktop runtime and packaging: game gate
 
-1. First electron-builder 26.15.3 -> 26.18.0, then Electron 44.8.0 -> 45.2.2
+1. First electron-builder 26.15.3 -> 26.18.0, then Electron 44.8.0 -> a
+   rechecked stable 45.x target (npm reported 45.2.3 on November 5)
    in separate change sets. Keep Chokidar unchanged for attribution.
 2. Run T01/T04/T06 for each: installed and portable launch, preload/IPC, tray,
    startup settings, auth, network fetch, update checks, saved paths and fixture sync.
 3. Verify packaging contains correct dependencies and no configuration/secrets.
    Require live-game collection/helper acceptance before desktop distribution.
+
+Builder checkpoint, November 5: maintainer approved W09 with "lets start".
+Baseline `e51799e` had a clean worktree and desktop build passed. Updated only
+electron-builder `26.15.3 -> 26.18.0` and its lockfile dependencies.
+Electron remains `44.8.0`, Chokidar remains `5.0.0`. Registry target and Node
+engine were checked; release-age policy accepted the October 20 builder release.
+Reviewed the [version-tagged changelog](https://github.com/electron-userland/electron-builder/blob/electron-builder%4026.18.0/CHANGELOG.md):
+relevant changes include Windows workspace detection, pnpm dependency discovery,
+ASAR path boundaries and NSIS fixes. Existing packaging configuration needed
+no changes.
+
+Frozen install, workspace typecheck, desktop build/NSIS+portable packaging and
+desktop tests (25 passed, one opt-in live-update test skipped) passed. ASAR main
+matches rebuilt output; inspected archive paths exclude config, SavedVariables,
+environment and node_modules directories. Both executables are `NotSigned`;
+builder explicitly reports no configured signing certificate. Successful
+packaging is not a trusted-publisher signature.
+
+| Builder-only candidate | SHA256 |
+| --- | --- |
+| `apps/desktop/release/FlockSync-Setup-0.5.1-x64.exe` | `4385FC124191D1D8C51BDDFBCA2CD3DF3996C374491AED8D6C44E990DF7F55A6` |
+| `apps/desktop/release/FlockSync-Portable-0.5.1-x64.exe` | `9589FE29E48FF524965FC6D17946D3460DCC9206BC2484B3CEC13C886A5B6DF9` |
+| `apps/desktop/release/win-unpacked/resources/app.asar` | `774AFF548923E556AAE97EEF6E83C83E3E2BA93BE8D65347B37BA9558CB21FBF` |
+
+These replace the local W08 candidate files under the same unchanged version,
+not the installed W08 app or root release downloads. No version bump, production
+update, installation, commit, tag or publication occurred in this checkpoint.
+Unchanged API/web were not rebuilt; no Dockerfiles/Compose changed.
+
+Manual builder-only follow-up November 5: actual portable and installed
+candidates passed protected saved-login/settings, synthetic sync/helper output,
+roster and tray close/reopen/Quit by maintainer report. Installation was approved
+and completed; installed ASAR matched the hash above. Startup entries were
+restored/verified after each launch; normal config remained hash-identical
+to its pre-install backup. Test containers/apps are stopped. This supersedes
+the initial checkpoint's no-installation status: the installed binary is now
+the builder-only W09 candidate.
+
+Fresh-game/helper follow-up passed by maintainer report: real export sync,
+equipment removal/restoration through reload-triggered saves and exit -> sync
+-> helper login, with original gear restored and WoW fully closed afterward.
+The protected wrapper reported startup restoration verified. Original helper
+and `.bak` were restored/hash-verified from the fresh W09 backup, normal config
+was unchanged and test services stopped. Builder-only applicable acceptance is
+complete. Electron has not changed; its separate implementation and acceptance
+are next within approved W09. Existing reboot/multi-account limitations remain.
+
+Acceptance gate before the Electron change: exercise actual portable and
+installer launch, isolated auth/sync, saved paths/settings, tray and applicable
+game/helper checks against these hashes. See the [W09 handoff](./UPGRADE-TESTS.md#w09-builder-only-candidate-handoff).
+Do not treat W08 manual results as new-builder candidate acceptance.
+Rollback is the committed `e51799e` package/lockfile plus the previously installed
+W08 candidate; retain unrelated changes. Not ready to commit as completed W09
+until its checkpoints and version preparation are complete.
+
+### Electron checkpoint - November 5, 2026
+
+After builder-only acceptance, maintainer approved the runtime step with
+"lets start". Baseline desktop build passed. Updated Electron `44.8.0 ->
+45.2.3`; registry latest, Node engine and publication time were rechecked
+(published November 4 at 21:39 UTC, over 24 hours before installation).
+pnpm's policy accepted it. Builder remains `26.18.0`, Chokidar `5.0.0`.
+Reviewed [Electron 45 breaking changes](https://www.electronjs.org/docs/latest/breaking-changes):
+the sandboxed preload uses only Electron imports and supported IPC listeners,
+not the removed Node shims/globals. No application source changes were needed.
+
+Frozen install, workspace typecheck, desktop build and NSIS/portable packaging
+passed. Desktop regressions: 25 passed, one opt-in live-update test skipped.
+The development runtime binary was initially missing after dependency install;
+running Electron's existing `install.js` restored it. An isolated real-runtime
+smoke then verified Electron `45.2.3`, Node `24.22.2`, Chromium `156.0.8078.80`,
+the built sandboxed preload/contextBridge IPC and native `net.fetch` against a
+loopback-only synthetic HTTP server. The smoke exited and stopped its server;
+no normal configuration, startup registration or game files were used.
+
+ASAR main/preload matched rebuilt outputs and sensitive/config paths were
+absent. The ASAR hash is unchanged from the builder-only step because app
+JavaScript did not change; it alone cannot identify the upgraded runtime.
+Use executable hashes plus runtime verification for candidate acceptance.
+
+| Electron 45 candidate | SHA256 |
+| --- | --- |
+| `apps/desktop/release/FlockSync-Setup-0.5.1-x64.exe` | `87022EF8F99BB38AB6DB747B1D937E1D82958BD557B58E33FF49A7D639EA8931` |
+| `apps/desktop/release/FlockSync-Portable-0.5.1-x64.exe` | `6307607B7433690684AA834FA6CCA0D553D188F1977A45572EF3658A2F5CC26E` |
+
+Candidates remain unsigned and versioned `0.5.1`; these replace only local
+desktop candidate files, not the installed builder-only runtime. No installation,
+component version bump, production update, commit or publication occurred.
+API/web were unchanged and not rebuilt. Test services are stopped.
+
+Manual acceptance pending: actual Electron 45 portable/installer launch,
+saved login/path/settings, auth/sync, tray, native update-fetch behavior and
+fresh-game/helper round trip under the protected test procedure.
+Follow [Electron handoff](./UPGRADE-TESTS.md#w09-electron-45-candidate-handoff).
+Do not count builder-only reports as runtime acceptance. W09 remains in
+progress; W10 is not started. Rollback uses the builder-only source/lockfile
+diff and previously installed Electron 44 candidate, preserving unrelated work.
+
+Electron manual follow-up: actual portable and installed candidates passed
+saved synthetic login/endpoint/path, sync/helper output, roster and tray
+close/reopen/Quit by maintainer report. Installation completed without
+auto-launch; installed executable and ASAR matched the candidate.
+Startup entries were restored/verified and normal config remained hash-identical
+to its fresh backup. Test services/apps stopped. Installed app is now Electron
+45.2.3 at unchanged component version `0.5.1`, superseding the earlier
+no-installation status. Fresh-game/helper and native GitHub fetch acceptance
+remain pending; W09 is still in progress.
+
+Final Electron acceptance, November 5: native Electron 45 `net.fetch`
+successfully fetched the public GitHub releases API and redirected manifest
+for `v0.10.0` (HTTP 200, manifest/tag agreement). This is read-only network
+acceptance, not an update installation. It also establishes public visibility
+of that tag at test time; earlier prepared/unpublished notes are historical.
+
+Maintainer then approved and passed the isolated fresh-game/helper checklist:
+real export sync, fresh equipment removal/restoration through reload saves,
+normal role/main and addon loading, and exit -> sync -> helper login.
+Gear was restored and WoW/test Desktop fully closed. Original helper and `.bak`
+were restored and hash-verified from a fresh backup; startup restoration was
+verified by the wrapper, normal config remained unchanged and test services
+were stopped. The local URL is inactive.
+
+W09 is complete for its scoped builder/runtime changes. Reboot/startup
+activation, multiple live account folders and new release installation via
+the updater were not tested. No production server update, version bump,
+commit, tag or publication occurred. The installed app remains the unreleased
+Electron 45.2.3 build at component version `0.5.1`.
+Ready-to-commit checkpoint: W09 desktop packaging/runtime upgrade, subject to
+changed-component version preparation and final artifact refresh when ready
+to commit. Suggested message: `Update the desktop runtime and Windows packaging`.
+W10 requires separate approval; Chokidar remains `5.0.0`.
 
 ## W10 - Chokidar migration: game gate
 
