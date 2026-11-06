@@ -132,7 +132,7 @@ export type {
   CharacterOwnership, SetCharacterOwner, CharacterOwnershipAudit, CharacterOwnershipCatalog
 } from "./characterOwnership.js";
 export {
-  SharedKillEntrySchema, SharedKillListSchema, KillNoteSchema, KillEditRequestSchema,
+  SharedKillEntrySchema, SharedKillListSchema, MAX_SHARED_KILL_ENTRIES, KillNoteSchema, KillEditRequestSchema,
   KillRemoveRequestSchema, GuildCharacterLinkSchema
 } from "./killList.js";
 export type { SharedKillEntry, GuildCharacterLink } from "./killList.js";

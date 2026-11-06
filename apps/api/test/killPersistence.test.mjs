@@ -117,3 +117,33 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
   assert.equal(replay.status, 200);
   assert.deepEqual((await call("GET", "/kill-list", bob.token)).body, [], "Pre-reset game export cannot resurrect kills");
 });
+
+test("shared kill catalog rejects additions beyond the return-payload limit", async (t) => {
+  const { call, admin } = await startOwnershipServer(t);
+  const now = Math.floor(Date.now() / 1000);
+  const character = {
+    guid: "Author-1", name: "Author One", realm: "Realm", classId: 1, level: 60, isActive: true,
+    role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: now - 20 },
+    gear: { items: [], updatedAt: now - 20 }, lastSeenAt: now - 20
+  };
+  const payload = {
+    addonVersion: "test", collectorGuild: { name: "Guild", realm: "Realm" },
+    exportedAt: now, officerCharacter: character, characters: []
+  };
+  const entry = (index) => ({
+    name: `Target ${index}`, realm: "Realm", author: character.name, authorGuid: character.guid,
+    actorGuid: character.guid, note: "", createdAt: now - 20, updatedAt: now - 20, deleted: false
+  });
+  const upload = (entries) => call("POST", "/sync", admin.token, { ...payload, sharedKillList: entries });
+
+  assert.equal((await upload(Array.from({ length: 3000 }, (_, index) => entry(index)))).status, 200);
+  const full = await upload(Array.from({ length: 2000 }, (_, index) => entry(index + 3000)));
+  assert.equal(full.status, 200);
+  assert.equal(full.body.sharedKillList.length, 5000);
+
+  const overflow = await upload([entry(5000)]);
+  assert.equal(overflow.status, 409);
+  const catalog = await call("GET", "/kill-list", admin.token);
+  assert.equal(catalog.body.length, 5000);
+  assert.ok(!catalog.body.some((target) => target.name === "Target 5000"));
+});

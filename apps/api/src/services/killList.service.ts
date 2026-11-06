@@ -1,5 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { SharedKillEntrySchema, type SharedKillEntry } from "@flocksync/shared-types";
+import {
+  MAX_SHARED_KILL_ENTRIES, SharedKillEntrySchema, type SharedKillEntry
+} from "@flocksync/shared-types";
 import { db } from "../db/index.js";
 import { guildIdentity, sharedKillTargets, users } from "../db/schema.js";
 import { effectiveOwnerships } from "./groupOwnership.service.js";
@@ -28,6 +30,8 @@ export const upsertSharedKills = (
   tx: Transaction, entries: SharedKillEntry[], guild: { name: string; realm: string },
   resetAt: number, now: number
 ): void => {
+  let targetCount = tx.select().from(sharedKillTargets)
+    .where(eq(sharedKillTargets.guildKey, guildKey(guild))).all().length;
   for (const entry of entries) {
     if (entry.updatedAt <= resetAt) continue;
     if (entry.realm !== guild.realm || entry.updatedAt > now + 30) {
@@ -49,11 +53,15 @@ export const upsertSharedKills = (
       && entry.createdAt <= old.updatedAt) {
       throw new KillSyncConflict("Kill-list author/creation identity cannot change on an active entry");
     }
+    if (!old && targetCount >= MAX_SHARED_KILL_ENTRIES) {
+      throw new KillSyncConflict(`Guild kill list is limited to ${MAX_SHARED_KILL_ENTRIES} targets`);
+    }
     tx.insert(sharedKillTargets).values({
       ...entry, guildKey: guildKey(guild), targetKey: targetKey(entry.name, entry.realm)
     }).onConflictDoUpdate({
       target: [sharedKillTargets.guildKey, sharedKillTargets.targetKey], set: entry
     }).run();
+    if (!old) targetCount++;
   }
 };
 
