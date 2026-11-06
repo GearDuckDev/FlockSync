@@ -20,6 +20,12 @@ member:fire("PLAYER_LOGIN")
 network:drain()
 assert(member.ns.HasSnapshot(), "Ordinary member must automatically receive snapshot without helper")
 assert(member.ns.Snapshot.origin == "broadcast")
+member.env.date = function(format, timestamp)
+    assert(format == "%m-%d-%Y %H:%M", "Snapshot date must use MM-DD-YYYY and retain time")
+    assert(timestamp == source.serverTimestamp)
+    return "11-05-2026 22:28"
+end
+assert(member.ns.DescribeSnapshot() == "Guild snapshot from guild officer, 11-05-2026 22:28")
 assert(member.ns.Snapshot.craftersByItem[123][1].characterName == "Guild Crafter")
 assert(member.ns.Snapshot.goalsByItem[123][1].characterName == "Goal Member")
 assert(#member.ns.Snapshot.upcomingRaids == 1, "Full group delivery remains explicitly allowed")

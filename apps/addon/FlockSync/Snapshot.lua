@@ -178,5 +178,5 @@ function ns.DescribeSnapshot()
     end
     local origin = ns.Snapshot.origin == "helper" and "desktop sync" or "guild officer"
     return "Guild snapshot from " .. origin .. ", "
-        .. date("%Y-%m-%d %H:%M", ns.Snapshot.serverTimestamp)
+        .. date("%m-%d-%Y %H:%M", ns.Snapshot.serverTimestamp)
 end
