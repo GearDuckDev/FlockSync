@@ -86,9 +86,8 @@ Collectors only catch broadcasts while logged in.
   individual progress visible when expanded.
 - 🛠️ **Crafters and goals:** browse guild recipes and shared gear targets.
 - 📋 **Loot, attendance, and tasks:** review recorded activity and officer follow-up.
-- 🔗 **Member group views:** existing verified character links filter which
-  team lineups members can see. Character-link management is not available in
-  the web dashboard.
+- 👥 **Member group views:** signed-in members can view all guild team lineups;
+  officers/admins retain lineup management controls.
 - ⚔️ **Guild Kill List:** signed-in users can add shared targets, edit notes,
   and remove entries; in-game shared changes require a current online guild member.
 - 🎨 **Themes:** optional Alliance/Horde/World of Warcraft or custom PNG/JPEG

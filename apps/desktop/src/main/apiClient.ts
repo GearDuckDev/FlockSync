@@ -57,9 +57,8 @@ export const apiSync = async (
   });
   if (!res.ok) return res;
   const parsed = ServerReturnPayloadSchema.safeParse(res.data);
-  if (parsed.success && payload.sharedKillList !== undefined
-    && (parsed.data.sharedKillList === undefined || parsed.data.characterLinks === undefined)) {
-    return { ok: false, error: 'Server omitted shared kill-list/character-link data. Update the server before syncing this candidate.' };
+  if (parsed.success && payload.sharedKillList !== undefined && parsed.data.sharedKillList === undefined) {
+    return { ok: false, error: 'Server omitted shared kill-list data. Update the server before syncing this candidate.' };
   }
   if (parsed.success && payload.sharedKillObservations !== undefined && parsed.data.sharedKillObservations === undefined) {
     return { ok: false, error: 'Server omitted shared observations. Update the server before syncing this candidate.' };

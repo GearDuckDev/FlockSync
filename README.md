@@ -183,7 +183,7 @@ broadcasting pause until Finish. Existing saved choices are preserved.
 | Gear Goals | Find players chasing the same item or sharing run-note keywords |
 | Attunements | Group by the main's step; expand initially collapsed alts to see their individual progress |
 | Loot & Attendance | Recorded loot and 30/60/90-day attendance, counting mains and alts as one player |
-| Officer Tasks | Character-linked task board for officers/admins |
+| Officer Tasks | Officer task board for guild-character follow-up |
 | Kill List | Signed-in users add targets, edit reasons, and remove shared entries |
 | Admin Settings | Account roles, database backup/restore, persistent backup folders, guild-data wipe, and server update notices |
 | Theme Settings | Custom UI/page colors, optional backgrounds, custom uploads, admin defaults, and personal overrides |
@@ -194,38 +194,16 @@ restore brings back that snapshot's guild name, while wipe clears it until a new
 collector sync. Older backups have no guild identity; sync a collector and refresh
 the dashboard to populate it.
 
-### Existing character ownership links
-
-The Character Links dashboard controls have been removed. Existing verified
-ownership records remain stored and continue to govern member-filtered group
-views, but the web app no longer provides controls to assign or revoke them.
-Kill List permissions no longer depend on character ownership.
-
 ### Member group views
 
-Website members see only Team Builder groups and recruitment callouts containing
-One of their verified linked characters, either assigned or on the bench.
-All linked characters count, across raid, dungeon and PvP groups. Main/alt
-labels alone do not grant access without an existing verified ownership link.
-Unlinked users see no groups; linked users without memberships see an explicit
-empty state, not an unrelated or previously selected lineup.
-Officers/admins retain all groups and management controls.
+All signed-in members can view every guild Team Builder lineup and recruitment
+callout. Only officers/admins can create, edit, or delete group lineups. Weekly
+guild availability, crafting and gear-goal views remain guild-wide.
 
-Use the dashboard **Refresh** button after ownership/membership changes.
-Data also refreshes on browser focus and every minute; stale selected member
-lineups disappear when membership is revoked. Loading/errors hide member groups
-until verified links are available. This is a **display filter, not private
-delivery**: the API and in-game snapshots may still deliver all guild groups,
-as designed. Weekly guild availability, crafting and gear-goal views remain
-guild-wide; they are not restricted by group membership.
-
-In-game Raid Schedule uses the same verified owner keys: membership of any
-linked character, including standby, makes its raid visible. Unlinked members
-see linking/sync instructions; current guild-roster officers see all raids.
+In-game Raid Schedule shows the guild's scheduled RAID teams to guild members.
 The existing in-game schedule snapshot contains RAID teams only; website
 dungeon/PvP groups remain available on the website, not newly added here.
-Changes reach the game after logout -> successful Desktop sync -> login and
-officer relay, not immediately when changing a website link.
+Changes reach the game through the existing Desktop sync and officer-relay flow.
 
 The existing in-game officer snapshot relay delivers crafting recipes and
 gear-goal matches to ordinary members without Desktop/AppHelper or collector

@@ -8,7 +8,6 @@ import {
 } from "@flocksync/shared-types";
 import { db } from "../db/index.js";
 import { characters, officerTasks, users } from "../db/schema.js";
-import { auditOwnershipDeletion } from "./characterOwnershipAudit.service.js";
 
 const BCRYPT_ROUNDS = 12;
 
@@ -154,7 +153,6 @@ export const deleteUser = (targetId: string, actingUserId: string): UserDeleteRe
   }
 
   db.transaction((tx) => {
-    auditOwnershipDeletion(tx, { userId: targetId }, actingUserId);
     // Synced characters keep a FK to the officer who uploaded them; hand them to the acting admin.
     tx.update(characters)
       .set({ updatedByOfficerId: actingUserId })

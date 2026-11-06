@@ -3,10 +3,16 @@ import { AttendanceRecordSchema, LootRecordSchema } from "./ledger.js";
 import { CharacterSchema } from "./player.js";
 import { AddonReleaseCatalogSchema } from "./releases.js";
 import { GuildIdentitySchema } from "./guild.js";
-import { SharedKillListSchema, GuildCharacterLinkSchema } from "./killList.js";
+import { SharedKillListSchema } from "./killList.js";
 import { KillObservationsSchema } from "./killObservations.js";
 
 const CollectorGuildSchema = GuildIdentitySchema;
+const LegacyCharacterLinkSchema = z.object({
+  characterGuid: z.string().trim().min(1).max(80).refine(
+    (value) => !/[\u0000-\u001f\u007f|]/u.test(value), "Unsupported character"
+  ),
+  ownerKey: z.string().min(1).max(128)
+}).strict();
 
 export const OfficerSyncPayloadSchema = z.object({
   addonVersion: z.string().min(1),
@@ -75,7 +81,7 @@ export const ServerReturnPayloadSchema = z.object({
   goalMatches: z.array(GuildGoalMatchSummarySchema).optional(),
   sharedKillList: SharedKillListSchema.optional(),
   sharedKillObservations: KillObservationsSchema.optional(),
-  characterLinks: z.array(GuildCharacterLinkSchema).optional(),
+  characterLinks: z.array(LegacyCharacterLinkSchema).optional(),
   addonReleases: AddonReleaseCatalogSchema.optional(),
   helperReleases: AddonReleaseCatalogSchema.optional()
 }).strict();

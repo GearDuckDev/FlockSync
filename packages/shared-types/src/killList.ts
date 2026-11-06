@@ -26,7 +26,3 @@ export const KillEditRequestSchema = z.object({
 export const KillRemoveRequestSchema = z.object({
   name: Text, realm: Text, expectedUpdatedAt: Epoch
 }).strict();
-export const GuildCharacterLinkSchema = z.object({
-  characterGuid: Text, ownerKey: z.string().min(1).max(128)
-}).strict();
-export type GuildCharacterLink = z.infer<typeof GuildCharacterLinkSchema>;

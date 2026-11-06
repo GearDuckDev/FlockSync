@@ -50,7 +50,7 @@ test('malformed live entries fail boundary validation rather than erasing a serv
   });
   assert.equal(SharedKillListSchema.safeParse(result.sharedKillList).success, false);
 });
-test('server shared kills and verified links serialize into a safe helper round trip', () => {
+test('server shared kills serialize safely and legacy account assignments are scrubbed', () => {
   const lua = serializeServerReturnToLua({
     isAuthorizedOfficer: true, serverTimestamp: 110, culledCharacterGuids: [],
     authorizedCollectorGuild: { name: 'Guild', realm: 'Realm' },
@@ -59,11 +59,11 @@ test('server shared kills and verified links serialize into a safe helper round 
   });
   const parsed = luaToJs(parseLuaAssignment(lua, 'FlockSyncHelperDB'));
   assert.ok(typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed));
-  assert.match(JSON.stringify(parsed), /website-user/);
+  assert.doesNotMatch(JSON.stringify(parsed), /website-user|characterLinks/);
   assert.match(JSON.stringify(parsed), /😀/);
 });
 
-test('syncFile sends published guild data and writes returned edits/links, refusing incompatible responses', async () => {
+test('syncFile writes returned edits without legacy account assignments and rejects incompatible responses', async () => {
   const root = await mkdtemp(join(tmpdir(), 'flocksync-kill-bridge-'));
   let legacy = false;
   let omitObservations = false;
@@ -113,7 +113,7 @@ test('syncFile sends published guild data and writes returned edits/links, refus
     const helperFile = join(root, 'FlockSync_AppHelper.lua');
     const helper = await readFile(helperFile, 'utf8');
     assert.match(helper, /Returned edit/);
-    assert.match(helper, /owner/);
+    assert.doesNotMatch(helper, /characterLinks|owner/);
     assert.match(helper, /Public zone/);
     omitObservations = true;
     const missingReports = await syncFile(file, context);

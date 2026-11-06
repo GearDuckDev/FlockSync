@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { startOwnershipServer } from "./ownershipServer.mjs";
 
-test("members receive public guild snapshots and own links but cannot manage lineups", async (t) => {
+test("all members see guild lineups without account assignments and cannot manage them", async (t) => {
   const { call, admin, create } = await startOwnershipServer(t);
-  const alice = await create("alice"), bob = await create("bob"), unlinked = await create("unlinked");
+  const alice = await create("alice"), bob = await create("bob"), member = await create("member");
   const now = Math.floor(Date.now() / 1000);
   const character = (guid) => ({
     guid, name: `${guid} Last`, realm: "Realm", classId: 1, level: 60, isActive: true,
@@ -20,14 +20,6 @@ test("members receive public guild snapshots and own links but cannot manage lin
     officerCharacter: character("alice"), characters: [character("alt"), character("bob")]
   });
   assert.equal((await sync()).status, 200);
-  for (const guid of ["alice", "alt"]) {
-    assert.equal((await call("PUT", `/character-ownership/${guid}`, admin.token, {
-      userId: alice.user.id, expectedRevision: null, confirmReassignment: false
-    })).status, 200);
-  }
-  assert.equal((await call("PUT", "/character-ownership/bob", admin.token, {
-    userId: bob.user.id, expectedRevision: null, confirmReassignment: false
-  })).status, 200);
   const base = {
     teamType: "RAID", name: "Alice Raid", instanceName: "Molten Core", raidSize: 10,
     scheduledDay: "MON", startTime: "20:00", endTime: "23:00", timezone: "UTC",
@@ -41,18 +33,15 @@ test("members receive public guild snapshots and own links but cannot manage lin
     ...base, name: "Alt Bench", assignments: [], benchGuids: ["alt"]
   });
   assert.equal(bench.status, 201);
-  for (const member of [alice, bob, unlinked]) {
-    const groups = await call("GET", "/raids", member.token);
+  for (const account of [alice, bob, member]) {
+    const groups = await call("GET", "/raids", account.token);
     assert.equal(groups.status, 200);
-    assert.equal(groups.body.length, 2, "full snapshot delivery explicitly allowed; UI performs filtering");
-    assert.equal((await call("POST", "/raids", member.token, base)).status, 403);
-    assert.equal((await call("PUT", `/raids/${raid.body.id}`, member.token, base)).status, 403);
-    assert.equal((await call("DELETE", `/raids/${raid.body.id}`, member.token)).status, 403);
-    assert.equal((await call("POST", "/sync", member.token, {})).status, 403);
+    assert.equal(groups.body.length, 2, "all members receive the same group list");
+    assert.equal((await call("POST", "/raids", account.token, base)).status, 403);
+    assert.equal((await call("PUT", `/raids/${raid.body.id}`, account.token, base)).status, 403);
+    assert.equal((await call("DELETE", `/raids/${raid.body.id}`, account.token)).status, 403);
+    assert.equal((await call("POST", "/sync", account.token, {})).status, 403);
   }
-  assert.equal((await call("GET", "/character-ownership/mine", alice.token)).body.length, 2);
-  assert.equal((await call("GET", "/character-ownership/mine", bob.token)).body.length, 1);
-  assert.deepEqual((await call("GET", "/character-ownership/mine", unlinked.token)).body, []);
   const snapshot = (await sync()).body;
   assert.equal(snapshot.craftersIndex.length, 3);
   assert.equal(snapshot.goalMatches[0].neededBy.length, 3);

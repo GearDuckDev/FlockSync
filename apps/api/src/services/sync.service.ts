@@ -5,7 +5,6 @@ import type {
 } from "@flocksync/shared-types";
 import { db } from "../db/index.js";
 import { characters, deletedCharacters, guildIdentity } from "../db/schema.js";
-import { effectiveOwnerships } from "./groupOwnership.service.js";
 import { listKillObservations, upsertKillObservations } from "./killObservations.service.js";
 import { and, eq } from "drizzle-orm";
 import { upsertAttendance, upsertLoot } from "./ledgerSync.service.js";
@@ -191,15 +190,12 @@ export const processOfficerSync = async (
   const guild = db.select().from(guildIdentity).get();
   const sameGuild = guild && payload.collectorGuild
     && guild.name === payload.collectorGuild.name && guild.realm === payload.collectorGuild.realm;
-  const characterLinks = sameGuild ? effectiveOwnerships().map((row) => ({
-    characterGuid: row.characterGuid, ownerKey: row.userId
-  })) : [];
   return {
     isAuthorizedOfficer: true,
     culledCharacterGuids: inactiveCharacters.map((character) => character.guid),
     serverTimestamp: now,
     databaseResetAt,
-    ...(sameGuild ? { sharedKillList: listSharedKills(true), sharedKillObservations: listKillObservations(), characterLinks } : {}),
+    ...(sameGuild ? { sharedKillList: listSharedKills(true), sharedKillObservations: listKillObservations() } : {}),
     ...buildGuildSnapshot()
   };
 };

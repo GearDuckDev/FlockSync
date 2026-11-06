@@ -35,7 +35,7 @@ test("officer persists guild kills; signed-in members can edit/remove and tombst
   assert.equal((await call("PATCH", "/kill-list", alice.token, edit)).status, 409);
   const returned = await upload();
   assert.equal(returned.body.sharedKillList[0].note, "Member edit", "Stale game snapshot cannot undo web edit");
-  assert.deepEqual(returned.body.characterLinks, [], "Kill-list changes do not create character ownership links");
+  assert.equal("characterLinks" in returned.body, false, "Sync no longer returns character-to-account assignments");
   assert.equal((await upload({ ...payload, sharedKillList: [{ ...entry, updatedAt: now + 999 }] })).status, 400);
   assert.equal((await upload({ ...payload, sharedKillList: [{ ...entry, realm: "Other" }] })).status, 400);
   assert.equal((await upload({ ...payload, collectorGuild: undefined })).status, 400);

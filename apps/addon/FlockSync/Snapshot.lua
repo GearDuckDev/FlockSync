@@ -9,7 +9,6 @@ ns.Snapshot = {
     craftersIndex = {},
     serverTimestamp = 0,
     origin = nil,
-    characterLinks = {},
 }
 
 local listeners = {}
@@ -75,12 +74,6 @@ rebuild = function(source, origin)
     snapshot.craftersIndex = {}
     snapshot.serverTimestamp = source.serverTimestamp or 0
     snapshot.origin = origin
-    snapshot.characterLinks = {}
-    for _, link in ipairs(type(source.characterLinks) == "table" and source.characterLinks or {}) do
-        if type(link) == "table" and isText(link.characterGuid) and isText(link.ownerKey) then
-            snapshot.characterLinks[link.characterGuid] = link.ownerKey
-        end
-    end
 
     for _, entry in ipairs(type(source.craftersIndex) == "table" and source.craftersIndex or {}) do
         if validCrafter(entry) then

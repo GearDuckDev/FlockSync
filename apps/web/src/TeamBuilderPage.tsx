@@ -12,7 +12,6 @@ import { TeamSettings } from './components/team/TeamSettings';
 import { PlayerPool } from './components/team/PlayerPool';
 import { RaidGrid } from './components/team/RaidGrid';
 import { CompositionPanel } from './components/team/CompositionPanel';
-import { memberGroupNotice } from './lib/memberGroups';
 
 const toInput = (t: RaidTeamInput): RaidTeamInput => ({
   name: t.name, teamType: t.teamType, instanceName: t.instanceName, raidSize: t.raidSize, scheduledDay: t.scheduledDay,
@@ -89,7 +88,6 @@ export const TeamBuilderPage = ({ data, canManage }: { data: DashboardData; canM
   if (!canManage && (data.loading || !selectedTeam)) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-slate-400">{memberGroupNotice(data.loading, data.linkedCharacters.length, raids.length)}</p>
         {raids.length > 0 && <label className="block text-sm">Your groups
           <select aria-label="Your groups" value="" onChange={(event) => load(event.target.value)}
             className="ml-2 rounded-md border border-slate-700 bg-slate-950 px-2 py-2">
@@ -119,7 +117,6 @@ export const TeamBuilderPage = ({ data, canManage }: { data: DashboardData; canM
             <button disabled={busy || !selectedId} onClick={() => void remove()} className="flex items-center gap-1 rounded-md border border-red-900 px-2.5 py-1.5 text-sm text-red-300 hover:bg-red-950 disabled:opacity-40 lg:px-2"><Trash2 size={14} /> Delete</button>
           </>
         )}
-        {!canManage && <span className="text-xs text-slate-500">{memberGroupNotice(false, data.linkedCharacters.length, raids.length)}</span>}
       </div>
       {notice && <div className="rounded-md bg-slate-900 px-3 py-2 text-sm text-slate-300">{notice}</div>}
 

@@ -252,17 +252,6 @@ Migration `0001_character_auto_stale` adds `characters.auto_stale`. Addon-report
 automatically on a newer, fresh login; manual web culls clear the flag and stay
 sticky. Redeploy the API to apply it (it runs automatically on startup).
 
-The character-ownership migration adds separate link and audit tables; it
-does not infer owners, change main/alt relationships, or modify existing
-character/kill-list records. Existing ownership links and audit data remain
-stored, but the web dashboard no longer provides controls to assign or revoke
-them. Existing links still determine member group visibility.
-One server hosts one configured guild. Links are scoped to that guild/realm
-and rely on the trusted collector's roster, not an external account-verification
-service. Backup/restore includes links and audit records; guild-data wipe clears
-them while retaining website accounts. Account/character deletion revokes its
-links and preserves a historical audit record.
-
 The shared kill-list migration adds guild/realm-scoped records and durable
 removal markers. Update the API, Desktop and main addon together for this
 preview; AppHelper code is unchanged. Personal entries/drafts do not upload.
@@ -275,16 +264,9 @@ targets in game; guild roster identity is still required. Any signed-in website
 user can add shared targets, edit notes, and remove entries. There is no public
 view. Website changes return through collector sync. Officers/admins retain
 the guild relay role for server-returned snapshots.
-Existing character links continue to filter member group views, but the web
-dashboard no longer provides Character Links management controls. Existing
-individual links and audit history are preserved; no automatic migration grants
-ownership. Group membership changes can still change access for existing links.
-The additive group-ownership migration is included. Backups preserve group
-grants, account deletion revokes them, and guild-data wipe clears them.
 Backup/restore includes shared targets; restore advances their sync epochs
 past the reset fence without rewriting original authors/creation time.
-Wipe clears shared targets as well as character ownership. Preserve backups
-and do not use a production wipe/restore to test this candidate.
+Preserve backups and do not use a production wipe/restore to test this candidate.
 
 The additive `kill_observations` migration stores only published-target
 observations: one latest sighting per target and at most 5,000 guild battle

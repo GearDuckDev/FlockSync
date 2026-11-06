@@ -23,6 +23,7 @@ const serialize = (value: TableValue, depth = 0): string => {
 
 export const serializeServerReturnToLua = (payload: ServerReturnPayload): string => {
   const validated = ServerReturnPayloadSchema.parse(payload);
+  delete validated.characterLinks;
   return `FlockSyncHelperDB = ${serialize({
     ...validated,
     isAuthorizedOfficer: validated.isAuthorizedOfficer ?? true,

@@ -10,7 +10,7 @@ installed version with their own manifest entry, never with the bundle tag.
 | Item | Version |
 | --- | --- |
 | Combined GitHub tag | `v1.0.1` (local preparation only; not publication) |
-| Desktop | `1.0.0` (unchanged) |
+| Desktop | `1.0.1` |
 | API + web / server | `1.0.1` |
 | Main addon | `1.0.1` |
 | AppHelper | `1.0.0` (unchanged) |
@@ -19,8 +19,9 @@ installed version with their own manifest entry, never with the bundle tag.
 
 ### Changes in this release
 
-- Removes the Character Links management screen from the website. Existing
-  ownership links are retained and continue to control member group visibility.
+- All signed-in members can view all guild lineups; only officers/admins can
+  manage lineups. Character-to-account assignment data no longer affects
+  visibility or appears in new snapshots/helper files.
 - Any signed-in website user can add shared Kill List targets, edit their
   reasons, and remove targets.
 - Any online guild member can add, edit reasons, and remove shared Kill List
@@ -321,6 +322,8 @@ lua5.1 .\apps\addon\test\localCapture.test.lua
 lua5.1 .\apps\addon\test\collectorAuthorization.test.lua
 lua5.1 .\apps\addon\test\releaseRelay.test.lua
 lua5.1 .\apps\addon\test\databaseReset.test.lua
+lua5.1 .\apps\addon\test\memberGroups.test.lua
+lua5.1 .\apps\addon\test\memberRelay.test.lua
 ```
 
 The review regressions cover guild-lookup exhaustion and leaving/rejoining
@@ -329,6 +332,21 @@ during retries, profession-summary pruning with a newer export timestamp, and
 correct eviction. Failed CHARACTER guild lookups report a skipped broadcast
 in chat, clear pending state, and allow a later broadcast attempt to retry.
 These checks use mocks; also verify UI and guild behavior in game before release.
+
+### Manual group visibility check
+
+1. Use a non-production test guild and the refreshed
+   `release\FlockSync-Addon-Bundle.zip` for collectors plus
+   `release\FlockSync-Raider-Only.zip` for members. Back up the test accounts'
+   SavedVariables, then replace addon files only while WoW is closed.
+2. Log in with an authorized collector, complete the normal Desktop sync, and
+   let its officer addon relay the snapshot to guild members.
+3. Check the website with an ordinary signed-in member and the in-game Raid
+   Schedule with a non-officer member. Both should show all guild lineups/raid
+   teams, with no character-assignment controls or linking instructions.
+4. Confirm snapshot sharing and member Kill List edits still work; check for no
+   addon errors. Exit WoW before restoring the SavedVariables backup or removing
+   the test addons. Report the client, account role, steps, and any errors.
 
 ## Live beta verification (development)
 

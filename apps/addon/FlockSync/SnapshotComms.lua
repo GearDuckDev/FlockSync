@@ -60,7 +60,7 @@ local function compact(source)
     end
     return { t = source.serverTimestamp, c = crafters, r = ns.Snapshot.upcomingRaids,
         g = goals, u = ns.CompactAddonReleases(), x = source.databaseResetAt,
-        o = source.characterLinks, a = source.authorizedCollectorGuild }
+        a = source.authorizedCollectorGuild }
 end
 
 local function expand(data)
@@ -87,7 +87,7 @@ local function expand(data)
     end
     return { serverTimestamp = data.t, craftersIndex = craftersIndex,
         upcomingRaids = type(data.r) == "table" and data.r or {}, goalMatches = goalMatches,
-        addonReleases = data.u, databaseResetAt = data.x, characterLinks = data.o,
+        addonReleases = data.u, databaseResetAt = data.x,
         authorizedCollectorGuild = data.a }
 end
 
@@ -136,12 +136,11 @@ local function handleMessage(_, prefix, chunk, _, sender)
     end
     if message.k == "SNAP" then
         local source = expand(message.d)
-        -- Ownership links are server-verified only when relayed by a current
-        -- roster officer; ordinary members cannot assert another user's links.
+        -- Snapshot data is accepted only from a current online roster officer.
         if source then
             local member = ns.KillGuildMember and ns.KillGuildMember(sender)
             if not member or not member.officer then
-                print("FlockSync: Ignored character-link snapshot without guild-roster officer authority.")
+                print("FlockSync: Ignored guild snapshot from a non-officer.")
                 return
             end
         end

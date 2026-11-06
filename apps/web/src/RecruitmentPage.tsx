@@ -6,7 +6,6 @@ import { buildCallouts, buildHeatmap, type Callout } from './lib/recruitment';
 import { DAYS } from './lib/schedule';
 import { RoleBadge } from './components/Badges';
 import { useAuth } from './AuthContext';
-import { memberGroupNotice } from './lib/memberGroups';
 
 const ROLES: Role[] = ['TANK', 'HEALER', 'DPS'];
 
@@ -64,7 +63,6 @@ export const RecruitmentPage = ({ data }: { data: DashboardData }): React.JSX.El
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Recruitment Needs</h2>
-        {!canManage && <p className="text-sm text-slate-400">{memberGroupNotice(data.loading, data.linkedCharacters.length, data.raids.length)}</p>}
         {canManage && callouts.length === 0 && <p className="text-sm text-slate-500">Create raid teams in the Team Builder to see recruitment gaps.</p>}
         {callouts.map((c) => {
           const { icon: Icon, cls } = SEVERITY[c.severity];

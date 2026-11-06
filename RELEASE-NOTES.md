@@ -1,9 +1,11 @@
 ## FlockSync 1.0.1
 
-### Website character links and shared Kill List
-- Removes the Character Links management screen from the website. Existing
-  character ownership links are retained and continue to determine which
-  member groups are visible.
+### Guild groups and shared Kill List
+- All signed-in members can view every guild Team Builder lineup and recruitment
+  callout; only officers/admins can manage lineups.
+- Character-to-account assignments no longer control group visibility, appear
+  in snapshots, or have a management screen or API. Older assignment data is
+  ignored and is not included in newly written Desktop helper files.
 - Lets any signed-in website user add shared Kill List targets, edit their
   reasons, and remove targets. Editing a target's character name is not
   supported.
@@ -19,8 +21,8 @@
    and writable. Stage the new server source without replacing configuration.
 2. Run `sh deploy/update-server.sh` from the deployed project directory. Require
    a verified pre-update backup; stop on failure. Do not bypass safeguards with
-   direct restarts, `docker compose down -v`, or a database wipe. This change
-   requires no data migration; existing character ownership links are preserved.
+   direct restarts, `docker compose down -v`, or a database wipe. No data
+   migration is required.
 3. Members using the website: sign in and open Kill List to add a shared target,
    change its reason, or remove it. Any authenticated account can perform these
    actions; character names remain unchanged when editing.
@@ -37,10 +39,10 @@
    account for collection and server sync.
 
 ### Download choices
-- **FlockSync-Setup-1.0.0-x64.exe:** Windows collector installer; Desktop is
-  unchanged. Choose this or the portable alternative.
-- **FlockSync-Portable-1.0.0-x64.exe:** unchanged portable Windows collector
-  alternative. Preserve saved server/client settings.
+- **FlockSync-Setup-1.0.1-x64.exe:** Windows collector installer with the
+  Desktop helper-file cleanup. Choose this or the portable alternative.
+- **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative
+  with the same helper-file cleanup. Preserve saved server/client settings.
 - **FlockSync-Raider-Only.zip:** main addon **1.0.1** for members.
 - **FlockSync-Addon-Bundle.zip:** main addon **1.0.1** plus unchanged AppHelper
   **1.0.0** for collectors.
@@ -55,8 +57,8 @@
 | Main addon | **1.0.1** | Updated (patch) |
 | API/web | **1.0.1** | Updated (patch); kept aligned |
 | Shared types | **1.0.1** | Updated (patch) |
-| Desktop | **1.0.0** | Unchanged; reinstall not required |
-| AppHelper | **1.0.0** | Unchanged; reinstall not required for this change |
+| Desktop | **1.0.1** | Updated (patch); collectors should update |
+| AppHelper | **1.0.0** | Unchanged; reinstall not required |
 | Root workspace metadata | **1.0.0** | Unchanged |
 
 ### Channel and publication
@@ -68,12 +70,14 @@ established release workflow, using addon version **1.0.1** and Release type.
 This preparation does not publish, deploy, or authorize a live update.
 
 ### Verification and acceptance
-The API/web changes passed workspace typecheck, API production tests (19/19),
-web production build, and web tests (24/24). All 17 addon Lua regression scripts
-passed under Lua 5.1. The full release packager rebuilt the release artifacts,
-and the manifest, versions, archive contents, and sensitive-file exclusions
-were checked. The maintainer confirmed the web and in-game changes are working
-as intended.
+Workspace typecheck and builds passed. API production tests passed (17/17), and
+the Desktop sync/serialization tests passed (6/6). Sumneko Lua Language Server
+reported no problems across 77 addon Lua files using the workspace's Lua 5.1
+settings. It is a static checker, not a Lua runtime, so the Lua 5.1 regression
+scripts still need to run in an interpreter. The release packager rebuilt the
+candidate assets and manifest; archive contents and sensitive-file exclusions
+were checked. The maintainer confirmed the earlier web and in-game changes;
+the latest legacy-field handling still needs Lua runtime validation.
 
 Nothing was committed, tagged, pushed, published, or deployed. Do not treat
 this local preparation as a published release or live deployment; publication

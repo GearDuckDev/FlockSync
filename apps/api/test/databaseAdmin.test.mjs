@@ -74,10 +74,6 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     });
     assert.equal(guildSync.status, 200, JSON.stringify(guildSync.body));
     assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: syncedGuild });
-    const owned = await call("PUT", "/api/character-ownership/guild-character", token, {
-      userId: login.body.user.id, expectedRevision: null, confirmReassignment: false
-    });
-    assert.equal(owned.status, 200, JSON.stringify(owned.body));
     const initial = await call("GET", "/api/admin/database", token);
     assert.equal(initial.status, 200);
     assert.equal(initial.body.backups.length, 0);
@@ -123,8 +119,6 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     assert.equal(restored.status, 200, `${JSON.stringify(restored.body)}\n${output}`);
     assert.ok(restored.body.databaseResetAt > 0);
     assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: syncedGuild });
-    assert.equal((await call("GET", "/api/character-ownership/mine", token)).body.length, 1);
-    assert.equal((await call("GET", "/api/character-ownership", token)).body.audit.length, 1);
     const verifyRestored = new Database(database, { readonly: true });
     try { assert.equal(verifyRestored.prepare("SELECT count(*) AS n FROM theme_defaults WHERE id = 'test'").get().n, 1); }
     finally { verifyRestored.close(); }

@@ -80,7 +80,7 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
   app.delete<{ Params: { guid: string } }>("/roster/:guid", {
     preHandler: [app.authenticate, app.requireOfficer]
   }, async (request, reply) => {
-    if (!purgeCharacter(request.params.guid, request.user.id)) {
+    if (!purgeCharacter(request.params.guid)) {
       return reply.code(404).send({ error: "Character not found" });
     }
     return reply.code(204).send();
