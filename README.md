@@ -175,8 +175,33 @@ Links are scoped to this server's configured guild/realm and trusted uploaded
 roster, not independently verified against a game-server account service.
 Normal collector uploads cannot assign ownership. Backups preserve links and
 audit history; a guild-data wipe clears both. No characters are auto-linked
-when upgrading. This checkpoint does not yet filter member group views or
-return ownership/website officer grants to the addon; those are later steps.
+when upgrading. Ownership/website officer grants are not yet returned to the
+addon; that bridge and verified in-game schedule filtering remain later steps.
+
+### Member group views
+
+Website members see only Team Builder groups and recruitment callouts containing
+one of their verified linked characters, either assigned or on the bench.
+All linked characters count, across raid, dungeon and PvP groups. Unverified
+main/alt labels do not grant access. Unlinked users see instructions to ask an
+officer/admin for Character Links; linked users without memberships see an
+explicit empty state, not an unrelated or previously selected lineup.
+Officers/admins retain all groups and management controls.
+
+Use the dashboard **Refresh** button after ownership/membership changes.
+Data also refreshes on browser focus and every minute; stale selected member
+lineups disappear when membership is revoked. Loading/errors hide member groups
+until verified links are available. This is a **display filter, not private
+delivery**: the API and in-game snapshots may still deliver all guild groups,
+as designed. Weekly guild availability, crafting and gear-goal views remain
+guild-wide; they are not restricted by group membership.
+
+The existing in-game officer snapshot relay delivers crafting recipes and
+gear-goal matches to ordinary members without Desktop/AppHelper or collector
+permissions, including tooltip information. Login requests catch-up automatically;
+an online collector with a desktop-sourced snapshot is needed. Simulated Lua
+clients verify relay, late joins, caching and guild isolation; actual client
+crafting/goal acceptance remains a maintainer check.
 
 ### Database administration
 

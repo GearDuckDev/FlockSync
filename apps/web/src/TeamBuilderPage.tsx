@@ -12,6 +12,7 @@ import { TeamSettings } from './components/team/TeamSettings';
 import { PlayerPool } from './components/team/PlayerPool';
 import { RaidGrid } from './components/team/RaidGrid';
 import { CompositionPanel } from './components/team/CompositionPanel';
+import { memberGroupNotice } from './lib/memberGroups';
 
 const toInput = (t: RaidTeamInput): RaidTeamInput => ({
   name: t.name, teamType: t.teamType, instanceName: t.instanceName, raidSize: t.raidSize, scheduledDay: t.scheduledDay,
@@ -23,7 +24,9 @@ export const TeamBuilderPage = ({ data, canManage }: { data: DashboardData; canM
   const { token } = useAuth();
   const { roster, raids, setRaids, handleError } = data;
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<RaidTeamInput>(emptyTeam);
+  const [editableDraft, setDraft] = useState<RaidTeamInput>(emptyTeam);
+  const selectedTeam = raids.find((team) => team.id === selectedId);
+  const draft = canManage ? editableDraft : selectedTeam ?? emptyTeam();
   const [armed, setArmed] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -83,11 +86,26 @@ export const TeamBuilderPage = ({ data, canManage }: { data: DashboardData; canM
 
   const armedChar = armed ? byGuid.get(armed) : undefined;
 
+  if (!canManage && (data.loading || !selectedTeam)) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-slate-400">{memberGroupNotice(data.loading, data.linkedCharacters.length, raids.length)}</p>
+        {raids.length > 0 && <label className="block text-sm">Your groups
+          <select aria-label="Your groups" value="" onChange={(event) => load(event.target.value)}
+            className="ml-2 rounded-md border border-slate-700 bg-slate-950 px-2 py-2">
+            <option value="">Select your group</option>
+            {raids.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+          </select>
+        </label>}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <select
-          value={selectedId ?? ''}
+          value={selectedTeam?.id ?? ''}
           onChange={(e) => load(e.target.value || null)}
           className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm fold:flex-none"
         >
@@ -101,7 +119,7 @@ export const TeamBuilderPage = ({ data, canManage }: { data: DashboardData; canM
             <button disabled={busy || !selectedId} onClick={() => void remove()} className="flex items-center gap-1 rounded-md border border-red-900 px-2.5 py-1.5 text-sm text-red-300 hover:bg-red-950 disabled:opacity-40 lg:px-2"><Trash2 size={14} /> Delete</button>
           </>
         )}
-        {!canManage && <span className="text-xs text-slate-500">Read-only: only Officers and Admins can edit lineups.</span>}
+        {!canManage && <span className="text-xs text-slate-500">{memberGroupNotice(false, data.linkedCharacters.length, raids.length)}</span>}
       </div>
       {notice && <div className="rounded-md bg-slate-900 px-3 py-2 text-sm text-slate-300">{notice}</div>}
 
@@ -134,15 +152,15 @@ export const TeamBuilderPage = ({ data, canManage }: { data: DashboardData; canM
         </div>
       )}
 
-      <div className="grid items-start gap-4 fold:grid-cols-[15.5rem_minmax(0,1fr)] lg:grid-cols-[18rem_1fr]">
-        <PlayerPool
+      <div className={`grid items-start gap-4 ${canManage ? 'fold:grid-cols-[15.5rem_minmax(0,1fr)] lg:grid-cols-[18rem_1fr]' : ''}`}>
+        {canManage && <PlayerPool
           roster={roster}
           team={draft}
           armedGuid={armed}
           disabled={!canManage}
           onArm={setArmed}
           onBench={(guid) => apply(placeOnBench(draft, guid, keyOf))}
-        />
+        />}
         <div className="space-y-4">
           <CompositionPanel team={draft} byGuid={byGuid} />
           <RaidGrid
