@@ -138,7 +138,7 @@ local function handleMessage(_, prefix, chunk, _, sender)
         local source = expand(message.d)
         -- Ownership links are server-verified only when relayed by a current
         -- roster officer; ordinary members cannot assert another user's links.
-        if source and source.characterLinks ~= nil then
+        if source then
             local member = ns.KillGuildMember and ns.KillGuildMember(sender)
             if not member or not member.officer then
                 print("FlockSync: Ignored character-link snapshot without guild-roster officer authority.")
