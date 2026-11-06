@@ -67,30 +67,17 @@ component's own version. Publish the main addon to CurseForge only through the
 established release workflow, using addon version **1.0.1** and Release type.
 This preparation does not publish, deploy, or authorize a live update.
 
-### Verification and outstanding acceptance
+### Verification and acceptance
 The API/web changes passed workspace typecheck, API production tests (19/19),
 web production build, and web tests (24/24). All 17 addon Lua regression scripts
 passed under Lua 5.1. The full release packager rebuilt the release artifacts,
 and the manifest, versions, archive contents, and sensitive-file exclusions
-were checked.
-
-The following Interface 16001 in-game acceptance remains pending:
-1. Use a disposable WoW Forever test profile and test guild, not production
-   SavedVariables. Install `release\FlockSync-Addon-Bundle.zip` with WoW closed.
-2. With two online guild members, including a non-officer, verify the non-officer
-   can add a shared target, change another member's reason, and remove a target.
-   Verify online peers receive the changes and that an unauthorized/non-guild
-   sender cannot alter the shared list.
-3. Test offline catch-up through the existing authorized officer/collector
-   relay. Confirm the shared list remains intact after relogging.
-4. Remove only the test target, close the disposable client, and restore or
-   discard only the disposable test profile. Report client/addon versions,
-   each action's result, and any exact in-game error.
+were checked. The maintainer confirmed the web and in-game changes are working
+as intended.
 
 Nothing was committed, tagged, pushed, published, or deployed. Do not treat
-automated mocks or packaging as proof of in-game behavior. Keep the final
-installation/smoke test and separate publication authorization as distribution
-gates.
+this local preparation as a published release or live deployment; publication
+still requires separate authorization.
 
 ### Maintainer / next-agent handoff
 Read [RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md),

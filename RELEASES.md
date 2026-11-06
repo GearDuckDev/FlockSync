@@ -26,7 +26,7 @@ installed version with their own manifest entry, never with the bundle tag.
 - Any online guild member can add, edit reasons, and remove shared Kill List
   targets in game. Guild-roster identity checks and officer-only snapshot relay
   remain in place.
-- Final in-game acceptance remains a distribution gate; see
+- The maintainer confirmed the web and in-game changes work as intended; see
   [RELEASE-NOTES.md](./RELEASE-NOTES.md).
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
