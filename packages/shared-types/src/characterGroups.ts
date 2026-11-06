@@ -31,7 +31,8 @@ export const groupCharacters = <T extends GroupCharacter>(roster: T[]): Characte
     [main.guid, { main, alts: [], orphan: false }]));
   const orphans: CharacterGroup<T>[] = [];
   for (const alt of roster.filter((c) => !isMain(c))) {
-    const owner = mains.find((m) => m.guid === alt.mainCharacterGuid || sameName(alt.mainCharacterName, m.name));
+    const owner = mains.find((m) => m.guid === alt.mainCharacterGuid)
+      ?? mains.find((m) => sameName(alt.mainCharacterName, m.name));
     const group = owner ? groups.get(owner.guid) : undefined;
     if (group) group.alts.push(alt);
     else orphans.push({ main: alt, alts: [], orphan: true });
