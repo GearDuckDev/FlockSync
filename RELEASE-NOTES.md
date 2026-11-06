@@ -73,11 +73,10 @@ This preparation does not publish, deploy, or authorize a live update.
 Workspace typecheck and builds passed. API production tests passed (17/17), and
 the Desktop sync/serialization tests passed (6/6). Sumneko Lua Language Server
 reported no problems across 77 addon Lua files using the workspace's Lua 5.1
-settings. It is a static checker, not a Lua runtime, so the Lua 5.1 regression
-scripts still need to run in an interpreter. The release packager rebuilt the
-candidate assets and manifest; archive contents and sensitive-file exclusions
-were checked. The maintainer confirmed the earlier web and in-game changes;
-the latest legacy-field handling still needs Lua runtime validation.
+settings. The maintainer completed the remaining Lua runtime and in-game
+acceptance checks and reports that all tests and behavior work as intended.
+The release packager rebuilt the 1.0.1 assets and manifest; archive contents
+and sensitive-file exclusions were checked.
 
 Nothing was committed, tagged, pushed, published, or deployed. Do not treat
 this local preparation as a published release or live deployment; publication
