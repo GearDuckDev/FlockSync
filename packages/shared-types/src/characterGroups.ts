@@ -17,8 +17,10 @@ const sameName = (a: string | undefined, b: string): boolean =>
   a !== undefined && a.trim().toLowerCase() === b.trim().toLowerCase();
 
 export const characterGroupKey = <T extends GroupCharacter>(group: CharacterGroup<T>): string =>
-  group.orphan && group.main.mainCharacterName
-    ? `name:${group.main.mainCharacterName.trim().toLowerCase()}` : group.main.guid;
+  group.orphan && group.main.mainCharacterGuid
+    ? group.main.mainCharacterGuid
+    : group.orphan && group.main.mainCharacterName
+      ? `name:${group.main.mainCharacterName.trim().toLowerCase()}` : group.main.guid;
 
 export const groupCharacters = <T extends GroupCharacter>(roster: T[]): CharacterGroup<T>[] => {
   const isMain = (c: T): boolean =>
