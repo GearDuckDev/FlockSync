@@ -35,7 +35,7 @@ export const KillListPage = (): React.JSX.Element => {
         {data.entries.length ? 'No matching shared targets.' : 'No published targets have reached the server. Publish in game and let your collector sync.'}
       </p>}
       <div className="grid gap-3 lg:grid-cols-2">{rows.map((entry) =>
-        <KillListCard key={`${entry.realm}\u001f${entry.name}`} entry={entry}
+        <KillListCard key={`${entry.realm}\u001f${entry.name}`} entry={entry} observations={data.observations}
           editable={mayChangeKill(entry, canManage, data.owned)}
           disabled={data.loading || data.saving} change={data.change} />
       )}</div>

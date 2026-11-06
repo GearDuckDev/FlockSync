@@ -9,7 +9,7 @@ for _, name in ipairs({ "SetAllPoints", "SetHeight", "SetAutoFocus", "SetFontObj
     "SetFrameStrata", "SetMovable", "EnableMouse", "RegisterForDrag", "StartMoving", "StopMovingOrSizing",
     "SetJustifyH", "SetOrientation", "SetThumbTexture", "SetColorTexture", "SetMinMaxValues",
     "SetValueStep", "SetObeyStepOnDrag", "EnableMouseWheel", "SetSpacing", "ClearFocus", "SetMaxBytes",
-    "SetBackdropColor", "SetBackdropBorderColor" }) do
+    "SetBackdropColor", "SetBackdropBorderColor", "EnableKeyboard", "SetPropagateKeyboardInput" }) do
     methods[name] = function() end
 end
 function methods:SetScript(event, callback) self.scripts[event] = callback end

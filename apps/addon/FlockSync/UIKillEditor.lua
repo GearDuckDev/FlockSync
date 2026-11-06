@@ -57,7 +57,7 @@ local function create()
     end)
     frame.shared = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
     frame.shared:SetPoint("TOPLEFT", 20, -224)
-    frame.shared.text:SetText("Shared (local draft)")
+    frame.shared.text:SetText("Guild Shared (sends on save)")
     frame.personal = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
     frame.personal:SetPoint("TOPLEFT", 240, -224)
     frame.personal.text:SetText("Personal (never synced)")
@@ -82,7 +82,8 @@ local function create()
         if not selected then message = "Select Shared, Personal, or both to enable OK." end
         if target and selected then
             message = frame.removing and "Confirm removal from this list only."
-                or (ns.KillTextLength(target.note) .. "/500 characters")
+                or (ns.KillTextLength(target.note) .. "/500 characters"
+                    .. (not frame.item and frame.shared:GetChecked() and " - sends to guild on save" or ""))
         end
         frame.feedback:SetText(message or "")
     end

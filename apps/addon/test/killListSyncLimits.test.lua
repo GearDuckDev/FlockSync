@@ -3,7 +3,10 @@ local member = net:client("Member One", "P1", 5)
 local officer = net:client("Officer Two", "P2", 1)
 member.ns.SetKillSetting("enabled", true)
 officer.ns.SetKillSetting("enabled", true)
-assert(member.ns.SaveKillTarget("Draft Player", "Realm", "DO_NOT_BROADCAST", true, false))
+member.ns.KillStore("shared")["realm\031draft player"] = {
+    name = "Draft Player", realm = "Realm", note = "DO_NOT_BROADCAST", author = member.name,
+    authorGuid = member.guid, createdAt = 100, updatedAt = 100
+}
 net.now = 101
 local key = "realm\031draft player"
 local draft = member.ns.KillStore("shared")[key]
@@ -16,11 +19,18 @@ local accepted = 0
 while member.ns.SendKillEntry(source) do accepted = accepted + 1; assert(accepted < 100) end
 assert(not member.ns.PublishKillDraft(item))
 assert(not draft.sharedLive and member.ns.KillStore("shared")[key] == draft)
+assert(not member.ns.SaveKillTarget("Queue Player", "Realm", "No partial save", true, true))
+assert(not member.ns.KillStore("shared")["realm\031queue player"])
+assert(not member.ns.KillStore("personal")["realm\031queue player"])
 -- Guild-switch invalidation stops queued old-guild data being sent on the new guild channel.
 member.guild = "Other Guild"
 net:drain()
 assert(#net.sent == 0)
 member.guild = "Guild"
+member.online = false
+assert(not member.ns.SaveKillTarget("Roster Player", "Realm", "", true, true))
+assert(not member.ns.KillStore("personal")["realm\031roster player"])
+member.online = true
 assert(member.ns.PublishKillDraft(item)); net:drain()
 assert(officer.ns.KillStore("shared")[key])
 -- A current-roster demotion cannot edit, even if a local website flag claims officer.

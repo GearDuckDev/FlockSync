@@ -6,6 +6,7 @@ import type {
 import { db } from "../db/index.js";
 import { characters, deletedCharacters, guildIdentity } from "../db/schema.js";
 import { effectiveOwnerships } from "./groupOwnership.service.js";
+import { listKillObservations, upsertKillObservations } from "./killObservations.service.js";
 import { and, eq } from "drizzle-orm";
 import { upsertAttendance, upsertLoot } from "./ledgerSync.service.js";
 import { buildGuildSnapshot } from "./snapshot.service.js";
@@ -173,6 +174,7 @@ export const processOfficerSync = async (
 
     if (payload.collectorGuild && payload.exportedAt > databaseResetAt) {
       upsertSharedKills(transaction, payload.sharedKillList ?? [], payload.collectorGuild, databaseResetAt, now);
+      upsertKillObservations(transaction, payload.sharedKillObservations ?? [], payload.collectorGuild, databaseResetAt, now);
     }
     upsertLoot(transaction, (payload.lootHistory ?? [])
       .filter((record) => databaseResetAt === 0 || record.timestamp > databaseResetAt));
@@ -197,7 +199,7 @@ export const processOfficerSync = async (
     culledCharacterGuids: inactiveCharacters.map((character) => character.guid),
     serverTimestamp: now,
     databaseResetAt,
-    ...(sameGuild ? { sharedKillList: listSharedKills(true), characterLinks } : {}),
+    ...(sameGuild ? { sharedKillList: listSharedKills(true), sharedKillObservations: listKillObservations(), characterLinks } : {}),
     ...buildGuildSnapshot()
   };
 };

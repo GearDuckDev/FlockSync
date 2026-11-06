@@ -7,7 +7,7 @@ import { db, databasePath, sqliteConnection } from "../db/index.js";
 import {
   attendance, characters, deletedCharacters, lootHistory, officerTasks,
   playerAliases, raidTeams, themeDefaults, userThemes, guildIdentity,
-  characterOwnerships, characterOwnershipAudit, sharedKillTargets, groupOwnerships
+  characterOwnerships, characterOwnershipAudit, sharedKillTargets, groupOwnerships, killObservations
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
 import { checkIntegrity, createBackupUnlocked } from "./databaseBackup.js";
@@ -151,6 +151,7 @@ export const wipeDatabase = () => runExclusive(async () => {
   try {
     db.transaction((transaction) => {
       transaction.delete(characterOwnerships).run();
+      transaction.delete(killObservations).run();
       transaction.delete(groupOwnerships).run();
       transaction.delete(sharedKillTargets).run();
       transaction.delete(characterOwnershipAudit).run();

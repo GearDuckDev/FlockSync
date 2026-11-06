@@ -4,6 +4,7 @@ import { CharacterSchema } from "./player.js";
 import { AddonReleaseCatalogSchema } from "./releases.js";
 import { GuildIdentitySchema } from "./guild.js";
 import { SharedKillListSchema, GuildCharacterLinkSchema } from "./killList.js";
+import { KillObservationsSchema } from "./killObservations.js";
 
 const CollectorGuildSchema = GuildIdentitySchema;
 
@@ -15,6 +16,7 @@ export const OfficerSyncPayloadSchema = z.object({
   includeHelperReleases: z.boolean().optional(),
   characters: z.array(CharacterSchema),
   sharedKillList: SharedKillListSchema.optional(),
+  sharedKillObservations: KillObservationsSchema.optional(),
   lootHistory: z.array(LootRecordSchema).optional(),
   attendanceHistory: z.array(AttendanceRecordSchema).optional()
 }).strict();
@@ -72,6 +74,7 @@ export const ServerReturnPayloadSchema = z.object({
   upcomingRaids: z.array(GuildUpcomingRaidSummarySchema).optional(),
   goalMatches: z.array(GuildGoalMatchSummarySchema).optional(),
   sharedKillList: SharedKillListSchema.optional(),
+  sharedKillObservations: KillObservationsSchema.optional(),
   characterLinks: z.array(GuildCharacterLinkSchema).optional(),
   addonReleases: AddonReleaseCatalogSchema.optional(),
   helperReleases: AddonReleaseCatalogSchema.optional()

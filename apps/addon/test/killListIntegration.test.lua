@@ -12,13 +12,17 @@ function GetGuildInfo() return guild, "Member", 5 end
 function GetServerTime() return 100 end
 ns.CurrentGuildName = function() return guild end
 ns.LoadSnapshot = function() end
+ns.KillGuildMember = function() return guild and { guid = "Player-1", officer = false } or nil end
+ns.KillLiveOfficer = function() return false end
+local sharedSends = 0
+ns.SendKillEntry = function() sharedSends = sharedSends + 1; return true end
 ns.BuildSchedulePanel = function(container) return container end
 local menus = {}
 Menu = { ModifyMenu = function(tag, callback)
     menus[tag] = callback
 end }
-for _, name in ipairs({ "Config", "Core", "KillListText", "KillList", "KillListActions", "UIList",
-    "UITabs", "UISettings", "UIKillEditor", "UIKillList", "UIOptions", "UI", "Slash", "KillListEntryPoints" }) do
+for _, name in ipairs({ "Config", "Core", "KillListText", "KillList", "KillListActions", "KillObservations", "UIList",
+    "UITabs", "UISettings", "UIKillEditor", "UIKillList", "UIKillHistory", "UIOptions", "UI", "Slash", "KillListEntryPoints" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
 ui.fire("ADDON_LOADED", "FlockSync")
@@ -48,6 +52,8 @@ dialog.shared:SetChecked(true); dialog.personal:SetChecked(true); ui.click(dialo
 assert(dialog.ok:IsEnabled())
 ui.click(dialog.ok)
 assert(#ns.KillEntries() == 2)
+assert(sharedSends == 1, "OK sends Guild Shared target once without a Publish click")
+assert(dialog.shared.text:GetText() == "Guild Shared (sends on save)")
 assert(ns.KillEntries()[1].entry.name == "Enemy Mixed Case")
 assert(ns.KillEntries()[1].entry.realm == "Realm", "Keep realm isolation internally")
 assert(ns.ValidateKillTarget("first last", "Realm", "").name == "First Last",
@@ -62,7 +68,17 @@ for _, widget in ipairs(ui.widgets) do
     if widget.item and widget.item.destination == "shared" then row = widget; break end
 end
 assert(row and not row.edit:IsEnabled() and row.remove:IsEnabled())
+assert(not row.publish:IsShown(), "New automatically shared entry has no Publish button")
 assert(row.name:GetText() == "Enemy Mixed Case", "List shows the full name without a realm suffix")
+ui.click(row.history)
+local history = ui.find(function(w) return w.footer ~= nil and w.list ~= nil end)
+assert(history:IsShown() and history.footer:GetText():find("No verified battles"))
+history.scripts.OnKeyDown(history, "ESCAPE")
+assert(not history:IsShown(), "History window supports Escape without a global frame")
+ui.click(row.history)
+ns.SetKillSetting("historyEnabled", false)
+assert(not history:IsShown(), "Hiding history immediately closes open window")
+ns.SetKillSetting("historyEnabled", true)
 local action
 local root = { CreateButton = function(_, _, callback) action = callback end }
 menu(nil, root, { unit = "target" })

@@ -64,7 +64,11 @@ function ns.RespondKillSync()
         until not key or (entry.sharedLive and (member.officer
             or (entry.actorGuid == member.guid and entry.authorGuid == member.guid
                 and (entry.deleted or entry.createdAt == entry.updatedAt))))
-        if not key then responding = false; return end
+        if not key then
+            responding = false
+            if ns.RespondKillObservations then ns.RespondKillObservations() end
+            return
+        end
         local function deliver()
             if guild ~= ns.KillGuildKey() or store ~= ns.KillStore("shared") then responding = false; return end
             local currentMember = ns.KillGuildMember(ns.GetPlayerFullName())

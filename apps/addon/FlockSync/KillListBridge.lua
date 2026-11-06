@@ -15,6 +15,7 @@ function ns.LoadServerKillList()
             ns.MergeKillWire(entry, { officer = true }, true)
         end
     end
+    if ns.LoadServerKillObservations then ns.LoadServerKillObservations() end
 end
 
 local frame = CreateFrame("Frame")

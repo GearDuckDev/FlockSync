@@ -9,15 +9,17 @@ member.ns.SetKillSetting("enabled", true)
 assert(member.ns.SaveKillTarget("enemy player", "Realm", string.rep("n", 500), true, true))
 local key = "realm\031enemy player"
 net:drain()
-assert(#net.sent == 0, "Draft creation never publishes")
-assert(next(officer.ns.KillStore("shared")) == nil)
-net.now = net.now + 1
-assert(member.ns.PublishKillDraft(item(member, key)))
-net:drain()
+assert(#net.sent > 0, "Guild Shared creation sends automatically without Publish")
+assert(member.ns.KillStore("shared")[key].sharedLive)
 assert(officer.ns.KillStore("shared")[key].note == string.rep("n", 500))
 assert(other.ns.KillStore("shared")[key], "Disabled/non-collector clients still receive shared data")
 assert(not other.ns.KillListEnabled())
 assert(next(other.ns.KillStore("personal")) == nil, "Personal copies never transmit")
+local sends = #net.sent
+assert(member.ns.SaveKillTarget("Private Player", "Realm", "PRIVATE_ONLY", false, true))
+net:drain()
+assert(#net.sent == sends and not officer.ns.KillStore("shared")["realm\031private player"],
+    "Personal-only save must not send a guild message")
 other.ns.SetKillSetting("enabled", true)
 assert(not other.ns.ChangeKillTarget(item(other, key), "Forged", false))
 officer.ns.SetKillSetting("enabled", true)
@@ -58,14 +60,21 @@ assert(other.ns.KillStore("shared")[key].deleted, "Far-future poisoning rejected
 -- Existing local drafts survive incoming snapshots without leaking to the guild.
 net.now = net.now + 1
 assert(late.ns.SetKillSetting("enabled", true))
-assert(late.ns.SaveKillTarget("Draft Player", "Realm", "LOCAL_ONLY", true, false))
+late.ns.KillStore("shared")["realm\031draft player"] = {
+    name = "Draft Player", realm = "Realm", note = "LOCAL_ONLY", author = late.name,
+    authorGuid = late.guid, createdAt = math.floor(net.now), updatedAt = math.floor(net.now)
+}
 assert(late.ns.RespondKillSync() == nil); net:drain()
 assert(not member.ns.KillStore("shared")["realm\031draft player"])
+net.now = net.now + 1
+assert(late.ns.PublishKillDraft(item(late, "realm\031draft player")))
+net:drain()
+assert(member.ns.KillStore("shared")["realm\031draft player"].note == "LOCAL_ONLY",
+    "Legacy drafts still require an explicit share action")
 -- Newer re-add is accepted, with a new creator, only after the removal.
 net.now = net.now + 1
 assert(officer.ns.SaveKillTarget("Enemy Player", "Realm", "Re-add", true, false))
-net.now = net.now + 1
-assert(officer.ns.PublishKillDraft(item(officer, key))); net:drain()
+net:drain()
 assert(not member.ns.KillStore("shared")[key].deleted)
 assert(member.ns.KillStore("shared")[key].authorGuid == "P2")
 -- Equal-time conflicting updates must not overwrite.

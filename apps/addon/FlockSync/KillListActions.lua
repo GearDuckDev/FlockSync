@@ -18,7 +18,7 @@ function ns.SaveKillTarget(name, realm, note, shared, personal)
     local stores = {}
     if shared then
         local store = ns.KillStore("shared")
-        if not store then return fail("Wait for your guild information before adding a shared draft.") end
+        if not store then return fail("Wait for your guild information before adding a guild-shared target.") end
         stores[#stores + 1] = store
     end
     if personal then stores[#stores + 1] = ns.KillStore("personal") end
@@ -30,9 +30,25 @@ function ns.SaveKillTarget(name, realm, note, shared, personal)
         if old and not old.deleted then return fail("Target already exists on a selected list; nothing saved.") end
         if old and now <= old.updatedAt then return fail("Target just changed. Wait one second and retry.") end
     end
+    local published
+    if shared then
+        local member = ns.KillGuildMember(ns.GetPlayerFullName())
+        if not member or member.guid ~= guid or target.realm ~= GetRealmName() then
+            return fail("Current guild roster identity and matching realm are required to share; nothing saved. Retry when ready.")
+        end
+        published = { name = target.name, realm = target.realm, note = target.note,
+            author = author, authorGuid = guid, actorGuid = guid, createdAt = now,
+            updatedAt = now, deleted = false, sharedLive = true }
+        local ok, errorMessage = ns.SendKillEntry(published)
+        if not ok then return fail(errorMessage .. " Nothing saved; retry after the queue drains.") end
+    end
     for _, store in ipairs(stores) do
         store[key] = { name = target.name, realm = target.realm, note = target.note,
             author = author, authorGuid = guid, createdAt = now, updatedAt = now }
+    end
+    if published then
+        ns.KillStore("shared")[key] = published
+        print("FlockSync: Target and note queued for guild delivery. Keep the client online while it sends.")
     end
     ns.KillListChanged()
     return true

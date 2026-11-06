@@ -9,6 +9,11 @@ function GetServerTime() return now end
 function CreateFrame() return { RegisterEvent = function() end, SetScript = function() end } end
 ns.CurrentGuildName = function() return guild end
 ns.IsOnboarded = function() return true end
+ns.KillGuildMember = function()
+    return guild and { guid = guid, officer = rank <= 2 } or nil
+end
+ns.KillLiveOfficer = function() return guild ~= nil and rank <= 2 end
+ns.SendKillEntry = function() return true end
 FlockSyncDB = { config = {}, characters = {}, profiles = {}, accountCharacters = {}, staleCharacters = {} }
 for _, name in ipairs({ "Core", "KillListText", "KillList", "KillListActions" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
@@ -56,6 +61,7 @@ assert(ns.KillOfficer())
 FlockSyncHelperDB = nil
 rank, now = 1, 102
 assert(ns.ChangeKillTarget(sharedItem, "Officer edit", false))
+sharedItem.entry = shared[key]
 assert(shared[key].authorGuid == "Player-1")
 guid, rank, now = "Player-1", 5, 103
 assert(ns.ChangeKillTarget(sharedItem, "", true))

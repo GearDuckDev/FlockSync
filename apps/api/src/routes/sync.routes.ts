@@ -39,6 +39,11 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
         || entry.updatedAt > Math.floor(Date.now() / 1000) + 30))) {
       return reply.code(400).send({ error: "Shared kills require collector guild identity, matching realm and valid clock" });
     }
+    if (payload.data.sharedKillObservations?.length && (!payload.data.collectorGuild
+      || payload.data.sharedKillObservations.some((entry) => entry.realm !== payload.data.collectorGuild?.realm
+        || entry.timestamp > Math.floor(Date.now() / 1000) + 30))) {
+      return reply.code(400).send({ error: "Observations require matching collector guild/realm and valid clock" });
+    }
 
     let result: Awaited<ReturnType<typeof processOfficerSync>>;
     try {

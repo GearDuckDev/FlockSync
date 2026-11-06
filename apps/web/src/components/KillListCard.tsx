@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { KillNoteSchema, type SharedKillEntry } from '@flocksync/shared-types';
+import { KillNoteSchema, type KillObservation, type SharedKillEntry } from '@flocksync/shared-types';
+import { KillObservationHistory } from './KillObservationHistory';
 
 interface Props {
   entry: SharedKillEntry;
+  observations: KillObservation[];
   editable: boolean;
   disabled: boolean;
   change: (entry: SharedKillEntry, note?: string) => Promise<boolean>;
 }
 
-export const KillListCard = ({ entry, editable, disabled, change }: Props): React.JSX.Element => {
+export const KillListCard = ({ entry, observations, editable, disabled, change }: Props): React.JSX.Element => {
   const [draft, setDraft] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState(entry);
   const stale = draft !== null && editingEntry.updatedAt !== entry.updatedAt;
@@ -30,6 +32,7 @@ export const KillListCard = ({ entry, editable, disabled, change }: Props): Reac
         <p className="text-xs text-slate-400">Added by {entry.author} &middot; Updated {new Date(entry.updatedAt * 1000).toLocaleString()}</p>
       </div>
       <p className="whitespace-pre-wrap break-words text-sm">{entry.note || 'No reason provided.'}</p>
+      <KillObservationHistory entry={entry} observations={observations} />
       {draft !== null && <div className="space-y-2">
         <label className="block text-sm">Reason for {entry.name}
           <textarea value={draft} disabled={disabled || !editable}

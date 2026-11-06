@@ -76,6 +76,8 @@ function ns.ReceiveKillChunk(prefix, chunk, channel, sender)
         if now - (requestTimes[member.guid] or -60) < 60 then return end
         requestTimes[member.guid] = now
         C_Timer.After(2 + math.random() * 4, ns.RespondKillSync)
+    elseif (message.kind == "OBS" or message.kind == "OBS_SNAP") and ns.ReceiveKillObservation then
+        ns.ReceiveKillObservation(message.entry, member, message.kind == "OBS_SNAP")
     elseif message.kind == "UPDATE" or message.kind == "SNAP" then
         if not ns.MergeKillWire(message.entry, member, message.kind == "SNAP") then
             -- Equal/older records are expected during catch-up; validation never mutates them.

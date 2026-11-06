@@ -1,5 +1,9 @@
 import { SharedKillEntrySchema, SharedKillListSchema, type SharedKillEntry } from '@flocksync/shared-types';
 import { request } from './api';
+import { KillObservationsSchema, type KillObservation } from '@flocksync/shared-types';
+
+export const fetchKillObservations = async (token: string): Promise<KillObservation[]> =>
+  KillObservationsSchema.parse(await request('/api/kill-list/observations', {}, token));
 
 export const fetchKillList = async (token: string): Promise<SharedKillEntry[]> =>
   SharedKillListSchema.parse(await request('/api/kill-list', {}, token));

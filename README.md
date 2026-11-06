@@ -97,8 +97,12 @@ Enter the full **First Last** player name. The current realm is automatic and
 is not shown as a separate field; saved realm identity remains internal.
 
 - Shared and Personal start unchecked; choose either or both to enable OK.
-  Shared entries start as local drafts. Click **Publish** on each intended
-  target to send it to online guildmates. Existing drafts never auto-publish.
+  Selecting **Guild Shared** sends the target and note to online guildmates
+  when you save; no separate Publish step for new additions. Existing legacy
+  drafts stay private until you explicitly Publish them.
+  If current guild-roster identity is unavailable or the sending queue is
+  full, saving reports an error and leaves the editor open; neither destination
+  is added if both were selected. Retry when the roster/queue is ready.
   Personal entries are character-local and excluded from messages and uploads.
 - Reasons allow 500 Unicode characters. The list shows at most 80 characters
   including truncation; notes do not appear in tooltips.
@@ -128,8 +132,36 @@ is not shown as a separate field; saved realm identity remains internal.
   authored by their currently verified linked characters. No website additions:
   add and publish targets in game. Use the website **Kill List** tab to search,
   edit notes or confirm a shared removal. Refresh after conflicts before retrying.
-- Detection, alerts, skulls and battle history are later
-  checkpoints, not available in this preview.
+- Readable enemy players are detected on target, mouseover, focus and nameplate
+  events, not periodic scans. Popup and sound default on after opt-in and have
+  separate settings, with a 60-second cooldown per target. Remote reports
+  update last-seen data but never trigger local nearby alerts. Nothing can
+  detect players the client does not expose.
+- Optional nameplate skulls are local overlays, default off. They are not raid
+  marks and never target players or invoke protected marking APIs.
+- Each entry shows its latest reported zone/time (`MM-DD-YYYY HH:MM`, local
+  timezone) and a History button. Hide history independently from reporting.
+  Turn off **Share sightings and battles** to keep new reports character-local;
+  turning it back on does not publish that private interval's history.
+  Personal-only observations/history stay character-local; shared drafts do
+  not generate shared reports.
+- Battle attribution uses readable `PARTY_KILL` participant GUIDs or your own
+  fresh death recap with explicit fatal damage and readable identities.
+  Unreadable/secret data, nonfatal hits, stale recaps, unknown enemies and
+  ambiguous killers are skipped, never guessed. Pet kills without a readable
+  party/guild player identity and deaths without sufficient evidence are not
+  attributed. Client-specific event/recap support requires game acceptance.
+- Published sightings and verified battles travel through the same bounded
+  guild transport and collector Desktop/server/helper path. Login catch-up
+  starts automatically, newest observations first after target records; large
+  histories may take substantial online time. A native guild-rank officer can
+  recover reports retained by other clients or the server. These are
+  roster-attested client reports, not a server-verified combat log.
+- Battle history retains 90 days and at most 5,000 guild events; each target
+  retains one latest sighting. Duplicate battle reports within five seconds
+  from the same killer/victim are combined. Removing/recreating a target does
+  not attach its old history to the new creation. Permanent target removal
+  markers are not subject to history retention.
 
 **Temporary testing build:** friendly-player portraits and `/fs kill add` on a
 friendly target are allowed. Portrait actions say **(TEST)** and login prints
@@ -246,7 +278,7 @@ Use matching candidate API, Desktop and main addon builds. Desktop uploads only
 published records from the collector's guild/realm and returns durable shared
 records, including removal markers. Keep WoW logged out while Desktop writes
 AppHelper; log back in afterward. The ordinary member needs neither Desktop nor
-AppHelper. New additions still require explicit Publish; subsequent delivery/
+AppHelper. New Guild Shared additions send automatically on save; subsequent delivery/
 login catch-up is automatic, with `/fs kill sync` only an optional recovery tool.
 Native guild-roster officers must be online to redistribute server-returned
 changes. A website-only collector can upload/load its own helper but cannot

@@ -27,7 +27,8 @@
     "DEFAULT_CHAT_FRAME",
     "Minimap",
     "UIParent",
-    "Menu"
+    "Menu",
+    "SOUNDKIT"
   ],
   "Lua.workspace.library": [
     "apps/addon/FlockSync",

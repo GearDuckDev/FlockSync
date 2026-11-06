@@ -12,6 +12,10 @@ function ns.GetKillState()
     FlockSyncDB.killListCharacters = FlockSyncDB.killListCharacters or {}
     local state = FlockSyncDB.killListCharacters[guid] or { enabled = false, personalEnabled = true, entries = {} }
     FlockSyncDB.killListCharacters[guid] = state
+    for key, value in pairs({ popupEnabled = true, soundEnabled = true, skullEnabled = false,
+        historyEnabled = true, reportEnabled = true }) do
+        if state[key] == nil then state[key] = value end
+    end
     return state
 end
 
@@ -22,7 +26,9 @@ end
 
 function ns.SetKillSetting(key, value)
     local state = ns.GetKillState()
-    if not state or (key ~= "enabled" and key ~= "personalEnabled") or type(value) ~= "boolean" then
+    local allowed = { enabled = true, personalEnabled = true, popupEnabled = true,
+        soundEnabled = true, skullEnabled = true, historyEnabled = true, reportEnabled = true }
+    if not state or not allowed[key] or type(value) ~= "boolean" then
         print("FlockSync: Kill-list character or setting unavailable.")
         return false
     end

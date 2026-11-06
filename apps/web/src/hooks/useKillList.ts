@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { SharedKillEntry } from '@flocksync/shared-types';
+import type { SharedKillEntry, KillObservation } from '@flocksync/shared-types';
 import { fetchOwnCharacters } from '../lib/apiCharacterOwnership';
-import { changeKillEntry, fetchKillList } from '../lib/apiKillList';
+import { changeKillEntry, fetchKillList, fetchKillObservations } from '../lib/apiKillList';
 
 export const useKillList = (token: string | null) => {
   const [entries, setEntries] = useState<SharedKillEntry[]>([]);
+  const [observations, setObservations] = useState<KillObservation[]>([]);
   const [owned, setOwned] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -19,13 +20,17 @@ export const useKillList = (token: string | null) => {
     setError(null);
     setOwned(new Set());
     try {
-      const [list, links] = await Promise.all([fetchKillList(token), fetchOwnCharacters(token)]);
+      const [list, links, reports] = await Promise.all([
+        fetchKillList(token), fetchOwnCharacters(token), fetchKillObservations(token)
+      ]);
       if (id !== generation.current) return;
       setEntries(list);
+      setObservations(reports);
       setOwned(new Set(links.map((link) => link.characterGuid)));
     } catch (err) {
       if (id === generation.current) {
         setEntries([]);
+        setObservations([]);
         setError(err instanceof Error ? err.message : 'Kill List refresh failed');
       }
     } finally {
@@ -70,5 +75,5 @@ export const useKillList = (token: string | null) => {
       if (id === generation.current) setSaving(false);
     }
   };
-  return { entries, owned, loading, saving, error, notice, load, change };
+  return { entries, observations, owned, loading, saving, error, notice, load, change };
 };

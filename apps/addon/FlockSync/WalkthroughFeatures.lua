@@ -46,10 +46,11 @@ function ns.BuildWalkthroughKillList(page)
     text(page, "Your Kill List",
         "Keep personal enemy-player targets and reasons in a new FlockSync tab. "
         .. "This feature starts off; enable it below if you want to try it.\n\n"
-        .. "Shared entries start as local drafts; click Publish to send one to online "
-        .. "guildmates. Web views, detection, alerts, skulls and battle history are "
-        .. "planned, not active yet. Personal entries never sync.\n\n"
+        .. "Select Guild Shared to send the target and note on save to online "
+        .. "guildmates. Personal entries and history never sync. Local enemy popup "
+        .. "and sound start on after enabling; the optional local skull starts off. "
+        .. "Reports show last-seen locations and verified battles.\n\n"
         .. "After setup: /fs kill, /fs kill add [name], or right-click an enemy portrait. "
-        .. "Choose Shared, Personal or both before saving.")
-    page.Refresh = ns.AddKillToggles(page, -265)
+        .. "Choose Shared, Personal or both. More settings: /fs killoptions.")
+    page.Refresh = ns.AddKillToggles(page, -265, true)
 end

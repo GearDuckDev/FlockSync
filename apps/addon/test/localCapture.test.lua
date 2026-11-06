@@ -44,6 +44,9 @@ end
 function GetInventoryItemID(_, slot)
     if slot == 7 and pants then return 100 end
 end
+function GetInventoryItemTexture(_, slot)
+    if slot == 7 and pants then return "test-pants-texture" end
+end
 C_Timer = {
     After = function(_, callback) timers[#timers + 1] = callback end,
     NewTicker = function(_, callback)
@@ -63,6 +66,7 @@ ns.IsOnboarded = function() return onboarded end
 ns.GetProfile = function()
     FlockSyncDB.profiles["Player-Test"] = FlockSyncDB.profiles["Player-Test"] or {
         role = { primaryRole = "DPS", offSpecEnabled = false, updatedAt = 1 },
+        gear = { items = {}, updatedAt = 0 },
     }
     return FlockSyncDB.profiles["Player-Test"]
 end
@@ -108,7 +112,7 @@ ns.PublishLocalScan()
 assert(FlockSyncDB.characters["Player-Test"].gear.items[1].slotId == 7)
 assert(FlockSyncDB.characters["Player-Test"].lastSeenAt == 100)
 now, pants = 200, false
-fire("PLAYER_EQUIPMENT_CHANGED")
+fire("PLAYER_EQUIPMENT_CHANGED", 7, false)
 assert(#timers == 1)
 -- Logout may happen before the debounced two-second equipment scan.
 fire("PLAYER_LOGOUT")

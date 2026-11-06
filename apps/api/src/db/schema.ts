@@ -185,3 +185,12 @@ export const sharedKillTargets = sqliteTable("shared_kill_targets", {
   updatedAt: integer("updated_at").notNull(),
   deleted: integer("deleted", { mode: "boolean" }).notNull()
 }, (table) => [primaryKey({ columns: [table.guildKey, table.targetKey] })]);
+
+export const killObservations = sqliteTable("kill_observations", {
+  guildKey: text("guild_key").notNull(),
+  id: text("id").notNull(),
+  targetKey: text("target_key").notNull(),
+  kind: text("kind").notNull(),
+  timestamp: integer("timestamp").notNull(),
+  payload: text("payload").notNull()
+}, (table) => [primaryKey({ columns: [table.guildKey, table.id] })]);

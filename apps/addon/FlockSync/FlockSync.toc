@@ -44,6 +44,7 @@ UIRole.lua
 UISettings.lua
 UIKillEditor.lua
 UIKillList.lua
+UIKillHistory.lua
 WalkthroughFeatures.lua
 Walkthrough.lua
 UIOptions.lua
@@ -51,4 +52,9 @@ UI.lua
 Minimap.lua
 Slash.lua
 KillListEntryPoints.lua
+KillObservations.lua
+KillObservationSync.lua
+KillDetection.lua
+KillAlerts.lua
+KillBattles.lua
 Events.lua
