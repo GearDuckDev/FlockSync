@@ -1,200 +1,206 @@
-## FlockSync 0.10.1
+## FlockSync 1.0.0
 
-### Reliable character sync and refreshed application dependencies
-- Fixed character uploads after a database reset so a character's main/alt link
-  is preserved. Linked characters still retain their own gear, role and availability.
-- Updated the Windows desktop runtime, installer tools and file watcher. Reload,
-  logout and file-replacement saves retain automatic sync, with stable-write
-  handling and no helper-file feedback loop in the verified scenarios.
-- Updated server, website and shared validation/build dependencies while
-  preserving login, guild collection permissions, saved client paths, themes,
-  availability and helper data. Existing UI/background colors can remain linked
-  or be configured separately; this release does not introduce another theme redesign.
-- Refreshed the backup container to Alpine 3.24. Online backups, integrity
-  verification, private file permissions, daily retention and preserved pre-update
-  snapshots remain in place.
-- Updated addon release-workflow tools and excluded project upgrade/operations
-  documents from the CurseForge addon package. Main addon and AppHelper code
-  are unchanged; current addon installations do not need reinstalling.
+### Shared kill lists and enemy awareness
+- Add a player and reason to **Guild Shared** to send both automatically when
+  saving. No separate Publish click for new additions. Existing old drafts
+  remain private until explicitly published; personal lists never upload.
+- Manage published targets through the website Kill List: search, read full
+  reasons, edit permitted notes and confirm removal. Officers/admins can manage
+  all targets; members can manage targets authored by their linked characters.
+  Additions remain in game, not on the website.
+- Enable local enemy popups and sound independently, with a 60-second
+  per-target cooldown. Optional skulls are local nameplate overlays, not raid
+  marks. Friendly players and NPCs do not trigger these features.
+- View last-seen zones/times and shared battle history in game and on the
+  website. History retains 90 days and up to 5,000 guild battles, with one
+  latest sighting per active target. Duplicate reports are combined.
+- Record battles only when readable player identities and killing-blow
+  evidence are available. Stale recaps, restricted data and ambiguous killers
+  are not guessed. Remote reports never trigger local nearby alerts.
+- Preserve removals across stale/offline uploads. Re-added targets do not
+  inherit the old creation's observations. Personal notes remain independent.
 
-### Release channel and scope
-Prepared as **v0.10.1**, a normal **Release-channel**, **pre-1.0** maintenance
-release after published v0.10.0. No preview suffix or GitHub prerelease flag.
-Preparation is not publication, deployment or permission to create a tag.
+### Whole-player ownership and clearer guild information
+- Character Links displays the same friendly-name groups as the roster.
+  Officers can assign one website owner to a complete group; future synced alts
+  in that group inherit access. Confirmation identifies current characters and
+  ownership changes. Check grouping carefully: later grouping changes affect access.
+- Members see group-play information for their linked characters; officers
+  retain management controls. Ownership changes apply after refresh.
+- Updated walkthrough and per-character settings explain sharing, privacy and
+  alert controls. Existing saved choices, character paths and data are preserved.
 
 ### Upgrade instructions
-1. Server operators: preserve deployed `.env`, local SQLite data, independent
-   backups, local overrides/startup units and backup storage settings. Stage
-   the new server ZIP without copying examples over production configuration.
-2. Verify the configured backup storage is mounted and writable with the expected
-   ownership and optional `.flocksync-storage-id`. Keep the live WAL SQLite
-   database on local persistent storage, not SMB/NFS; network storage is for backups.
-3. From the deployed project directory run `sh deploy/update-server.sh`. It
-   verifies a fresh pre-update backup before rebuilding/recreating services.
-   Expect a brief interruption. Do not bypass failure guards with direct restarts
-   or `docker compose down -v`. Re-enable any paused external retry automation
-   only after successful checks.
-4. Verify container health, `/ready`, website login, guild header, linked-character
-   grouping, collector sync and backup health. No wipe or database restore is
-   needed for this update. Database-reset main/alt preservation applies to fresh
-   character uploads; it does not reconstruct already lost relationships without
-   a valid source export.
-5. Collectors: quit Desktop through its tray icon, then install **0.5.2** or use
-   its portable alternative. Preserve saved settings and select the actual WoW
-   client root containing `Interface` and `WTF`. Use your guild server's full URL
-   without `/api`; do not use a previous local test URL.
-6. Members already on main addon **0.6.0**, and collectors on AppHelper **0.2.2**,
-   do not need to reinstall those unchanged components. Older addon installations
-   should be updated with WoW closed, preserving SavedVariables and avoiding
-   extra ZIP-named folder nesting.
-7. For returned helper data, use logout/exit -> successful Desktop sync -> login.
-   WoW writes SavedVariables on reload/logout/exit; Desktop cannot upload unsaved
-   in-game memory. Each WoW account folder needs its own sync.
+1. Server operators: preserve deployed environment configuration, local SQLite
+   data and independent backups. Verify configured backup storage is mounted
+   and writable. Stage the new server source without replacing configuration.
+2. Run `sh deploy/update-server.sh` from the deployed project directory. Require
+   verified pre-update backup before rebuilding; stop on failure. Never bypass
+   safeguards with direct restarts, `docker compose down -v`, or a database wipe.
+3. Verify API/web health, `/ready`, normal login, existing roster and Character
+   Links. Additive migrations preserve targets/ownership and add observation
+   persistence. No wipe or restore is required for this upgrade.
+4. Collectors: quit Desktop through its tray icon. Install **1.0.0** or choose
+   the portable alternative. Preserve saved server/client settings; use the full
+   guild server URL without `/api`. Upgrade server and Desktop together: an old
+   server missing observation return data produces a visible sync error.
+5. With WoW closed, update the main addon for every participating client.
+   Collectors install both addons from the bundle. Extract directly into the
+   actual client's `Interface\AddOns`, without extra ZIP folder nesting.
+   Preserve SavedVariables; remove unwanted old test entries through the UI.
+6. Use logout/exit -> successful Desktop sync -> login for server-returned
+   edits and helper data, then automatic guild relay. Every account folder needs
+   its own sync. Do not manually overwrite helper files while WoW runs.
+7. Review per-character `/fs killoptions`. Kill List defaults off; popup/sound
+   default on after opt-in, skull off. Friendly-entry TEST mode is disabled.
+   Typed names remain supported without independently proving hostility.
 
 ### Download choices
-- **FlockSync-Setup-0.5.2-x64.exe:** updated Windows collector installer.
-- **FlockSync-Portable-0.5.2-x64.exe:** updated portable alternative; choose one
-  Desktop download, not both. Windows candidates are unsigned; no signing
-  certificate is configured. Do not disable Windows protection to run them.
-- **FlockSync-Raider-Only.zip:** unchanged main addon **0.6.0** for members.
-  Members do not need Desktop, AppHelper or a website account to broadcast.
-- **FlockSync-Addon-Bundle.zip:** unchanged main addon **0.6.0** and AppHelper
-  **0.2.2** for collectors. Collectors also need Desktop and an authorized
-  OFFICER/ADMIN website login.
-- **FlockSync_Remote_Server_Deploy.zip:** updated **0.7.1 API/web** source,
-  shared contracts, migrations, theme assets and deployment/backup tooling for
-  AMD64 or ARM64 Linux Docker hosts. It contains source, not prebuilt images.
-- **flocksync-release.json:** generated component-version manifest; attach beside
-  all five payloads on one public GitHub release.
+- **FlockSync-Setup-1.0.0-x64.exe:** Windows collector installer.
+- **FlockSync-Portable-1.0.0-x64.exe:** portable alternative; choose one Desktop
+  download. Builds are unsigned; use normal trust checks, never disable OS protection.
+- **FlockSync-Raider-Only.zip:** main addon **1.0.0** for members. Members do not
+  need Desktop, AppHelper or a website account just to broadcast their character.
+- **FlockSync-Addon-Bundle.zip:** main addon **1.0.0** plus AppHelper **1.0.0**
+  for collectors, who also need Desktop and an authorized OFFICER/ADMIN login.
+- **FlockSync_Remote_Server_Deploy.zip:** API/web **1.0.0** source and deployment
+  tooling for 64-bit AMD64/ARM64 Linux Docker servers; not prebuilt images.
+- **flocksync-release.json:** generated component-version manifest. Attach beside
+  the five payloads on one publicly readable GitHub release.
 
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Desktop | **0.5.2** | Updated from 0.5.1 |
-| Server/API/web | **0.7.1** | Updated from 0.7.0; API/web aligned |
-| Shared types | **0.7.1** | Updated from 0.7.0 |
-| Main addon | **0.6.0** | Unchanged; no reinstall needed |
-| AppHelper | **0.2.2** | Unchanged; no reinstall needed |
-| Root workspace metadata | **0.2.2** | Unchanged; not the bundle version |
+| Main addon | **1.0.0** | Updated from 0.6.0; TEST mode disabled |
+| Desktop | **1.0.0** | Updated from 0.5.2 |
+| API/web | **1.0.0** | Updated from 0.7.1; aligned |
+| Shared types | **1.0.0** | Updated from 0.7.1 |
+| AppHelper | **1.0.0** | Version aligned from 0.2.2; runtime code unchanged |
+| Root workspace metadata | **1.0.0** | Version aligned from 0.2.2 |
 
-### New installations
-Members install the main addon and finish the walkthrough. Collectors also
-install AppHelper and one Desktop download, select their actual client folder
-and log in with an authorized website account.
+AppHelper's code is unchanged: an existing compatible helper does not need
+reinstallation for new behavior, although the combined bundle carries its
+1.0.0 version label. Main addon, Desktop and server do require the update.
 
-Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first-time server setup and offline
-recovery; [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) covers maintenance.
-Collection requires an online authorized collector and cannot recover missed
-broadcasts. Server operators supply their own environment, tunnel, domain and
-backup location; the package does not install host-specific monitoring.
+### First installation and channels
+Members install the main addon and complete the walkthrough. Collectors also
+install AppHelper and one Desktop download and configure their own server.
+Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first-install setup and recovery,
+and [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for maintenance.
+Collection requires an online authorized collector; broadcasts missed while
+offline cannot be recovered from the server.
 
-### Verification and publication status
-The pre-version-bump candidates passed offline regressions and applicable
-portable/installed/game tests, including reload equipment removal/restoration,
-logout/sync/login, helper loading, upload-failure recovery and tray/relaunch.
-Original helper files and startup entries were restored and verified; normal
-Desktop settings were unchanged. All local test services are stopped.
+Prepared for the normal **Release** channel, without an alpha/beta suffix.
+When separately authorized, publish one release tagged **v1.0.0**, titled
+**FlockSync 1.0.0**, with GitHub prerelease unchecked and all six assets.
+Checkers compare each component's own version. CurseForge main-addon publication
+uses version **1.0.0** and Release type; do not create duplicate uploads.
 
-Backup checks passed on AMD64 and emulated ARM64, including actual accelerated
-cron and restore into a fresh database. Routing, readiness, backup-health,
-proxy trust, SPA and PWA serving checks passed. The hosted
-[no-publish workflow preview](https://github.com/GearDuckDev/FlockSync/actions/runs/42155373845)
-passed, including downloaded artifact inspection; CurseForge publication was skipped.
+### Verification and outstanding acceptance
+This is local release preparation, not publication or a new live deployment.
+Final 1.0.0 sources passed:
+- Root typecheck and all component builds; Windows installer and portable packaging.
+- All 31 API production/update checks, 27 web checks and two packaging checks.
+- 34 Desktop checks; one optional live-GitHub test remains skipped because it
+  asserts a specific historical public release, not this unpublished candidate.
+- All 18 Lua 5.1 checks including dedicated gear persistence, plus both-addon
+  syntax validation and the distributed TEST-off assertion.
+- Actual API/web container builds, isolated readiness, Desktop -> SQLite ->
+  generated Lua helper -> independent addon clients, restart persistence,
+  deduplication and private-data exclusion.
+- ZIP contents match final source files; all package/TOC/manifest versions are
+  1.0.0. Root executable copies match built outputs; Desktop's packaged archive
+  contains version 1.0.0. Local trackers/scratch files are excluded.
 
-**Final-version automated builds and artifact verification passed.** The full
-release packager passed workspace typecheck, API/web builds, Windows packaging
-and all ZIP/manifest generation. Final tests: 11 API production, 14 API updates,
-16 web and two deployment-packaging regressions; Desktop 27 passed with one
-optional live-network skip. Three watcher tests passed under the final packaged
-Electron runtime. Final AMD64 API/web image builds and isolated container
-readiness/backup-health/proxy tests passed, including SPA/PWA serving.
-All six manifest assets were inspected: copied executable hashes match, packaged
-Desktop output matches its build, addon ZIPs byte-match unchanged sources, and
-all 214 server ZIP source files match the workspace with required exclusions.
-**Final 0.5.2 portable and installed smoke acceptance passed.**
-The maintainer confirmed version, login/sync, tray reopen/Quit and portable
-relaunch with retained settings. Automatic synthetic role sync reached the final
-0.7.1 server without manual upload. Installed executable/ASAR match the verified
-candidate. Normal settings/startup entries were preserved; all test services
-stopped and disposable synthetic database removed. No real game files were used
-in these final smoke checks.
-No new release, tag or production deployment has been created.
-Some transitive dependency deprecations remain in upstream build tools;
-untested newer dependency releases were not adopted. This is not a
-zero-vulnerability claim. Live multiple-account, reboot/startup activation, active-upload shutdown
-cancellation, real NAS/overnight scheduling and independent total-host outage
-checks are not established by these tests. Lua 5.1 standalone tests were not rerun;
-unchanged addon runtime files do not justify claiming them passed.
+The update-check fixture now generates a server version newer than the installed
+version; its previous fixed 1.0.0 was no longer newer after version alignment.
+No runtime update-check behavior was changed.
 
-### Publishing and update notices
-Only when separately authorized, publish one GitHub Release tagged **v0.10.1**,
-titled **FlockSync 0.10.1**, with prerelease **unchecked** and all six verified
-assets. Check prior CurseForge status first: unchanged main addon 0.6.0 should
-be skipped by the automatic unchanged-version guard; never manually duplicate it.
-Checkers compare each component's version, not the bundle tag. Current addon/
-AppHelper installs need no update; Desktop/server do after this release is published.
-Release/Beta/Alpha channels all permit eligible stable updates. Nothing moves to 1.0.
+Maintainer reported live server readiness, preserved roster/group ownership
+display, Desktop sync/helper update, error-free game UI, shared note return,
+automatic shared additions and deletion reaching the website on earlier
+candidate versions. These results do not prove final-version installation.
+
+**Hostile-player manual checks were waived by the maintainer because no enemy
+players were available.** Real-client sightings, alerts, skull display/cleanup
+and kill/death attribution remain unverified in game. Automated mocks are not
+proof of actual client event availability. No universal detection/attribution
+or zero-vulnerability claim is made.
+
+Isolated API/web test services have stopped; their localhost test URL is no
+longer available. Nothing was committed, tagged, pushed, published or redeployed.
+The remote v1.0.0 tag was absent during preparation; recheck before publication.
+
+### Final maintainer smoke checklist (distribution gate)
+These checks are pending, not recorded as passed. Use only the final assets in
+`release`; their manifest reports 1.0.0 for every component.
+1. **Identify the candidate:** from the checkout, run
+   `Get-FileHash .\release\FlockSync-Portable-1.0.0-x64.exe -Algorithm SHA256`.
+   Expected hash:
+   `3C55FA7AE9F65676CC1F34A460CD4EE1FEBA16D6388E67C61B7AF047E5D3F7FB`.
+   Inspect `release\flocksync-release.json`: release and all components must be
+   1.0.0. Report any mismatch; do not install a mismatched candidate.
+2. **Desktop:** quit the old app through its tray icon. Only after authorizing
+   use of the existing installation/settings, launch
+   `release\FlockSync-Portable-1.0.0-x64.exe` (or choose the matching Setup
+   alternative). Expect 1.0.0, preserved server/client settings and normal login.
+   Do not post config files/tokens. Report displayed version and exact errors.
+3. **Server, only after separately authorizing the update:** privately preserve
+   configuration and data; verify writable backup storage. Use the final
+   `release\FlockSync_Remote_Server_Deploy.zip`, stage source as described in
+   [DEPLOYMENT.md](./DEPLOYMENT.md), then run `sh deploy/update-server.sh`.
+   Stop on failed/missing verified backup. Expect healthy API/web from
+   `docker compose ps` and `{"status":"ok"}` from
+   `docker compose exec web wget -qO- http://127.0.0.1/ready`.
+   Check existing roster/ownership/kill entries without changing real records.
+4. **Addon/helper and sync, game required:** after authorizing this installation
+   check, close WoW before replacing addons. Existing junction-linked addons
+   already point at this checkout: do not extract ZIPs over those links.
+   Other clients install Raider Only or the collector bundle into the actual
+   AddOns directory, preserving SavedVariables. Expect 1.0.0 and no friendly
+   TEST indicator. Use logout -> successful Desktop sync -> login; check
+   existing notes and history. No reset or manual helper overwrite.
+5. **Sharing and cleanup, game required:** only with a consented typed test
+   player entry, save Guild Shared with a distinctive note. Expect automatic
+   guild delivery without Publish, then website appearance after collector sync.
+   Remove only that test entry and verify removal after relay/sync. Friendly
+   typed entries test transport only, not detection. Report UI errors, sync
+   result, add/note/removal results and any missing existing data.
+
+Quit test Desktop instances afterward. If installation fails, stop testing and
+report errors before retrying or rolling back. Keep previous downloads/backups
+available outside the current upload folder; never overwrite a running helper,
+delete SavedVariables or restore a live database casually. Server rollback uses
+the recovery instructions in [DEPLOYMENT.md](./DEPLOYMENT.md).
+Hostile-player detection/skull/kill/death checks remain waived/deferred until
+appropriate players are available. Final smoke acceptance and separate
+publication authorization remain distribution blockers.
 
 ---
 
 ### Maintainer / next-agent handoff
-Start with [.github/copilot-instructions.md](./.github/copilot-instructions.md),
-[RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md) and
-[README.md](./README.md). Inspect current branch/status, package/TOC versions,
-manifest contents and actual publication state. v0.10.0 is published; v0.10.1
-was unused at preparation. Do not reuse published tags or infer ZIP freshness
-from its name. Temporary work trackers and local inventories are not part of
-the repository or release downloads.
+Read [RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md),
+[README.md](./README.md) and the existing workspace instructions. Inspect branch,
+status, package/TOC versions, generated manifest and actual publication state.
+Never reuse a published tag or infer ZIP freshness from filenames.
+Local trackers and operator notes remain ignored, not release assets.
 
-#### Build definitions and packages
-The committed lockfile is format 9.0; repository/container pnpm is **12.16.1**.
-Docker API/web builds use Node 22 Bookworm; native API builds install Python 3,
-make and g++. API runner includes SQLite CLI and runs as UID 1000. Web runtime is
-`nginx:alpine`, observed nginx 1.31.8 / Alpine 3.24.4; backup uses Alpine 3.24.
-Tags/package repositories are mutable; record actual image identities when testing.
-Host editor extensions are not installed container compilers or Lua interpreters.
-Machine-specific inventories and update tasks belong in local-only notes.
+Build source of truth: committed format-9 lockfile, pnpm **12.16.1**,
+TypeScript strict shared contracts, Vite React SPA (not Next.js), Fastify,
+parameterized Drizzle and WAL SQLite, Lua **5.1**, Interface **16001**.
+Docker API/web builders use Node 22 Bookworm; API builds native SQLite with
+Python 3/make/g++, runner UID 1000; web runs nginx; backups use Alpine.
+Use host-appropriate commands; editor extensions do not establish runtimes.
 
-| Area | Tested project versions (see manifests/lockfile for full graph) |
-| --- | --- |
-| API | Fastify 5.12.8; CORS 11.4.0; JWT 10.2.7; rate-limit 11.2.2; bcryptjs 3.0.3; better-sqlite3 13.0.3; dotenv 18.0.9; Drizzle ORM 0.45.4 / Kit 0.31.11; tsx 4.23.15 |
-| Web | React/DOM 19.3.1; lucide-react 1.67.0; Vite 8.3.5; Tailwind/plugin 4.3.4; React Vite plugin 6.2.1 |
-| Desktop | Electron 45.2.3; builder 26.18.0; electron-vite 6.0.0; Chokidar 6.0.0 |
-| Shared/compiler | Zod 4.6.7; TypeScript 7.0.2; runtime-aligned Node declarations retained |
+Desktop settings/auth live in Electron userData configuration: preserve them,
+never dump, commit or package them. Preserve saved client paths. Addons go into
+the actual client's `Interface\AddOns`; SavedVariables stay in their account
+folder. Logout -> Desktop sync -> login remains the safe helper-loading flow.
 
-The web is a Vite React SPA, not Next.js. Shared contracts stay in
-`@flocksync/shared-types`; do not import between apps. API uses parameterized
-Drizzle and SQLite WAL. Addons run sandboxed Lua 5.1, Interface 16001.
-
-#### Destinations and safety
-| Asset | Destination |
-| --- | --- |
-| Raider ZIP | Actual client `Interface\AddOns`, yielding `FlockSync\FlockSync.toc` |
-| Addon bundle | Same directory, sibling `FlockSync` and `FlockSync_AppHelper` |
-| Installer / portable | Windows collector; run one, never put it in AddOns/server |
-| Server ZIP | Extract the `FlockSync` source folder on Linux; run updater inside it |
-| Manifest | Attach unchanged to the combined release; not an addon installation file |
-
-Default client root is `C:\Program Files (x86)\World of Warcraft\_forever_`;
-preserve saved alternatives. Desktop reads
-`WTF\Account\<account>\SavedVariables\FlockSync.lua`, uploads validated data and
-writes sibling `FlockSync_AppHelper.lua`. Never manually replace helper files
-while game/Desktop is running. Auth/settings are sensitive Electron userData
-configuration: preserve, never dump/commit/package.
-
-Compose services are `api`, `web`, `cloudflared`, `db-backup`, with no published
-host ports. Tunnel -> `http://web:80` -> API `:3001`. Preserve deployed `.env` and
-`data/sqlite`; validate `NAS_BACKUP_PATH` before starting. Configure names from
-`.env.example`, never record actual credentials. Backups run UTC midnight with
-30-day daily retention and manually retained pre-update snapshots; writable
-WAL/SHM coordination access is intentional.
-
-For final release preparation use `.\scripts\package-release.ps1 -ReleaseVersion 0.10.1`.
-Ordinary changes require affected builds/tests plus `pnpm run typecheck`, not
-unrequested full packaging. Bump changed components once when ready to commit:
-fixes +0.0.1, significant features +0.1.0; reserve 1.0 for actual primetime readiness.
-Use `sh deploy/update-server.sh` for separately authorized deployment; failed
-backup must abort the update. No live restarts merely to validate changes.
-Do not package credentials, databases, SavedVariables, local notes, dependencies,
-caches, links or stale output. Keep all six manifest assets; remove only identified
-superseded local downloads after final verification, never published releases/tags.
+No host ports are exposed in production Compose. Cloudflare Tunnel routes to
+`http://web:80`; nginx proxies `/api` and `/health` to `api:3001`. Live WAL SQLite
+must remain on local persistent storage; configured backup storage is for
+backups only. Verify storage availability and permissions before upgrades.
+Preserve deployed environment/data; use the guarded updater, not direct restarts.
+Keep pre-update snapshots until intentionally removed. Instance runbooks,
+host inventories and access details belong only in ignored local notes.

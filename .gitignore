@@ -35,3 +35,10 @@ FlockSync_Remote_Server_Deploy.zip
 
 # Local kill-list planning tracker
 /docs/KILL-LIST-TRACKER.local.md
+
+# Personal progress trackers and scratch output (shared project docs stay tracked)
+*TRACKER*.md
+*tracker*.md
+*.tmp
+*.bak
+.addon_staging/

@@ -1,6 +1,5 @@
 local addonName, ns = ...
--- Temporary testing switch; must be false before the final commit.
-ns.KillListAllowFriendlyTesting = true
+ns.KillListAllowFriendlyTesting = false
 
 local function readable(value)
     if issecretvalue and issecretvalue(value) then return nil end

@@ -5,29 +5,30 @@ The overall Git tag identifies the bundle; the manifest identifies the version
 of each component. Desktop, server, and addon update checks compare their own
 installed version with their own manifest entry, never with the bundle tag.
 
-## Current release (pre-1.0)
+## Current release preparation
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v0.10.1` (local preparation; v0.10.0 is published) |
-| Desktop | `0.5.2` |
-| API + web / server | `0.7.1` |
-| Main addon | `0.6.0` |
-| AppHelper | `0.2.2` |
-| Shared types | `0.7.1` |
-| Root package | `0.2.2` |
+| Combined GitHub tag | `v1.0.0` (local preparation only; not publication) |
+| Desktop | `1.0.0` |
+| API + web / server | `1.0.0` |
+| Main addon | `1.0.0` |
+| AppHelper | `1.0.0` (version alignment; runtime unchanged) |
+| Shared types | `1.0.0` |
+| Root package | `1.0.0` |
 
 ### Changes in this release
 
-- Server 0.7.1 preserves main/alt links on fresh uploads after a database reset.
-- Desktop 0.5.2 refreshes its runtime, watcher and Windows packaging; API/web
-  and shared validation/build dependencies are updated with scoped regression
-  and maintainer acceptance. Backup tooling advances to Alpine 3.24.
-- API/web and shared types advance from 0.7.0 to 0.7.1; Desktop from 0.5.1
-  to 0.5.2. Main addon 0.6.0, AppHelper 0.2.2 and root metadata 0.2.2 remain
-  unchanged. Current addon/helper installations need no reinstall.
-- Notifications are excluded from this branch; remote Kuma access is optional,
-  separately configured infrastructure, not an installed release feature.
+- Guild Shared kill-list additions send names and notes automatically on save;
+  personal entries remain private and old drafts require explicit sharing.
+- Adds local enemy alerts, optional local skulls, last-seen locations and
+  shared battle history with collector/server persistence and website management.
+- Friendly-name groups can be linked to website owners with future-alt inheritance.
+- All component versions align to 1.0.0 at the maintainer's explicit request.
+  Friendly-entry TEST mode is off; existing saved entries are preserved.
+- Hostile-player manual tests were waived by the maintainer, not verified in
+  game. Final-version installation/smoke acceptance remains a distribution gate.
+  Do not present a version number as proof of complete combat attribution.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 
@@ -44,7 +45,7 @@ installed version with their own manifest entry, never with the bundle tag.
    from the repo root (replace the version for future releases):
 
    ```powershell
-   .\scripts\package-release.ps1 -ReleaseVersion 0.10.1
+   .\scripts\package-release.ps1 -ReleaseVersion 1.0.0
    ```
 
    This typechecks, builds API/web, packages desktop/addons/server, copies the
@@ -63,17 +64,17 @@ installed version with their own manifest entry, never with the bundle tag.
 
    ```powershell
    git push origin main
-   git tag -a v0.10.1 -m "FlockSync 0.10.1"
-   git push origin v0.10.1
+   git tag -a v1.0.0 -m "FlockSync 1.0.0"
+   git push origin v1.0.0
    ```
 
 6. On GitHub, open **Releases -> Draft a new release**:
-   - Tag: `v0.10.1`.
-   - Title: `FlockSync 0.10.1`.
+   - Tag: `v1.0.0`.
+   - Title: `FlockSync 1.0.0`.
    - Paste the combined changelog, download choices, and upgrade instructions.
    - Check **Set as a pre-release** for alpha/beta builds.
-     For `v0.10.1`, leave it **unchecked**; this is a normal Release-channel
-     publication, not a declaration of 1.0 completeness.
+     For `v1.0.0`, leave it **unchecked**; the maintainer requested the normal
+     Release channel. Publication still requires separate authorization.
    - Attach the six files below. Publish only after all uploads finish.
 7. The CurseForge workflow automatically publishes the main addon when the GitHub
    release is published, using the main addon's version and the tag's matching
@@ -87,8 +88,8 @@ installed version with their own manifest entry, never with the bundle tag.
 | File | Audience |
 | --- | --- |
 | `flocksync-release.json` | Required component version manifest; every release |
-| `FlockSync-Setup-0.5.2-x64.exe` | Windows installer |
-| `FlockSync-Portable-0.5.2-x64.exe` | Windows portable app |
+| `FlockSync-Setup-1.0.0-x64.exe` | Windows installer |
+| `FlockSync-Portable-1.0.0-x64.exe` | Windows portable app |
 | `FlockSync_Remote_Server_Deploy.zip` | Web/API Docker deployment source |
 | `FlockSync-Raider-Only.zip` | Main addon for guild members |
 | `FlockSync-Addon-Bundle.zip` | Main addon + AppHelper for officers |

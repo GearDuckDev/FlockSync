@@ -15,3 +15,11 @@ data
 .vscode
 .github
 COMMANDS.txt
+**/*.local
+**/*.local.*
+**/*TRACKER*.md
+**/*tracker*.md
+**/*.tmp
+**/*.bak
+.remote_server_staging
+.addon_staging

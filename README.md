@@ -163,11 +163,11 @@ is not shown as a separate field; saved realm identity remains internal.
   not attach its old history to the new creation. Permanent target removal
   markers are not subject to history retention.
 
-**Temporary testing build:** friendly-player portraits and `/fs kill add` on a
-friendly target are allowed. Portrait actions say **(TEST)** and login prints
-a warning. NPCs and unreadable unit data remain excluded. This testing switch
-must be disabled before the final commit; remove fictional/friendly test
-entries from both lists before publishing anything to your real guild.
+**Release behavior:** friendly-player portrait additions are disabled. Target-based
+`/fs kill add` requires a readable enemy player; NPCs and unreadable data are
+excluded. Typed names remain supported without proving hostility. Existing saved
+entries are preserved, including previous test entries; remove unwanted test
+entries through the UI. Friendly players do not trigger sightings, alerts or skulls.
 
 Existing users are not forced through setup again. To revisit it, use
 **Reset First-Time Walkthrough** in Options > Display & Features; scanning and

@@ -27,6 +27,7 @@ for _, name in ipairs({ "Config", "Core", "KillListText", "KillList", "KillListA
 end
 ui.fire("ADDON_LOADED", "FlockSync")
 FlockSyncDB.config.hasCompletedOnboarding = true
+assert(ns.KillListAllowFriendlyTesting == false, "Distributed addon must default to release mode")
 ui.fire("PLAYER_LOGIN")
 local menu = menus.MENU_UNIT_ENEMY_PLAYER
 ns.HandleSlashCommand("killoptions")
@@ -90,6 +91,7 @@ assert(not dialog:IsShown(), "Guild changes close stale editor")
 guild = "Guild"
 ui.fire("GUILD_ROSTER_UPDATE")
 enemy, action = false, nil
+ns.KillListAllowFriendlyTesting = true
 menus.MENU_UNIT_PLAYER(nil, root, { unit = "target" })
 assert(action and ns.KillUnitTarget("target"), "Test mode accepts friendly players")
 ns.HandleSlashCommand("kill add")

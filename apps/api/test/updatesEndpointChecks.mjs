@@ -19,6 +19,7 @@ const { syncRoutes } = await import("../dist/routes/sync.routes.js");
 const { releaseCatalog } = await import("../dist/services/releases.service.js");
 const { createReleaseCatalog } = await import("../dist/services/releaseCatalog.js");
 const { currentServerVersion } = await import("../dist/config/version.js");
+const newerServerVersion = `${Number(currentServerVersion.split(".")[0]) + 1}.0.0`;
 const app = Fastify();
 await registerAuthPlugin(app);
 await app.register(updatesRoutes, { prefix: "/api" });
@@ -98,7 +99,8 @@ try {
       draft: false, prerelease: false, assets: []
     },
     {
-      tag_name: "server-v1.0.0", html_url: "https://github.com/GearDuckDev/FlockSync/releases/tag/server-v1.0.0",
+      tag_name: `server-v${newerServerVersion}`,
+      html_url: `https://github.com/GearDuckDev/FlockSync/releases/tag/server-v${newerServerVersion}`,
       draft: false, prerelease: false, assets: []
     }
   ])));
@@ -111,12 +113,12 @@ try {
   assert.equal(status.statusCode, 200);
   assert.equal(status.json().channel, "release");
   assert.equal(status.json().updateAvailable, true);
-  assert.equal(status.json().latest.version, "1.0.0");
+  assert.equal(status.json().latest.version, newerServerVersion);
   for (const role of ["MEMBER", "OFFICER"]) {
     const notice = await call("/api/updates/server", role);
     assert.equal(notice.statusCode, 200, `${role} can read the update banner status`);
     assert.equal(notice.json().updateAvailable, true);
-    assert.equal(notice.json().latest.version, "1.0.0");
+    assert.equal(notice.json().latest.version, newerServerVersion);
     assert.equal((await call("/api/updates/server/version", role)).statusCode, 200);
   }
   assert.equal(requests, 2);
