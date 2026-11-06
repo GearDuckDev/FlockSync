@@ -7,7 +7,9 @@ guild-hosted web dashboard. Share character information, plan lineups, find
 crafters, and keep mains and alts together.
 
 Built for **WoW Forever (Interface 16001)** by **GearDuckDev**.
-**Release-channel, still pre-1.0**: features continue to evolve.
+**Version 1.0.0 is the feature-complete release of FlockSync's guild-management
+toolkit**: share character data in game, plan guild activities on the web, and
+keep the addon, Windows sync companion, and self-hosted server working together.
 
 ***
 
@@ -23,6 +25,10 @@ the desktop app, AppHelper, or a website account to broadcast character data.
 - 🛠️ **Crafter Search:** find synced guild recipes and contact crafters in game.
 - 🎯 **Gear goals and matching:** record wanted items and find guildmates with matching goals.
 - 🎒 **Item tooltips:** see relevant guild crafting and gear-goal information.
+- 📝 **Availability and crafting:** share play times and tell your guild which
+  professions you are accepting requests for.
+- ⚔️ **Optional Kill List:** keep personal targets or share guild entries, notes,
+  sightings, and available battle history. Local alerts have separate controls.
 - ⚙️ **Configurable UI:** manage feature tabs, tooltips, and the minimap button.
 
 Your guild needs an active collector and configured server for shared dashboard
@@ -75,11 +81,15 @@ Collectors only catch broadcasts while logged in.
   Windows startup, start-minimized, and close-to-tray behavior.
 - 🎒 **Roster and gear:** keep mains/alts linked and inspect synced equipment.
 - 🛡️ **Team Builder:** plan raid, dungeon, and PvP lineups, groups, bench, and role targets.
-- 📅 **Availability:** see weekly coverage and recruitment gaps.
+- 📅 **Availability and recruitment:** see weekly coverage, role needs, and recruitment gaps.
 - 🗝️ **Attunements:** group alts beneath their main, initially collapsed, with
   individual progress visible when expanded.
 - 🛠️ **Crafters and goals:** browse guild recipes and shared gear targets.
 - 📋 **Loot, attendance, and tasks:** review recorded activity and officer follow-up.
+- 🔗 **Character Links:** let officers assign a website owner to a verified
+  main/alt group, with confirmed changes and an audit history.
+- ⚔️ **Guild Kill List:** search shared targets and sightings; authorized
+  officers and verified authors can update notes or remove entries.
 - 🎨 **Themes:** optional Alliance/Horde/World of Warcraft or custom PNG/JPEG
   backgrounds, opacity controls, admin defaults, and personal overrides.
   Custom UI and page background colors are linked by default, with a toggle

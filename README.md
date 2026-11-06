@@ -7,9 +7,12 @@ and a **guild-hosted web dashboard**. Members share their character data in game
 officers collect it and bring roster management and planning onto the web.
 Built by **GearDuckDev** for **WoW Forever, Interface 16001**.
 
-**Release-channel, still pre-1.0.** Features continue to evolve. This project does
-not claim official server endorsement or guarantee that its use is ban-safe.
-Confirm your server's rules before using the addon and desktop bridge.
+**FlockSync 1.0.0 is the feature-complete release of the guild-management
+toolkit.** The addon, Windows sync companion, and self-hosted dashboard bring
+character sharing, guild planning, crafting, and shared guild tools together.
+The project remains maintained; see the release notes for changes. FlockSync
+does not claim official server endorsement or guarantee that its use is
+ban-safe. Confirm your server's rules before using the addon and desktop bridge.
 
 [Downloads](https://github.com/GearDuckDev/FlockSync/releases) |
 [Server setup](./DEPLOYMENT.md) | [Release notes](./RELEASE-NOTES.md) |
@@ -76,7 +79,7 @@ Shared views depend on the last received snapshot, not a continuous website
 connection. Profession recipes require opening each profession window in game.
 Item search is a bounded local cache, not a complete game-item database.
 
-#### Kill List guild-sharing preview and setup
+#### Kill List: guild sharing and setup
 
 The six-page first-time walkthrough now explains crafting orders, group-play
 availability and the optional Kill List. **Accepting Orders** (the
@@ -195,7 +198,7 @@ restore brings back that snapshot's guild name, while wipe clears it until a new
 collector sync. Older backups have no guild identity; sync a collector and refresh
 the dashboard to populate it.
 
-### Verified character ownership (preview)
+### Verified character ownership
 
 In **Character Links**, officers/admins select the website owner for a
 **friendly-name group**, using the same grouping and alias as Roster & Gear.
@@ -468,7 +471,7 @@ Web API configuration uses `VITE_API_BASE_URL` (production `/api`, development
 | `apps/addon` | Lua 5.1 main addon and AppHelper |
 
 Validate with `pnpm run typecheck` and `pnpm build`. Package with
-`.\scripts\package-release.ps1 -ReleaseVersion 0.7.1`; see
+`.\scripts\package-release.ps1 -ReleaseVersion <new-version>`; see
 [RELEASES.md](./RELEASES.md) for tests, all six downloads, and publishing rules.
 Update checks compare component versions, not the overall release tag.
 
