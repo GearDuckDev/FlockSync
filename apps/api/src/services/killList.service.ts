@@ -42,11 +42,11 @@ export const upsertSharedKills = (
       }
       continue;
     }
-    if (old?.deleted && !entry.deleted
-      && (entry.createdAt !== entry.updatedAt || entry.createdAt <= old.updatedAt)) {
+    if (old?.deleted && !entry.deleted && entry.createdAt <= old.updatedAt) {
       throw new KillSyncConflict("Removed targets require a new in-game addition, not an old edit");
     }
-    if (old && !old.deleted && (entry.authorGuid !== old.authorGuid || entry.createdAt !== old.createdAt)) {
+    if (old && !old.deleted && (entry.authorGuid !== old.authorGuid || entry.createdAt !== old.createdAt)
+      && entry.createdAt <= old.updatedAt) {
       throw new KillSyncConflict("Kill-list author/creation identity cannot change on an active entry");
     }
     tx.insert(sharedKillTargets).values({

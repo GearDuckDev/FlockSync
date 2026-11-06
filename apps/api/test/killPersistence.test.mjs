@@ -55,7 +55,8 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
 
   const second = { ...entry, name: "Enemy Two", note: "Second" };
   const third = { ...entry, name: "Enemy Three", note: "Third", authorGuid: "Another-Author" };
-  assert.equal((await upload({ ...payload, sharedKillList: [second, third] })).status, 200);
+  const fourth = { ...entry, name: "Enemy Four", note: "Fourth" };
+  assert.equal((await upload({ ...payload, sharedKillList: [second, third, fourth] })).status, 200);
   assert.equal((await call("PATCH", "/kill-list", alice.token, {
     ...edit, name: third.name
   })).status, 403, "A linked member cannot edit other authors");
@@ -75,10 +76,26 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
   assert.equal((await upload({
     ...payload, sharedKillList: [{ ...second, updatedAt: removed.body.updatedAt + 1 }]
   })).status, 409, "A later edit to an old creation cannot resurrect a tombstone");
-  assert.ok(!(await call("GET", "/kill-list", alice.token)).body.some((row) => row.name === second.name));
+  while (Math.floor(Date.now() / 1000) <= removed.body.updatedAt) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
   assert.equal((await call("PATCH", "/kill-list", admin.token, {
     ...edit, name: second.name
   })).status, 404, "Web cannot resurrect a removed target");
+  const readdedAt = removed.body.updatedAt + 1;
+  const editedReadd = {
+    ...second, note: "Edited before sync", createdAt: readdedAt, updatedAt: readdedAt + 1
+  };
+  const readded = await upload({ ...payload, sharedKillList: [editedReadd] });
+  assert.equal(readded.status, 200, "An edited re-add snapshot supersedes its older removal");
+  assert.equal(readded.body.sharedKillList.find((row) => row.name === second.name).note, editedReadd.note);
+  assert.ok((await call("GET", "/kill-list", alice.token)).body.some((row) => row.name === second.name));
+  const missedRemovalReadd = {
+    ...fourth, authorGuid: "New-Author", createdAt: now - 10, updatedAt: now - 9
+  };
+  const caughtUp = await upload({ ...payload, sharedKillList: [missedRemovalReadd] });
+  assert.equal(caughtUp.status, 200, "A newer creation identity repairs a missed remove/re-add");
+  assert.equal(caughtUp.body.sharedKillList.find((row) => row.name === fourth.name).authorGuid, missedRemovalReadd.authorGuid);
   const conflicting = await upload({
     ...payload, sharedKillList: [{ ...entry, authorGuid: "Spoofed", updatedAt: now + 1 }]
   });
@@ -90,7 +107,7 @@ test("officer persists guild kills; linked-author edits/removals are enforced an
     filename: backup.body.backup.filename, relativeDirectory: backup.body.backup.relativeDirectory
   });
   assert.equal(restored.status, 200);
-  assert.equal((await call("GET", "/kill-list", bob.token)).body.length, 2, "Backup retains kills and removal markers");
+  assert.equal((await call("GET", "/kill-list", bob.token)).body.length, 4, "Backup retains kills and removal markers");
   const restoredReturn = await upload();
   assert.ok(restoredReturn.body.sharedKillList.every((row) => row.updatedAt > restored.body.databaseResetAt),
     "Restored kills/tombstones cross reset fence for helper recovery");
