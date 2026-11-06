@@ -42,3 +42,6 @@ FlockSync_Remote_Server_Deploy.zip
 *.tmp
 *.bak
 .addon_staging/
+docs/MONITORING-NOTIFICATIONS-PLAN.md
+docs/SCREENSHOTS.md
+docs/DISCORD.md
