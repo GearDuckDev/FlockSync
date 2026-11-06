@@ -524,6 +524,12 @@ PWA push feature planned for C4.
 See [Resource safeguards and monitoring](#resource-safeguards-and-monitoring)
 for disk-pressure checks, backup mount identity, and independent outage alerts.
 
+The backup sidecar uses the Alpine 3.24 branch (3.24.4 at the November 5, 2026
+validation), with SQLite installed from that branch's package repository.
+This changes container tooling, not database paths, backup settings or scheduling.
+Keep existing data and backup mounts when upgrading; use the backup-verifying
+updater below rather than restarting production solely to test an image.
+
 The Alpine sidecar runs once at startup, then daily at midnight UTC via cron. SQLite's
 online `.backup` API takes a consistent snapshot while WAL writes continue.
 The source directory is mounted writable so SQLite can create WAL/shared-memory

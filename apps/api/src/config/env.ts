@@ -7,7 +7,7 @@ const EnvironmentSchema = z.object({
   DATABASE_URL: z.string().min(1),
   BACKUP_DIRECTORY: z.string().min(1).default("/backups"),
   BACKUP_STORAGE_ID: z.string().regex(/^[A-Za-z0-9_-]{1,80}$/).optional(),
-  TRUSTED_PROXY_IP: z.string().ip({ version: "v4" }).optional(),
+  TRUSTED_PROXY_IP: z.ipv4().optional(),
   PUBLIC_REGISTRATION_ENABLED: z.enum(["true", "false"]).default("true").transform((value) => value === "true"),
   AUTH_LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(1000).default(10),
   AUTH_LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).max(86400000).default(900000),

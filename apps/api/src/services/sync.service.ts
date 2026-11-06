@@ -54,8 +54,7 @@ const toCharacterValues = (character: Character, officerUserId: string, now: num
 });
 
 const freshCharacterAfterReset = (character: Character, resetAt: number): Character => {
-  const { availability, lockouts, professions, gearGoals, mainCharacterGuid: _mainGuid,
-    mainCharacterName: _mainName, ...base } = character;
+  const { availability, lockouts, professions, gearGoals, ...base } = character;
   return {
     ...base,
     role: character.role.updatedAt > resetAt

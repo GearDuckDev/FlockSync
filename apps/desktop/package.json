@@ -1,6 +1,6 @@
 {
   "name": "@flocksync/desktop",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "FlockSync desktop sync client",
   "author": "GearDuckDev",
@@ -13,20 +13,20 @@
   },
   "dependencies": {
     "@flocksync/shared-types": "workspace:*",
-    "chokidar": "^5.0.0",
-    "zod": "^3.25.76"
+    "chokidar": "^6.0.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "electron": "^44.8.0",
-    "electron-builder": "^26.15.3",
+    "@vitejs/plugin-react": "^6.2.1",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "vite": "^8.3.5"
   }
 }

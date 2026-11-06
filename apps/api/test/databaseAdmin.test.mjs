@@ -159,6 +159,28 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     assert.equal(stale.body.databaseResetAt, wiped.body.databaseResetAt);
     const roster = await call("GET", "/api/roster", token);
     assert.deepEqual(roster.body, []);
+
+    const freshSeenAt = wiped.body.databaseResetAt + 2;
+    const main = {
+      guid: "post-wipe-main", name: "Pirani", realm: "Realm", classId: 1, level: 60,
+      isActive: true,
+      role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: freshSeenAt },
+      gear: { items: [], updatedAt: freshSeenAt }, lastSeenAt: freshSeenAt
+    };
+    const linkedAlt = {
+      guid: "post-wipe-alt", name: "Spoolmon", realm: "Realm", classId: 1, level: 60,
+      mainCharacterGuid: main.guid, mainCharacterName: main.name, isActive: true,
+      role: { primaryRole: "HEALER", offSpecEnabled: false, updatedAt: freshSeenAt },
+      gear: { items: [], updatedAt: freshSeenAt }, lastSeenAt: freshSeenAt
+    };
+    const freshSync = await call("POST", "/api/sync", token, {
+      addonVersion: "test", exportedAt: freshSeenAt, officerCharacter: main, characters: [linkedAlt]
+    });
+    assert.equal(freshSync.status, 200, JSON.stringify(freshSync.body));
+    const freshRoster = await call("GET", "/api/roster", token);
+    assert.equal(freshRoster.status, 200);
+    assert.equal(freshRoster.body.length, 2);
+    assert.equal(freshRoster.body.find((character) => character.guid === linkedAlt.guid).mainCharacterGuid, main.guid);
   } finally {
     await stop();
     await rm(directory, { recursive: true, force: true });
