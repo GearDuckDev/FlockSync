@@ -17,6 +17,15 @@ function ns.GetPlayerFullName()
     return full
 end
 
+-- PLAYER_GUILD_UPDATE also fires for nearby units (nameplates, targets); only
+-- this character's own guild changes should trigger guild-wide work.
+function ns.IsOwnGuildEvent(event, unit)
+    if event ~= "PLAYER_GUILD_UPDATE" or unit == nil or unit == "" or unit == "player" then
+        return true
+    end
+    return UnitIsUnit ~= nil and UnitIsUnit(unit, "player") == true
+end
+
 function ns.RegisterAccountCharacter()
     local guid = UnitGUID("player")
     local name = ns.GetPlayerFullName()

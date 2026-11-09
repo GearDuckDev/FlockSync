@@ -1,6 +1,6 @@
 local addonName, ns = ...
 
-local responding = false
+local responding, starting = false, false
 local activeGuild
 
 local function wire(entry)
@@ -95,9 +95,12 @@ end
 
 function ns.StartKillSync()
     ns.RequestGuildRoster()
+    if starting then return end
+    starting = true
     C_Timer.After(15, function()
+        starting = false
         if ns.IsOnboarded() and ns.KillGuildKey() then
-            ns.RequestKillSync()
+            ns.RequestKillSync(true)
             ns.RespondKillSync()
         end
     end)
@@ -106,11 +109,13 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_GUILD_UPDATE")
-frame:SetScript("OnEvent", function(_, event)
+frame:SetScript("OnEvent", function(_, event, unit)
+    if not ns.IsOwnGuildEvent(event, unit) then return end
     local guild = ns.KillGuildKey()
-    if guild ~= activeGuild then
+    local changed = guild ~= activeGuild
+    if changed then
         ns.ResetKillTransport()
         activeGuild = guild
     end
-    if event == "PLAYER_LOGIN" or guild then ns.StartKillSync() end
+    if event == "PLAYER_LOGIN" or (changed and guild) then ns.StartKillSync() end
 end)

@@ -114,7 +114,8 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("GUILD_ROSTER_UPDATE")
 frame:RegisterEvent("PLAYER_GUILD_UPDATE")
-frame:SetScript("OnEvent", function()
+frame:SetScript("OnEvent", function(_, event, unit)
+    if not ns.IsOwnGuildEvent(event, unit) then return end
     rebuildRoster()
     for _, callback in ipairs(listeners) do
         pcall(callback)

@@ -1,87 +1,78 @@
-## FlockSync 1.0.1
+## FlockSync 1.0.2
 
-### Guild groups and shared Kill List
-- All signed-in members can view every guild Team Builder lineup and recruitment
-  callout; only officers/admins can manage lineups.
-- Character-to-account assignments no longer control group visibility, appear
-  in snapshots, or have a management screen or API. Older assignment data is
-  ignored and is not included in newly written Desktop helper files.
-- Lets any signed-in website user add shared Kill List targets, edit their
-  reasons, and remove targets. Editing a target's character name is not
-  supported.
-- Lets any current online guild member add shared targets, edit reasons, and
-  remove targets in game. Guild-roster identity checks remain, and authoritative
-  snapshot relay remains officer-only.
-- Personal Kill List entries remain private. Offline guild members receive
-  shared changes through the existing authorized officer/collector sync flow.
+### Kill List chat spam fix (main addon)
+- Fixes repeated **"Wait one minute between kill-list catch-up requests"**
+  messages in chat after logging in and while riding past enemy players.
+- The addon now reacts only to **your own** guild changes. Guild information
+  loading for nearby players (nameplates, targets, mouseover) no longer starts
+  Kill List catch-ups, reloads, or roster rebuilds.
+- Login starts exactly one automatic Kill List catch-up. Automatic catch-ups
+  that hit the one-minute limit are skipped quietly; typing `/fs kill sync`
+  twice within a minute still shows the reminder.
+- Kill List sighting cooldowns and alerts no longer reset when nearby players'
+  guild information loads, so listed enemies alert once per cooldown.
+- Less background guild addon traffic: your shared Kill List is no longer
+  re-sent to the guild each time an extra event fires.
 
 ### Upgrade instructions
-1. Server operators: preserve deployed environment configuration, local SQLite
-   data and independent backups. Verify configured backup storage is mounted
-   and writable. Stage the new server source without replacing configuration.
-2. Run `sh deploy/update-server.sh` from the deployed project directory. Require
-   a verified pre-update backup; stop on failure. Do not bypass safeguards with
-   direct restarts, `docker compose down -v`, or a database wipe. No data
-   migration is required.
-3. Members using the website: sign in and open Kill List to add a shared target,
-   change its reason, or remove it. Any authenticated account can perform these
-   actions; character names remain unchanged when editing.
-4. With WoW closed, update the main addon for participating clients. Collectors
-   install both addons from the bundle. Extract directly into the actual
-   client's `Interface\AddOns`, without extra ZIP folder nesting, and preserve
-   SavedVariables.
-5. Use logout/exit -> successful Desktop sync -> login for server-returned helper
-   data. Each account folder needs its own sync. Do not overwrite helper files
-   manually while WoW is running.
+1. Exit WoW completely before replacing addon files.
+2. Members: install **FlockSync-Raider-Only.zip** directly into the actual
+   client's `Interface\AddOns`, yielding
+   `FlockSync\FlockSync.toc`.
+3. Collectors: extract **FlockSync-Addon-Bundle.zip** into the same AddOns
+   folder, yielding sibling `FlockSync` and `FlockSync_AppHelper` folders.
+   AppHelper is unchanged; replacing it is harmless but not required.
+4. Avoid extra ZIP-named folder nesting and preserve SavedVariables. No data
+   migration or reset is required.
+5. Desktop, API/web and server are unchanged: do **not** reinstall Desktop or
+   run the server updater for this release.
 6. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation, recovery and
    server setup. Members do not need Desktop or AppHelper just to use the addon;
    collectors still need Desktop, AppHelper, and an authorized OFFICER/ADMIN
-   account for collection and server sync.
+   account for collection and server sync. Continue to use logout/exit ->
+   successful Desktop sync -> login for server-returned helper data.
 
 ### Download choices
-- **FlockSync-Setup-1.0.1-x64.exe:** Windows collector installer with the
-  Desktop helper-file cleanup. Choose this or the portable alternative.
-- **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative
-  with the same helper-file cleanup. Preserve saved server/client settings.
-- **FlockSync-Raider-Only.zip:** main addon **1.0.1** for members.
-- **FlockSync-Addon-Bundle.zip:** main addon **1.0.1** plus unchanged AppHelper
-  **1.0.0** for collectors.
-- **FlockSync_Remote_Server_Deploy.zip:** API/web **1.0.1** source and deployment
-  tooling for supported Linux Docker servers; it is not a prebuilt image.
+- **FlockSync-Setup-1.0.1-x64.exe:** Windows collector installer, unchanged
+  Desktop **1.0.1**. Choose this or the portable alternative; existing 1.0.1
+  installs need nothing new.
+- **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative,
+  unchanged Desktop **1.0.1**. Preserve saved server/client settings.
+- **FlockSync-Raider-Only.zip:** main addon **1.0.2** for members.
+- **FlockSync-Addon-Bundle.zip:** main addon **1.0.2** plus unchanged
+  AppHelper **1.0.0** for collectors.
+- **FlockSync_Remote_Server_Deploy.zip:** unchanged API/web **1.0.1** source and
+  deployment tooling for supported Linux Docker servers; not a prebuilt image.
+  Existing 1.0.1 servers do not need updating.
 - **flocksync-release.json:** generated component-version manifest. Attach it
   beside the five payloads on one publicly readable GitHub release.
 
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Main addon | **1.0.1** | Updated (patch) |
-| API/web | **1.0.1** | Updated (patch); kept aligned |
-| Shared types | **1.0.1** | Updated (patch) |
-| Desktop | **1.0.1** | Updated (patch); collectors should update |
+| Main addon | **1.0.2** | Updated (patch) |
 | AppHelper | **1.0.0** | Unchanged; reinstall not required |
+| Desktop | **1.0.1** | Unchanged; reinstall not required |
+| API/web | **1.0.1** | Unchanged; no server update required |
+| Shared types | **1.0.1** | Unchanged |
 | Root workspace metadata | **1.0.0** | Unchanged |
 
 ### Channel and publication
-Prepared for the stable **Release** channel. When separately authorized,
-publish one release tagged **v1.0.1**, titled **FlockSync 1.0.1**, with the
-GitHub prerelease option unchecked and all six assets. Checkers compare each
-component's own version. Publish the main addon to CurseForge only through the
-established release workflow, using addon version **1.0.1** and Release type.
-This preparation does not publish, deploy, or authorize a live update.
+Prepared for the **Release** channel. When authorized, publish one GitHub
+release tagged **v1.0.2**, titled **FlockSync 1.0.2**, with **Set as a
+pre-release unchecked** and all six assets. Publishing that release triggers
+the CurseForge workflow, which uploads main addon **1.0.2** as a **Release**
+file. Existing stable-channel addon installs (1.0.1) can receive an update
+notice. Desktop and server checkers see no change.
 
 ### Verification and acceptance
-Workspace typecheck and builds passed. API production tests passed (17/17), and
-the Desktop sync/serialization tests passed (6/6). Sumneko Lua Language Server
-reported no problems across 77 addon Lua files using the workspace's Lua 5.1
-settings. The maintainer completed the remaining Lua runtime and in-game
-acceptance checks and reports that all tests and behavior work as intended.
-The release packager rebuilt the 1.0.1 assets and manifest; archive contents
-and sensitive-file exclusions were checked.
-
-Nothing was committed, tagged, pushed, published, or deployed. Do not treat
-this local preparation as a published release or live deployment; publication
-still requires separate authorization.
-
+All 19 addon Lua 5.1 regression tests passed, including the new
+`killGuildEvents.test.lua`, which fails on 1.0.1 sources (3 catch-up requests
+from one login) and passes on this build. Every main addon Lua file passed a
+Lua 5.1 syntax check, and the Sumneko Lua Language Server reported no problems
+in changed files. The maintainer tested in game and confirmed the login and
+nearby-enemy chat spam is fixed. The release packager rebuilt the release
+assets and manifest.
 ### Maintainer / next-agent handoff
 Read [RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md),
 [README.md](./README.md) and the workspace instructions before release or

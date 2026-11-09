@@ -9,26 +9,23 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v1.0.1` (local preparation only; not publication) |
-| Desktop | `1.0.1` |
-| API + web / server | `1.0.1` |
-| Main addon | `1.0.1` |
+| Combined GitHub tag | `v1.0.2` (local preparation only; not publication) |
+| Desktop | `1.0.1` (unchanged) |
+| API + web / server | `1.0.1` (unchanged) |
+| Main addon | `1.0.2` |
 | AppHelper | `1.0.0` (unchanged) |
-| Shared types | `1.0.1` |
+| Shared types | `1.0.1` (unchanged) |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
-- All signed-in members can view all guild lineups; only officers/admins can
-  manage lineups. Character-to-account assignment data no longer affects
-  visibility or appears in new snapshots/helper files.
-- Any signed-in website user can add shared Kill List targets, edit their
-  reasons, and remove targets.
-- Any online guild member can add, edit reasons, and remove shared Kill List
-  targets in game. Guild-roster identity checks and officer-only snapshot relay
-  remain in place.
-- The maintainer confirmed the web and in-game changes work as intended; see
-  [RELEASE-NOTES.md](./RELEASE-NOTES.md).
+- Fixes repeated "Wait one minute between kill-list catch-up requests" chat
+  messages on login and near enemy players. The main addon now ignores other
+  players' guild-update events, starts one automatic catch-up per login or real
+  guild change, and keeps automatic throttling silent (`/fs kill sync` still
+  explains it). Sighting cooldowns and alerts no longer reset near enemies.
+- The maintainer tested the fix in game and confirmed the chat spam is gone.
+- Regression test: `apps/addon/test/killGuildEvents.test.lua`.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 
@@ -324,6 +321,7 @@ lua5.1 .\apps\addon\test\releaseRelay.test.lua
 lua5.1 .\apps\addon\test\databaseReset.test.lua
 lua5.1 .\apps\addon\test\memberGroups.test.lua
 lua5.1 .\apps\addon\test\memberRelay.test.lua
+lua5.1 .\apps\addon\test\killGuildEvents.test.lua
 ```
 
 The review regressions cover guild-lookup exhaustion and leaving/rejoining

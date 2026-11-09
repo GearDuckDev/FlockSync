@@ -21,7 +21,8 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_GUILD_UPDATE")
-frame:SetScript("OnEvent", function()
+frame:SetScript("OnEvent", function(_, event, unit)
+    if not ns.IsOwnGuildEvent(event, unit) then return end
     ns.EnforceSnapshotGuild(ns.CurrentGuildName())
     ns.LoadSnapshot()
     ns.LoadServerKillList()
