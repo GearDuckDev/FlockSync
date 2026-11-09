@@ -31,7 +31,9 @@ local statusFrame = CreateFrame("Frame")
 statusFrame:RegisterEvent("PLAYER_LOGIN")
 statusFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
 statusFrame:RegisterEvent("GUILD_ROSTER_UPDATE")
-statusFrame:SetScript("OnEvent", refreshStatus)
+statusFrame:SetScript("OnEvent", function(_, event, unit)
+    if ns.IsOwnGuildEvent(event, unit) then refreshStatus() end
+end)
 
 StaticPopupDialogs["FLOCKSYNC_CONFIRM_OFFICER_MODE"] = {
     text = "Warning: Forcing Officer Mode allows this client to intercept and store all guild "

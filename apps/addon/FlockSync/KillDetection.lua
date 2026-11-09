@@ -83,6 +83,7 @@ for _, event in ipairs({ "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT", "PLAY
     frame:RegisterEvent(event)
 end
 frame:SetScript("OnEvent", function(_, event, unit)
+    if not ns.IsOwnGuildEvent(event, unit) then return end
     if event == "PLAYER_GUILD_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
         observed, lastSighting = {}, {}
         if ns.ResetKillAlerts then ns.ResetKillAlerts() end

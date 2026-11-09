@@ -34,7 +34,8 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_GUILD_UPDATE")
 frame:RegisterEvent("GUILD_ROSTER_UPDATE")
-frame:SetScript("OnEvent", function(_, event)
+frame:SetScript("OnEvent", function(_, event, unit)
+    if not ns.IsOwnGuildEvent(event, unit) then return end
     if event ~= "PLAYER_LOGIN" then ns.KillListChanged(); return end
     if not Menu or not Menu.ModifyMenu then
         print("FlockSync: Portrait menu unavailable; use /fs kill add.")

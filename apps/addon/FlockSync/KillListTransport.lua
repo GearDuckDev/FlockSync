@@ -86,10 +86,10 @@ function ns.ReceiveKillChunk(prefix, chunk, channel, sender)
     end
 end
 
-function ns.RequestKillSync()
+function ns.RequestKillSync(automatic)
     local now = GetServerTime()
     if now - lastRequest < 60 then
-        print("FlockSync: Wait one minute between kill-list catch-up requests.")
+        if not automatic then print("FlockSync: Wait one minute between kill-list catch-up requests.") end
         return false
     end
     local ok, message = ns.SendKillMessage("REQ")
