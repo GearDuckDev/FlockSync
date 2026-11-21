@@ -9,23 +9,20 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v1.0.2` (local preparation only; not publication) |
+| Combined GitHub tag | `v1.1.0` (local preparation only; not publication) |
 | Desktop | `1.0.1` (unchanged) |
 | API + web / server | `1.0.1` (unchanged) |
-| Main addon | `1.0.2` |
+| Main addon | `1.1.0` |
 | AppHelper | `1.0.0` (unchanged) |
 | Shared types | `1.0.1` (unchanged) |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
-- Fixes repeated "Wait one minute between kill-list catch-up requests" chat
-  messages on login and near enemy players. The main addon now ignores other
-  players' guild-update events, starts one automatic catch-up per login or real
-  guild change, and keeps automatic throttling silent (`/fs kill sync` still
-  explains it). Sighting cooldowns and alerts no longer reset near enemies.
-- The maintainer tested the fix in game and confirmed the chat spam is gone.
-- Regression test: `apps/addon/test/killGuildEvents.test.lua`.
+- Main character is now one account-wide setting in the main addon: choosing a
+  Main on any character shows that same Main on every character in the WoW
+  account. Older per-character Main choices migrate automatically on login.
+- Regression test: `apps/addon/test/accountMain.test.lua`.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 

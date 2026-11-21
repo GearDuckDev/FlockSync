@@ -7,7 +7,7 @@ end
 local HELP = {
     { "/fs", "Open/close the FlockSync window (raids, crafters, LFG, professions)" },
     { "/fs options | config | setup", "Open FlockSync options" },
-    { "/fs role | main", "Set this character's role, off-spec and Main" },
+    { "/fs role | main", "Set this character's role/off-spec and your account Main" },
     { "/fs prof", "Professions & Gear Goals" },
     { "/fs craft", "Guild Crafter Search" },
     { "/fs raid | schedule", "Your raid schedule" },
