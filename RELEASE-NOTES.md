@@ -1,18 +1,18 @@
-## FlockSync 1.0.2
+## FlockSync 1.1.0
 
-### Kill List chat spam fix (main addon)
-- Fixes repeated **"Wait one minute between kill-list catch-up requests"**
-  messages in chat after logging in and while riding past enemy players.
-- The addon now reacts only to **your own** guild changes. Guild information
-  loading for nearby players (nameplates, targets, mouseover) no longer starts
-  Kill List catch-ups, reloads, or roster rebuilds.
-- Login starts exactly one automatic Kill List catch-up. Automatic catch-ups
-  that hit the one-minute limit are skipped quietly; typing `/fs kill sync`
-  twice within a minute still shows the reminder.
-- Kill List sighting cooldowns and alerts no longer reset when nearby players'
-  guild information loads, so listed enemies alert once per cooldown.
-- Less background guild addon traffic: your shared Kill List is no longer
-  re-sent to the guild each time an extra event fires.
+### One Main per account (main addon)
+- Your **Main** character is now a single setting shared by every character
+  on the same WoW account. Pick a Main on any character and all your other
+  characters, including new ones, show that same Main.
+- Changing the Main later (for example from char1 to char2) updates every
+  character on the account: logging in on char1 or any alt now shows char2.
+- Existing setups convert automatically on your next login. If your characters
+  had different Mains, FlockSync keeps the Main chosen on the character you log
+  in with; otherwise it uses the Main most of your characters already shared.
+- If you remove your Main from FlockSync's account character list, the
+  character you are logged in on becomes the Main.
+- The guild and website see an offline alt's new Main the next time that alt
+  logs in.
 
 ### Upgrade instructions
 1. Exit WoW completely before replacing addon files.
@@ -22,11 +22,13 @@
 3. Collectors: extract **FlockSync-Addon-Bundle.zip** into the same AddOns
    folder, yielding sibling `FlockSync` and `FlockSync_AppHelper` folders.
    AppHelper is unchanged; replacing it is harmless but not required.
-4. Avoid extra ZIP-named folder nesting and preserve SavedVariables. No data
-   migration or reset is required.
-5. Desktop, API/web and server are unchanged: do **not** reinstall Desktop or
+4. Avoid extra ZIP-named folder nesting and preserve SavedVariables. No reset
+   is required; Main choices migrate automatically on login.
+5. After logging in, open the Role & Main settings once to confirm the Main
+   shown is the one you want for the account.
+6. Desktop, API/web and server are unchanged: do **not** reinstall Desktop or
    run the server updater for this release.
-6. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation, recovery and
+7. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation, recovery and
    server setup. Members do not need Desktop or AppHelper just to use the addon;
    collectors still need Desktop, AppHelper, and an authorized OFFICER/ADMIN
    account for collection and server sync. Continue to use logout/exit ->
@@ -38,8 +40,8 @@
   installs need nothing new.
 - **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative,
   unchanged Desktop **1.0.1**. Preserve saved server/client settings.
-- **FlockSync-Raider-Only.zip:** main addon **1.0.2** for members.
-- **FlockSync-Addon-Bundle.zip:** main addon **1.0.2** plus unchanged
+- **FlockSync-Raider-Only.zip:** main addon **1.1.0** for members.
+- **FlockSync-Addon-Bundle.zip:** main addon **1.1.0** plus unchanged
   AppHelper **1.0.0** for collectors.
 - **FlockSync_Remote_Server_Deploy.zip:** unchanged API/web **1.0.1** source and
   deployment tooling for supported Linux Docker servers; not a prebuilt image.
@@ -50,7 +52,7 @@
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Main addon | **1.0.2** | Updated (patch) |
+| Main addon | **1.1.0** | Updated (minor: new feature) |
 | AppHelper | **1.0.0** | Unchanged; reinstall not required |
 | Desktop | **1.0.1** | Unchanged; reinstall not required |
 | API/web | **1.0.1** | Unchanged; no server update required |
@@ -59,20 +61,19 @@
 
 ### Channel and publication
 Prepared for the **Release** channel. When authorized, publish one GitHub
-release tagged **v1.0.2**, titled **FlockSync 1.0.2**, with **Set as a
+release tagged **v1.1.0**, titled **FlockSync 1.1.0**, with **Set as a
 pre-release unchecked** and all six assets. Publishing that release triggers
-the CurseForge workflow, which uploads main addon **1.0.2** as a **Release**
-file. Existing stable-channel addon installs (1.0.1) can receive an update
+the CurseForge workflow, which uploads main addon **1.1.0** as a **Release**
+file. Existing stable-channel addon installs (1.0.2) can receive an update
 notice. Desktop and server checkers see no change.
 
 ### Verification and acceptance
-All 19 addon Lua 5.1 regression tests passed, including the new
-`killGuildEvents.test.lua`, which fails on 1.0.1 sources (3 catch-up requests
-from one login) and passes on this build. Every main addon Lua file passed a
-Lua 5.1 syntax check, and the Sumneko Lua Language Server reported no problems
-in changed files. The maintainer tested in game and confirmed the login and
-nearby-enemy chat spam is fixed. The release packager rebuilt the release
-assets and manifest.
+All 20 addon Lua 5.1 regression tests passed, including the new
+`accountMain.test.lua`, which fails on 1.0.2 sources and passes on this build.
+Every addon Lua file passed a Lua 5.1 syntax check, and the Sumneko Lua
+Language Server reported no problems in changed files. The release packager
+rebuilt the release assets and manifest. In-game acceptance of the account-wide
+Main is pending the maintainer's report.
 ### Maintainer / next-agent handoff
 Read [RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md),
 [README.md](./README.md) and the workspace instructions before release or

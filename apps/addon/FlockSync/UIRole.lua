@@ -98,20 +98,24 @@ function ns.BuildRoleControls(container, prefix, top, options)
         end)
     end
 
+    local function mainLabel(main)
+        return main and main.guid ~= UnitGUID("player") and main.name or selfMainLabel()
+    end
+
     local function mainMenu(dropdown)
         UIDropDownMenu_Initialize(dropdown, function(_, level)
-            local profile = ns.GetProfile()
-            local function choose(character, label)
-                profile.mainCharacterGuid = character and character.guid or nil
-                profile.mainCharacterName = character and character.name or nil
-                UIDropDownMenu_SetText(dropdown, label)
+            local main = ns.GetAccountMain()
+            local function choose(character)
+                local guid = character and character.guid or UnitGUID("player")
+                if not ns.SetAccountMain(guid) then return end
+                UIDropDownMenu_SetText(dropdown, mainLabel(ns.GetAccountMain()))
                 changed()
             end
-            addOption(level, selfMainLabel(), profile.mainCharacterGuid == nil,
-                function() choose(nil, selfMainLabel()) end)
+            addOption(level, selfMainLabel(), main and main.guid == UnitGUID("player"),
+                function() choose(nil) end)
             for _, character in ipairs(otherAccountCharacters()) do
-                addOption(level, character.name, profile.mainCharacterGuid == character.guid,
-                    function() choose(character, character.name) end)
+                addOption(level, character.name, main and main.guid == character.guid,
+                    function() choose(character) end)
             end
         end)
     end
@@ -187,7 +191,7 @@ function ns.BuildRoleControls(container, prefix, top, options)
         UIDropDownMenu_SetText(controls.primaryRow.dropdown, ROLE_LABELS[role.primaryRole] or role.primaryRole)
         UIDropDownMenu_SetText(controls.offSpecRow.dropdown,
             role.offSpecRole and ROLE_LABELS[role.offSpecRole] or "Select")
-        UIDropDownMenu_SetText(controls.mainRow.dropdown, profile.mainCharacterName or selfMainLabel())
+        UIDropDownMenu_SetText(controls.mainRow.dropdown, mainLabel(ns.GetAccountMain()))
         if controls.removeRow then
             UIDropDownMenu_SetText(controls.removeRow.dropdown, "Select to remove")
         end

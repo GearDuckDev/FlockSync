@@ -89,29 +89,78 @@ function ns.InitializeDatabase()
     end
 end
 
--- A new character defaults to the Main already chosen on another character of
--- this account, so alts don't each need the same selection.
-local function inheritMain(profile, guid)
-    if profile.mainCharacterGuid then
-        return
+local function knownCharacter(guid, currentGuid)
+    if guid == currentGuid then
+        return { guid = guid, name = ns.GetPlayerFullName and ns.GetPlayerFullName() or UnitName("player") }
     end
-    for otherGuid, other in pairs(FlockSyncDB.profiles) do
-        local mainGuid = type(other) == "table" and other.mainCharacterGuid
-        local main = mainGuid and FlockSyncDB.accountCharacters[mainGuid]
-        if otherGuid ~= guid and main and mainGuid ~= guid then
-            profile.mainCharacterGuid = main.guid
-            profile.mainCharacterName = main.name
-            return
-        end
-    end
+    local character = FlockSyncDB.accountCharacters[guid]
+    return type(character) == "table" and type(character.name) == "string" and character or nil
 end
 
--- Settings are per character because FlockSyncDB is account-wide.
+-- Migrates older per-character Main choices to the account-wide value once.
+local function migrateAccountMain(currentGuid, currentProfile)
+    local selected = currentProfile and currentProfile.mainCharacterGuid
+    if selected and knownCharacter(selected, currentGuid) then return selected end
+    local counts = {}
+    for guid, profile in pairs(FlockSyncDB.profiles) do
+        local mainGuid = type(profile) == "table" and (profile.mainCharacterGuid or guid)
+        if mainGuid and knownCharacter(mainGuid, currentGuid) then
+            counts[mainGuid] = (counts[mainGuid] or 0) + 1
+        end
+    end
+    local best, bestCount = currentGuid, counts[currentGuid] or 0
+    for guid, count in pairs(counts) do
+        local name, bestName = knownCharacter(guid, currentGuid).name, knownCharacter(best, currentGuid).name
+        if count > bestCount or (count == bestCount and best ~= currentGuid and name < bestName) then
+            best, bestCount = guid, count
+        end
+    end
+    return best
+end
+
+function ns.SetAccountMain(guid)
+    local currentGuid = UnitGUID("player")
+    local character = guid and knownCharacter(guid, currentGuid)
+    if not character then return false end
+    FlockSyncDB.accountMain = { guid = character.guid, name = character.name }
+    for profileGuid, profile in pairs(FlockSyncDB.profiles) do
+        if type(profile) == "table" then
+            profile.mainCharacterGuid = profileGuid ~= character.guid and character.guid or nil
+            profile.mainCharacterName = profileGuid ~= character.guid and character.name or nil
+        end
+    end
+    return true
+end
+
+function ns.GetAccountMain()
+    local currentGuid = UnitGUID("player")
+    if not currentGuid then return nil end
+    local saved = FlockSyncDB.accountMain
+    local main = type(saved) == "table" and type(saved.guid) == "string"
+        and knownCharacter(saved.guid, currentGuid)
+    if not main then
+        if not ns.SetAccountMain(migrateAccountMain(currentGuid, FlockSyncDB.profiles[currentGuid])) then
+            return nil
+        end
+        main = knownCharacter(FlockSyncDB.accountMain.guid, currentGuid)
+    elseif saved.name ~= main.name then
+        ns.SetAccountMain(main.guid)
+    end
+    local profile = FlockSyncDB.profiles[currentGuid]
+    if type(profile) == "table" then
+        profile.mainCharacterGuid = currentGuid ~= main.guid and main.guid or nil
+        profile.mainCharacterName = currentGuid ~= main.guid and main.name or nil
+    end
+    return main
+end
+
+-- Most settings are per character; Main is account-wide in FlockSyncDB.accountMain.
 function ns.GetProfile()
     local guid = UnitGUID("player")
     if not guid then
         return nil
     end
+    local hadAccountMain = type(FlockSyncDB.accountMain) == "table"
     local profile = FlockSyncDB.profiles[guid]
     if type(profile) ~= "table" then
         -- Adopt the pre-0.1 single global profile on first login, then drop it.
@@ -120,8 +169,9 @@ function ns.GetProfile()
         profile.character = nil
         FlockSyncDB.myProfile = nil
         FlockSyncDB.profiles[guid] = profile
-        inheritMain(profile, guid)
+        if not hadAccountMain then profile.mainCharacterGuid, profile.mainCharacterName = nil, nil end
     end
+    ns.GetAccountMain()
     -- Characters configured before the setup popup existed count as set up.
     if profile.setupDone == nil and type(profile.role) == "table"
         and (profile.role.updatedAt or 0) > 0 then

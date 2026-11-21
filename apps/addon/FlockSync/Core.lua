@@ -53,6 +53,9 @@ function ns.RemoveAccountCharacter(guid)
     FlockSyncDB.profiles[guid] = nil
     FlockSyncDB.characters[guid] = nil
     if FlockSyncDB.killListCharacters then FlockSyncDB.killListCharacters[guid] = nil end
+    if type(FlockSyncDB.accountMain) == "table" and FlockSyncDB.accountMain.guid == guid then
+        FlockSyncDB.accountMain = nil
+    end
     for _, profile in pairs(FlockSyncDB.profiles) do
         if profile.mainCharacterGuid == guid then
             profile.mainCharacterGuid = nil

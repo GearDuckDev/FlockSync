@@ -42,7 +42,7 @@ end
 local function buildRole(page)
     addText(page, "GameFontNormalLarge", -10, "Your Role")
     addText(page, "GameFontHighlightSmall", -36,
-        "Pick this character's role. If it is an alt, choose your Main so the guild "
+        "Pick this character's role. Choose one Main for this account so the guild "
         .. "groups your characters together.")
     page.controls = ns.BuildRoleControls(page, "FlockSyncWizard", -70, {})
     page.Refresh = page.controls.Refresh
