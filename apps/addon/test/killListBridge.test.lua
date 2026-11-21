@@ -45,4 +45,26 @@ officer.env.FlockSyncHelperDB.authorizedCollectorGuild.name = "Other"
 raw.updatedAt = math.floor(net.now) + 1
 officer.ns.LoadServerKillList()
 assert(officer.ns.KillStore("shared")[key].deleted, "Cross-guild helper rejected")
-print("Server helper kill-list import, officer redistribution, privacy and tombstones: passed")
+for _, client in ipairs({ officer, member }) do
+    client.env.GetRealmName = function() return "" end
+    client.env.GetNormalizedRealmName = function() return "" end
+    assert(client.ns.SetRealmIdentity("Test Ruleset"))
+end
+officer.env.FlockSyncHelperDB.authorizedCollectorGuild = { name = "Guild", realm = "Test Ruleset" }
+raw.name, raw.realm, raw.note, raw.deleted = "Forever Enemy", "Test Ruleset", "Server note", false
+raw.createdAt, raw.updatedAt = math.floor(net.now), math.floor(net.now)
+officer.ns.LoadServerKillList()
+officer.ns.RespondKillSync(); net:drain()
+local foreverKey = "test ruleset\031forever enemy"
+assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note")
+assert(member.ns.KillStore("shared")[foreverKey].note == "Server note")
+member.ns.SetKillSetting("enabled", true)
+assert(member.ns.SaveKillTarget("New Forever Enemy", "Test Ruleset", "Guild reason", true, false))
+net:drain()
+assert(officer.ns.KillStore("shared")["test ruleset\031new forever enemy"].note == "Guild reason")
+officer.env.FlockSyncHelperDB.authorizedCollectorGuild.realm = "OtherRuleset"
+raw.updatedAt, raw.note = math.floor(net.now) + 1, "Wrong ruleset"
+net.now = net.now + 1
+officer.ns.LoadServerKillList()
+assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note")
+print("Server helper import, officer redistribution, privacy, tombstones and Forever sharing: passed")

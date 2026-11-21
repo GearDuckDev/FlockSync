@@ -16,15 +16,17 @@ function ns.KillUnitTarget(unit)
     if type(full) == "string" then
         local normalized = type(realm) == "string" and realm ~= "" and realm:gsub("%s", "")
             or (GetNormalizedRealmName and readable(GetNormalizedRealmName()))
-        local suffix = normalized and ("-" .. normalized)
+        local suffix = type(normalized) == "string" and normalized ~= "" and ("-" .. normalized)
         name = suffix and full:sub(-#suffix) == suffix and full:sub(1, -#suffix - 1) or full
     end
-    return { name = name, realm = realm and realm ~= "" and realm or GetRealmName() }
+    realm = realm and realm ~= "" and realm or ns.GetPlayerRealm()
+    if not realm then return nil end
+    return { name = name, realm = realm }
 end
 function ns.KillSlash(message)
     local command, name = (message or ""):match("^%s*(%S*)%s*(.-)%s*$")
     if string.lower(command) == "add" then
-        ns.OpenKillEditor(nil, false, name ~= "" and { name = ns.FormatKillName(name), realm = GetRealmName() }
+        ns.OpenKillEditor(nil, false, name ~= "" and { name = ns.FormatKillName(name), realm = ns.GetPlayerRealm() }
             or ns.KillUnitTarget("target"))
     elseif command == "" then ns.OpenFeatures("killlist")
     elseif string.lower(command) == "sync" then ns.RequestKillSync()

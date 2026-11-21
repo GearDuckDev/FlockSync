@@ -48,7 +48,7 @@ function network:client(name, guild, helper)
     end
     ns.IsEnabled = function() return true end
     ns.CacheAddonReleases, ns.CompactAddonReleases = function() end, function() end
-    for _, module in ipairs({ "Serializer", "Snapshot", "SnapshotComms", "Tooltips" }) do
+    for _, module in ipairs({ "Ruleset", "Serializer", "Snapshot", "SnapshotComms", "Tooltips" }) do
         local chunk = assert(loadfile("apps/addon/FlockSync/" .. module .. ".lua"))
         setfenv(chunk, env)("FlockSync", ns)
     end

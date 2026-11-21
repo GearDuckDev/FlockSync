@@ -328,6 +328,44 @@ correct eviction. Failed CHARACTER guild lookups report a skipped broadcast
 in chat, clear pending state, and allow a later broadcast attempt to retry.
 These checks use mocks; also verify UI and guild behavior in game before release.
 
+### Missing-realm / Kill List check
+
+This is a candidate check, not release acceptance. Use a disposable test guild,
+test server and test WoW account. Back up the account's SavedVariables first;
+do not test against production without explicit approval.
+
+1. Note the **exact, case-sensitive** realm displayed beside an existing
+   website Kill List target. Check that the account's characters and collected
+   records with empty realms all belong to this same identity. The fallback is
+   account-wide: do not use it to merge data from different rulesets.
+2. With WoW closed, install the candidate `release\FlockSync-Addon-Bundle.zip`
+   for the collector, or `release\FlockSync-Raider-Only.zip` for a test member.
+   Preserve SavedVariables and install both folders at the proper AddOns level.
+3. If the client reports an empty realm, the addon detects the identity
+   automatically from the numeric server id in the player GUID (for example
+   `Player-6932-...`). It uses `ns.KNOWN_SERVER_REALMS` in `Ruleset.lua`, or
+   the one realm this account captured earlier for that server id. Add new
+   Forever server ids to that table using the exact website realm. Only if
+   detection fails (chat says "Realm unavailable"), enter
+   `/fs realm <exact website realm>`, preserving spaces and capitalization.
+   The command refuses to replace an already configured identity; changing it
+   requires a separate data migration. Run `/reload`: empty character realm
+   values for the same server id are repaired, while nonempty identities and gear are preserved.
+4. Log out, let Desktop sync succeed, then log in again. With the Kill List
+   enabled, check that existing website targets appear. Select Guild Shared
+   or Personal when adding a test target; OK should enable. Shared targets
+   should reach an online test guildmate and, after logout and sync, the website.
+   Personal targets must remain local.
+5. Also check a member's guild catch-up, a different-guild/ruleset rejection,
+   target edit/removal and any disabled-button feedback. Report the exact
+   identity used, sync result, symptoms and errors, without credentials or
+   SavedVariables contents.
+6. Close WoW before restoring the test SavedVariables and previous addons.
+   Remove test website targets through the normal UI, not direct database edits.
+   No temporary test service is needed. Production use and distribution remain
+   blocked until the live-server identity is confirmed and the maintainer
+   reports successful in-game acceptance.
+
 ### Manual group visibility check
 
 1. Use a non-production test guild and the refreshed

@@ -79,7 +79,9 @@ ns.ShowStartupWindow = function() end
 local function load(name)
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
+load("Ruleset")
 load("Core")
+load("KillListText")
 load("Attunements")
 load("Professions")
 load("GearGoals")
@@ -396,4 +398,54 @@ ns.AutoInviteRaid({ name = "40-Man Raid", assignments = assignments })
 assert(converted == true, "Existing party must convert to raid immediately when inviting >5 raid members")
 assert(#invited == 40, "All 40 online assigned raid members must be invited")
 
-print("Local scan export, logout flush, empty gear, epochs and officer-only aggregation: passed")
+GetRealmName = function() return "" end
+GetNormalizedRealmName = function() return "" end
+FlockSyncDB.characters.LegacyBlank = {
+    guid = "LegacyBlank", name = "Legacy Blank", realm = "", lastSeenAt = 50,
+    gear = { updatedAt = 45, items = { { slotId = 7, itemId = 100 } } },
+}
+FlockSyncDB.accountCharacters.LegacyBlank = { guid = "LegacyBlank", name = "Legacy Blank", realm = "" }
+FlockSyncDB.characters.OtherScope = { realm = "OtherRealm", lastSeenAt = 50 }
+now = 1600
+assert(ns.CaptureLocalScan() == nil, "Do not guess an identity when the client reports no realm")
+assert(FlockSyncDB.characters.LegacyBlank.realm == "", "Unconfigured records must remain untouched")
+assert(not ns.SetRealmIdentity("  ") and not ns.SetRealmIdentity("bad|realm"))
+assert(ns.SetRealmIdentity("Test Ruleset"))
+local repaired = ns.CaptureLocalScan()
+assert(repaired.realm == "Test Ruleset" and FlockSyncDB.collectorGuild.realm == "Test Ruleset")
+assert(FlockSyncDB.officerCharacter == "Tester Two (Test Ruleset)")
+assert(FlockSyncDB.accountCharacters["Player-Test"].realm == "Test Ruleset")
+assert(FlockSyncDB.characters.LegacyBlank.realm == "Test Ruleset")
+assert(FlockSyncDB.accountCharacters.LegacyBlank.realm == "Test Ruleset")
+assert(FlockSyncDB.characters.LegacyBlank.lastSeenAt == 50
+    and FlockSyncDB.characters.LegacyBlank.gear.updatedAt == 45
+    and FlockSyncDB.characters.LegacyBlank.gear.items[1].itemId == 100)
+assert(FlockSyncDB.characters.OtherScope.realm == "OtherRealm", "Never remap an existing nonempty identity")
+assert(not ns.SetRealmIdentity("Other Ruleset"), "Changing an established identity requires migration")
+FlockSyncHelperDB.authorizedCollectorGuild.realm = "Test Ruleset"
+assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
+GetNormalizedRealmName = function() return "NormalizedRealm" end
+assert(ns.GetPlayerRealm() == "Test Ruleset", "A normalized name must not override the exact saved identity")
+GetRealmName = function() return "Display Realm" end
+assert(ns.GetPlayerRealm() == "Display Realm")
+assert(not ns.SetRealmIdentity("Display Realm"), "Native realms never request manual identity")
+
+GetRealmName = function() return "" end
+FlockSyncDB.config.realmIdentity = nil
+local playerGuid = "Player-6932-00AA"
+UnitGUID = function() return playerGuid end
+assert(ns.GetPlayerRealm() == "CAMWOW US2 Realm 6 PvP", "Known GUID server id resolves automatically")
+FlockSyncDB.characters["Player-6932-00BB"] = { guid = "Player-6932-00BB", realm = "", lastSeenAt = 7 }
+FlockSyncDB.characters["Player-7000-00CC"] = { guid = "Player-7000-00CC", realm = "" }
+ns.RepairMissingRulesetRealms()
+assert(FlockSyncDB.characters["Player-6932-00BB"].realm == "CAMWOW US2 Realm 6 PvP")
+assert(FlockSyncDB.characters["Player-6932-00BB"].lastSeenAt == 7)
+assert(FlockSyncDB.characters["Player-7000-00CC"].realm == "", "Auto repair never touches other server ids")
+assert(FlockSyncDB.config.realmIdentity == nil, "Auto detection does not persist a manual override")
+playerGuid = "Player-7777-00AA"
+FlockSyncDB.accountCharacters["Player-7777-00DD"] = { guid = "Player-7777-00DD", realm = "Learned Realm" }
+assert(ns.GetPlayerRealm() == "Learned Realm", "Unknown server ids learn from earlier native captures")
+FlockSyncDB.characters["Player-7777-00EE"] = { guid = "Player-7777-00EE", realm = "Conflicting Realm" }
+assert(ns.GetPlayerRealm() == nil, "Conflicting earlier captures are never guessed")
+assert(ns.SetRealmIdentity("Manual Realm") and ns.GetPlayerRealm() == "Manual Realm", "Manual override wins")
+print("Local scan export, logout flush, empty gear, epochs, officer aggregation and Forever identity repair: passed")

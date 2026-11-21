@@ -1,18 +1,21 @@
-## FlockSync 1.1.0
+## FlockSync 1.1.1
 
-### One Main per account (main addon)
-- Your **Main** character is now a single setting shared by every character
-  on the same WoW account. Pick a Main on any character and all your other
-  characters, including new ones, show that same Main.
-- Changing the Main later (for example from char1 to char2) updates every
-  character on the account: logging in on char1 or any alt now shows char2.
-- Existing setups convert automatically on your next login. If your characters
-  had different Mains, FlockSync keeps the Main chosen on the character you log
-  in with; otherwise it uses the Main most of your characters already shared.
-- If you remove your Main from FlockSync's account character list, the
-  character you are logged in on becomes the Main.
-- The guild and website see an offline alt's new Main the next time that alt
-  logs in.
+### Kill List and Desktop sync fixed on WoW Forever (main addon)
+- **Adding Kill List targets works again.** The Add Target **OK** button no
+  longer stays grayed out when the game does not report a realm name.
+- **Website Kill List targets show up in game again** after the usual
+  logout -> Desktop sync -> login.
+- **Desktop sync no longer fails** with `officerCharacter.realm: Too small`,
+  `collectorGuild.realm: Too small` or `characters.N.realm: Too small` errors.
+- FlockSync now **detects your server automatically**, using the server number
+  every character already carries. No one needs to type anything; existing
+  characters saved with a blank realm are repaired on login. Gear, timestamps
+  and other characters are left untouched.
+- The Add Target dialog now explains why OK is disabled (no list selected,
+  Kill List turned off, or server not detected) instead of silently graying out.
+- Fallback only: if chat ever says **"Realm unavailable"**, an officer can run
+  `/fs realm <exact realm shown on the website>` once on that account, then
+  `/reload`. The setting cannot be changed afterwards without a data migration.
 
 ### Upgrade instructions
 1. Exit WoW completely before replacing addon files.
@@ -23,9 +26,10 @@
    folder, yielding sibling `FlockSync` and `FlockSync_AppHelper` folders.
    AppHelper is unchanged; replacing it is harmless but not required.
 4. Avoid extra ZIP-named folder nesting and preserve SavedVariables. No reset
-   is required; Main choices migrate automatically on login.
-5. After logging in, open the Role & Main settings once to confirm the Main
-   shown is the one you want for the account.
+   is required; blank realms are repaired automatically on login.
+5. Collectors: log in once, then log out or exit, let Desktop finish a
+   **successful** sync, and log back in to load the website's Kill List.
+   Repeat for each WoW account folder you collect from.
 6. Desktop, API/web and server are unchanged: do **not** reinstall Desktop or
    run the server updater for this release.
 7. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation, recovery and
@@ -40,8 +44,8 @@
   installs need nothing new.
 - **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative,
   unchanged Desktop **1.0.1**. Preserve saved server/client settings.
-- **FlockSync-Raider-Only.zip:** main addon **1.1.0** for members.
-- **FlockSync-Addon-Bundle.zip:** main addon **1.1.0** plus unchanged
+- **FlockSync-Raider-Only.zip:** main addon **1.1.1** for members.
+- **FlockSync-Addon-Bundle.zip:** main addon **1.1.1** plus unchanged
   AppHelper **1.0.0** for collectors.
 - **FlockSync_Remote_Server_Deploy.zip:** unchanged API/web **1.0.1** source and
   deployment tooling for supported Linux Docker servers; not a prebuilt image.
@@ -52,7 +56,7 @@
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Main addon | **1.1.0** | Updated (minor: new feature) |
+| Main addon | **1.1.1** | Updated (patch: bug fix) |
 | AppHelper | **1.0.0** | Unchanged; reinstall not required |
 | Desktop | **1.0.1** | Unchanged; reinstall not required |
 | API/web | **1.0.1** | Unchanged; no server update required |
@@ -61,19 +65,30 @@
 
 ### Channel and publication
 Prepared for the **Release** channel. When authorized, publish one GitHub
-release tagged **v1.1.0**, titled **FlockSync 1.1.0**, with **Set as a
+release tagged **v1.1.1**, titled **FlockSync 1.1.1**, with **Set as a
 pre-release unchecked** and all six assets. Publishing that release triggers
-the CurseForge workflow, which uploads main addon **1.1.0** as a **Release**
-file. Existing stable-channel addon installs (1.0.2) can receive an update
+the CurseForge workflow, which uploads main addon **1.1.1** as a **Release**
+file. Existing stable-channel addon installs (1.1.0) can receive an update
 notice. Desktop and server checkers see no change.
 
 ### Verification and acceptance
-All 20 addon Lua 5.1 regression tests passed, including the new
-`accountMain.test.lua`, which fails on 1.0.2 sources and passes on this build.
-Every addon Lua file passed a Lua 5.1 syntax check, and the Sumneko Lua
-Language Server reported no problems in changed files. The release packager
-rebuilt the release assets and manifest. In-game acceptance of the account-wide
-Main is pending the maintainer's report.
+All 19 addon Lua 5.1 regression test files passed, including new cases for
+automatic server detection, blank-realm repair limited to the same server,
+refusing to guess when saved data conflicts, and the Add Target OK button.
+Every addon Lua file passed a Lua 5.1 syntax check, and `pnpm run typecheck`
+passed. Detection was also checked against a backup of real collector data,
+which resolved to the exact website realm. The release packager rebuilt all
+assets and the manifest; both addon ZIPs were verified file-by-file against
+source. The maintainer confirmed in game that Desktop sync succeeds, website
+targets appear and Add Target works after setting the realm. Automatic
+detection on a client that never ran `/fs realm` is pending the maintainer's
+report.
+
+Server numbers are mapped in `ns.KNOWN_SERVER_REALMS` in
+`apps/addon/FlockSync/Ruleset.lua` (currently `6932` ->
+`CAMWOW US2 Realm 6 PvP`). Guilds on other Forever servers are detected only
+if that account saved a realm earlier; otherwise add the server number there
+using the exact website realm, or use the `/fs realm` fallback.
 ### Maintainer / next-agent handoff
 Read [RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md),
 [README.md](./README.md) and the workspace instructions before release or

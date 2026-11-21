@@ -38,7 +38,7 @@ function ns.ValidateKillWire(entry)
     if entry.updatedAt <= (FlockSyncDB.databaseResetAt or 0) then return nil end
     local target = ns.ValidateKillTarget(entry.name, entry.realm, entry.note)
     if not target or target.name ~= entry.name or target.realm ~= entry.realm
-        or entry.realm ~= GetRealmName() or not ns.ValidateKillAuthor(entry.author) then return nil end
+        or entry.realm ~= ns.GetPlayerRealm() or not ns.ValidateKillAuthor(entry.author) then return nil end
     if entry.deleted and entry.note ~= "" then return nil end
     return {
         name = entry.name, realm = entry.realm, note = entry.note, author = entry.author,

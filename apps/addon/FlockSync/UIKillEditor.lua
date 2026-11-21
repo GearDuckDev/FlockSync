@@ -62,6 +62,7 @@ local function create()
     frame.personal:SetPoint("TOPLEFT", 240, -224)
     frame.personal.text:SetText("Personal (never synced)")
     frame.feedback = label(frame, "", 22, -262)
+    frame.feedback:SetHeight(52)
     frame.ok = ns.AddPanelButton(frame, "OK", 100, function()
         local ok, message
         if frame.item then
@@ -77,10 +78,12 @@ local function create()
     cancel:SetPoint("BOTTOMRIGHT", -20, 16)
     function frame.Validate()
         local target, message = ns.ValidateKillTarget(frame.name:GetText(), frame.targetRealm, frame.note:GetText())
-        local selected = frame.shared:GetChecked() or frame.personal:GetChecked()
+        local selected = frame.shared:GetChecked() == true or frame.personal:GetChecked() == true
         frame.ok:SetEnabled(target ~= nil and selected and ns.KillListEnabled())
-        if not selected then message = "Select Shared, Personal, or both to enable OK." end
-        if target and selected then
+        if not frame.targetRealm then message = "Set the exact guild server identity with /fs realm <name>, then /reload."
+        elseif not selected then message = "Select Shared, Personal, or both to enable OK."
+        elseif not ns.KillListEnabled() then message = "Enable Kill List with /fs killoptions first."
+        elseif target then
             message = frame.removing and "Confirm removal from this list only."
                 or (ns.KillTextLength(target.note) .. "/500 characters"
                     .. (not frame.item and frame.shared:GetChecked() and " - sends to guild on save" or ""))
@@ -102,7 +105,7 @@ function ns.OpenKillEditor(item, removing, target)
     if not dialog then dialog = create() end
     dialog.item, dialog.removing, dialog.guild = item, removing == true, ns.KillGuildKey()
     local entry = item and item.entry or target or {}
-    dialog.targetRealm = item and entry.realm or GetRealmName()
+    dialog.targetRealm = (item or target) and entry.realm or ns.GetPlayerRealm()
     dialog.TitleText:SetText(removing and "Remove target?" or (item and "Edit reason" or "Add kill-list target"))
     dialog.name:SetText(entry.name or "")
     dialog.note:SetText(entry.note or "")

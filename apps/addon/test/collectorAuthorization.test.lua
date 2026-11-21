@@ -4,6 +4,7 @@ function IsInGuild() return guild ~= nil end
 function GetGuildInfo() return guild, "Member", rank end
 function GetRealmName() return realm end
 C_GuildInfo = { CanViewOfficerNote = function() return native end }
+assert(loadfile("apps/addon/FlockSync/Ruleset.lua"))("FlockSync", ns)
 assert(loadfile("apps/addon/FlockSync/Officer.lua"))("FlockSync", ns)
 FlockSyncDB = { config = { forceOfficerMode = false }, officerGuilds = {} }
 FlockSyncHelperDB = { isAuthorizedOfficer = true }

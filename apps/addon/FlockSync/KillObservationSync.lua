@@ -43,7 +43,7 @@ function ns.LoadServerKillObservations()
     local helper = FlockSyncHelperDB
     local guild = type(helper) == "table" and helper.authorizedCollectorGuild
     if type(guild) ~= "table" or helper.isAuthorizedOfficer ~= true
-        or guild.name ~= ns.CurrentGuildName() or guild.realm ~= GetRealmName() then return end
+        or guild.name ~= ns.CurrentGuildName() or guild.realm ~= ns.GetPlayerRealm() then return end
     local changed = false
     for _, entry in ipairs(type(helper.sharedKillObservations) == "table" and helper.sharedKillObservations or {}) do
         if ns.ValidateKillObservation(entry) then

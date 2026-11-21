@@ -21,7 +21,7 @@ local menus = {}
 Menu = { ModifyMenu = function(tag, callback)
     menus[tag] = callback
 end }
-for _, name in ipairs({ "Config", "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions", "KillObservations", "UIList",
+for _, name in ipairs({ "Config", "Ruleset", "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions", "KillObservations", "UIList",
     "UITabs", "UISettings", "UIKillEditor", "UIKillList", "UIKillHistory", "UIOptions", "UI", "Slash", "KillListEntryPoints" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
@@ -63,6 +63,7 @@ assert(ns.KillEntries()[1].entry.realm == "Realm", "Keep realm isolation interna
 assert(ns.ValidateKillTarget("first last", "Realm", "").name == "First Last",
     "Save validation applies the same capitalization for future sync")
 assert(ns.FormatKillName("first McLast") == "First McLast", "Preserve existing internal capitalization")
+assert(not ns.SetRealmIdentity("Other Ruleset"), "Native realm remains authoritative")
 ns.HandleSlashCommand("kill")
 local window = ui.find(function(w) return w.globalName == "FlockSyncFeaturesFrame" end)
 assert(window.tabs.selected == "killlist")
@@ -125,4 +126,10 @@ end
 assert(registrations == 1, "Reopening must not duplicate Escape registration")
 dialog.note.scripts.OnEscapePressed()
 assert(not dialog:IsShown(), "Escape while editing a reason closes the editor")
+GetRealmName = function() return "" end
+GetNormalizedRealmName = function() return "" end
+ns.HandleSlashCommand("REALM MiXeD Server Realm")
+assert(FlockSyncDB.config.realmIdentity == "MiXeD Server Realm", "Realm command preserves exact case")
+ns.HandleSlashCommand("realm Different")
+assert(FlockSyncDB.config.realmIdentity == "MiXeD Server Realm", "Changing scope cannot happen silently")
 print("Kill-list integration: tab wrapping, slash case, portrait guard, permissions and guild changes passed")

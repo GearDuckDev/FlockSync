@@ -13,7 +13,7 @@ local env = setmetatable({
     CreateFrame = function() return { RegisterEvent = function() end, SetScript = function() end } end,
 }, { __index = _G })
 env._G = env
-for _, name in ipairs({ "Config", "Core" }) do
+for _, name in ipairs({ "Config", "Ruleset", "Core" }) do
     local chunk = assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))
     setfenv(chunk, env)("FlockSync", ns)
 end

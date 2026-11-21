@@ -6,7 +6,7 @@ function ns.ScanPlayer(preserveGear)
     end
     local guid = UnitGUID("player")
     local name = ns.GetPlayerFullName()
-    local realm = GetRealmName()
+    local realm = ns.GetPlayerRealm()
     local _, _, classId = UnitClass("player")
     if not guid or not name or not realm or not classId then
         return nil

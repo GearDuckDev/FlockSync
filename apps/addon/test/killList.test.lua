@@ -15,7 +15,7 @@ end
 ns.KillLiveOfficer = function() return guild ~= nil and rank <= 2 end
 ns.SendKillEntry = function() return true end
 FlockSyncDB = { config = {}, characters = {}, profiles = {}, accountCharacters = {}, staleCharacters = {} }
-for _, name in ipairs({ "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions" }) do
+for _, name in ipairs({ "Ruleset", "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
 ns.KillGuildMember = function()

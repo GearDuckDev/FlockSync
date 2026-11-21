@@ -27,11 +27,16 @@ function ns.IsOwnGuildEvent(event, unit)
 end
 
 function ns.RegisterAccountCharacter()
+    ns.RepairMissingRulesetRealms()
     local guid = UnitGUID("player")
     local name = ns.GetPlayerFullName()
-    local realm = GetRealmName()
+    local realm = ns.GetPlayerRealm()
     local _, _, classId = UnitClass("player")
     if not guid or not name or not realm or not classId then
+        if not realm and not ns.missingRealmNotified then
+            ns.missingRealmNotified = true
+            print("FlockSync: Realm unavailable. Set the exact guild server identity with /fs realm <name>, then /reload.")
+        end
         return
     end
     FlockSyncDB.accountCharacters[guid] = {
