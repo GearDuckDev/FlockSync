@@ -1,62 +1,49 @@
-## FlockSync 1.1.1
+## FlockSync 1.1.2
 
-### Kill List and Desktop sync fixed on WoW Forever (main addon)
-- **Adding Kill List targets works again.** The Add Target **OK** button no
-  longer stays grayed out when the game does not report a realm name.
-- **Website Kill List targets show up in game again** after the usual
-  logout -> Desktop sync -> login.
-- **Desktop sync no longer fails** with `officerCharacter.realm: Too small`,
-  `collectorGuild.realm: Too small` or `characters.N.realm: Too small` errors.
-- FlockSync now **detects your server automatically**, using the server number
-  every character already carries. No one needs to type anything; existing
-  characters saved with a blank realm are repaired on login. Gear, timestamps
-  and other characters are left untouched.
-- The Add Target dialog now explains why OK is disabled (no list selected,
-  Kill List turned off, or server not detected) instead of silently graying out.
-- Fallback only: if chat ever says **"Realm unavailable"**, an officer can run
-  `/fs realm <exact realm shown on the website>` once on that account, then
-  `/reload`. The setting cannot be changed afterwards without a data migration.
+### Prevented repeated realm repair notices (main addon)
+- Blank-realm guild updates no longer erase a character's already-known realm,
+  which could cause the same repair notice to recur.
+- New blank-realm records use the existing server-identity fallback only when
+  their GUID matches the current server (or the account has an explicit realm
+  identity). Other server identities are never guessed.
+- Older saved records with blank realms may still be repaired once. No
+  SavedVariables reset or Desktop/API change is required.
 
 ### Upgrade instructions
 1. Exit WoW completely before replacing addon files.
-2. Members: install **FlockSync-Raider-Only.zip** directly into the actual
-   client's `Interface\AddOns`, yielding
-   `FlockSync\FlockSync.toc`.
+2. Members: install **FlockSync-Raider-Only.zip** into the actual client's
+   `Interface\AddOns`, yielding `FlockSync\FlockSync.toc`.
 3. Collectors: extract **FlockSync-Addon-Bundle.zip** into the same AddOns
    folder, yielding sibling `FlockSync` and `FlockSync_AppHelper` folders.
-   AppHelper is unchanged; replacing it is harmless but not required.
-4. Avoid extra ZIP-named folder nesting and preserve SavedVariables. No reset
-   is required; blank realms are repaired automatically on login.
-5. Collectors: log in once, then log out or exit, let Desktop finish a
-   **successful** sync, and log back in to load the website's Kill List.
-   Repeat for each WoW account folder you collect from.
-6. Desktop, API/web and server are unchanged: do **not** reinstall Desktop or
-   run the server updater for this release.
-7. Follow [DEPLOYMENT.md](./DEPLOYMENT.md) for first installation, recovery and
-   server setup. Members do not need Desktop or AppHelper just to use the addon;
-   collectors still need Desktop, AppHelper, and an authorized OFFICER/ADMIN
-   account for collection and server sync. Continue to use logout/exit ->
-   successful Desktop sync -> login for server-returned helper data.
+   The AppHelper component is unchanged; reinstalling it is not required.
+4. Preserve SavedVariables and avoid extra ZIP-named folder nesting.
+5. Collectors: log in, log out or exit, let Desktop finish a **successful**
+   sync, then log in again to load server-returned data. Repeat for each WoW
+   account folder you collect from.
+6. Desktop, API/web, shared types and server are unchanged; no Desktop
+   reinstall or server update is required.
+7. For first installation or recovery, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+   Members need only the main addon. Collectors need both addons, Desktop and
+   an authorized OFFICER/ADMIN website login.
 
 ### Download choices
 - **FlockSync-Setup-1.0.1-x64.exe:** Windows collector installer, unchanged
-  Desktop **1.0.1**. Choose this or the portable alternative; existing 1.0.1
-  installs need nothing new.
+  Desktop **1.0.1**. Choose this or the portable alternative.
 - **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative,
   unchanged Desktop **1.0.1**. Preserve saved server/client settings.
-- **FlockSync-Raider-Only.zip:** main addon **1.1.1** for members.
-- **FlockSync-Addon-Bundle.zip:** main addon **1.1.1** plus unchanged
+- **FlockSync-Raider-Only.zip:** main addon **1.1.2** for members.
+- **FlockSync-Addon-Bundle.zip:** main addon **1.1.2** plus unchanged
   AppHelper **1.0.0** for collectors.
-- **FlockSync_Remote_Server_Deploy.zip:** unchanged API/web **1.0.1** source and
-  deployment tooling for supported Linux Docker servers; not a prebuilt image.
-  Existing 1.0.1 servers do not need updating.
+- **FlockSync_Remote_Server_Deploy.zip:** unchanged API/web **1.0.1** source
+  and deployment tooling for supported Linux Docker servers; not a prebuilt
+  image. Existing servers do not need updating.
 - **flocksync-release.json:** generated component-version manifest. Attach it
   beside the five payloads on one publicly readable GitHub release.
 
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Main addon | **1.1.1** | Updated (patch: bug fix) |
+| Main addon | **1.1.2** | Updated (patch: bug fix) |
 | AppHelper | **1.0.0** | Unchanged; reinstall not required |
 | Desktop | **1.0.1** | Unchanged; reinstall not required |
 | API/web | **1.0.1** | Unchanged; no server update required |
@@ -64,31 +51,27 @@
 | Root workspace metadata | **1.0.0** | Unchanged |
 
 ### Channel and publication
-Prepared for the **Release** channel. When authorized, publish one GitHub
-release tagged **v1.1.1**, titled **FlockSync 1.1.1**, with **Set as a
-pre-release unchecked** and all six assets. Publishing that release triggers
-the CurseForge workflow, which uploads main addon **1.1.1** as a **Release**
-file. Existing stable-channel addon installs (1.1.0) can receive an update
-notice. Desktop and server checkers see no change.
+Prepared for the **Release** channel; not published. When authorized, publish
+one GitHub release tagged **v1.1.2**, titled **FlockSync 1.1.2**, with **Set as
+a pre-release unchecked** and all six assets. Publishing triggers the
+CurseForge workflow to upload main addon **1.1.2** as a **Release** file.
+Desktop and server checkers see no component-version change.
 
 ### Verification and acceptance
-All 19 addon Lua 5.1 regression test files passed, including new cases for
-automatic server detection, blank-realm repair limited to the same server,
-refusing to guess when saved data conflicts, and the Add Target OK button.
-Every addon Lua file passed a Lua 5.1 syntax check, and `pnpm run typecheck`
-passed. Detection was also checked against a backup of real collector data,
-which resolved to the exact website realm. The release packager rebuilt all
-assets and the manifest; both addon ZIPs were verified file-by-file against
-source. The maintainer confirmed in game that Desktop sync succeeds, website
-targets appear and Add Target works after setting the realm. Automatic
-detection on a client that never ran `/fs realm` is pending the maintainer's
-report.
+The realm-merge regression and the full addon test suite were run with Lua 5.1;
+all addon Lua files passed Lua 5.1 syntax checks. `pnpm run typecheck` and the
+release packager completed successfully. The manifest and all release assets
+were checked against the selected component versions. The Windows installer
+and portable builds are unsigned because no code-signing certificate is
+configured. In-game acceptance of the recurring-notice fix remains pending;
+verify it with a test character before distribution. Do not treat this local
+preparation as a published release or as confirmation of manual testing.
 
-Server numbers are mapped in `ns.KNOWN_SERVER_REALMS` in
-`apps/addon/FlockSync/Ruleset.lua` (currently `6932` ->
-`CAMWOW US2 Realm 6 PvP`). Guilds on other Forever servers are detected only
-if that account saved a realm earlier; otherwise add the server number there
-using the exact website realm, or use the `/fs realm` fallback.
+For Forever server identity, `ns.KNOWN_SERVER_REALMS` in
+`apps/addon/FlockSync/Ruleset.lua` currently maps `6932` to
+`CAMWOW US2 Realm 6 PvP`. Other servers are recognized only from that account's
+earlier capture or the exact identity configured with `/fs realm`; do not
+guess a realm or merge data across server identities.
 ### Maintainer / next-agent handoff
 Read [RELEASES.md](./RELEASES.md), [DEPLOYMENT.md](./DEPLOYMENT.md),
 [README.md](./README.md) and the workspace instructions before release or

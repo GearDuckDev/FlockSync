@@ -9,20 +9,20 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v1.1.0` (local preparation only; not publication) |
+| Combined GitHub tag | `v1.1.2` (local preparation only; not publication) |
 | Desktop | `1.0.1` (unchanged) |
 | API + web / server | `1.0.1` (unchanged) |
-| Main addon | `1.1.0` |
+| Main addon | `1.1.2` |
 | AppHelper | `1.0.0` (unchanged) |
 | Shared types | `1.0.1` (unchanged) |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
-- Main character is now one account-wide setting in the main addon: choosing a
-  Main on any character shows that same Main on every character in the WoW
-  account. Older per-character Main choices migrate automatically on login.
-- Regression test: `apps/addon/test/accountMain.test.lua`.
+- Blank-realm guild updates preserve a character's known realm or use the
+  existing matching-server fallback for new records, preventing repeated
+  realm-repair notices without guessing other server identities.
+- The main addon is the only changed component; update its TOC to `1.1.2`.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 
