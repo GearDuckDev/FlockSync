@@ -74,20 +74,28 @@ function ns.SetRealmIdentity(value)
     return true
 end
 
-function ns.RepairMissingRulesetRealms()
-    if type(FlockSyncDB) ~= "table" then return end
-    if nativeRealm() then return end
+function ns.GetCharacterRealmFallback(guid)
     local realm = ns.GetPlayerRealm()
     if not realm then return end
     local manual = type(FlockSyncDB.config) == "table" and FlockSyncDB.config.realmIdentity == realm
     local serverId = playerServerId()
+    if manual or (serverId and ns.GuidServerId(guid) == serverId) then return realm end
+end
+
+function ns.RepairMissingRulesetRealms()
+    if type(FlockSyncDB) ~= "table" then return end
+    if nativeRealm() then return end
     local repaired = 0
+    local realm
     for _, name in ipairs({ "characters", "accountCharacters" }) do
         for key, character in pairs(type(FlockSyncDB[name]) == "table" and FlockSyncDB[name] or {}) do
-            if type(character) == "table" and character.realm == ""
-                and (manual or ns.GuidServerId(character.guid or key) == serverId) then
-                character.realm = realm
-                repaired = repaired + 1
+            if type(character) == "table" and character.realm == "" then
+                local fallback = ns.GetCharacterRealmFallback(character.guid or key)
+                if fallback then
+                    character.realm = fallback
+                    realm = fallback
+                    repaired = repaired + 1
+                end
             end
         end
     end

@@ -86,6 +86,11 @@ function ns.MergeCharacter(incoming)
         return
     end
     local existing = FlockSyncDB.characters[incoming.guid]
+    if incoming.realm == "" then
+        local knownRealm = type(existing) == "table" and existing.realm
+        incoming.realm = type(knownRealm) == "string" and knownRealm ~= "" and knownRealm
+            or ns.GetCharacterRealmFallback(incoming.guid) or ""
+    end
     if not existing then
         FlockSyncDB.characters[incoming.guid] = incoming
         return

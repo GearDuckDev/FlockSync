@@ -351,6 +351,11 @@ do not test against production without explicit approval.
    The command refuses to replace an already configured identity; changing it
    requires a separate data migration. Run `/reload`: empty character realm
    values for the same server id are repaired, while nonempty identities and gear are preserved.
+   Incoming blank guild updates now retain a character's known realm, or resolve
+   a new character using the same fallback rules. After receiving test-member
+   updates and triggering a scan (for example by changing equipment), verify
+   that the same record does not repeatedly produce the repair notice.
+   A notice for older saved records may still appear once.
 4. Log out, let Desktop sync succeed, then log in again. With the Kill List
    enabled, check that existing website targets appear. Select Guild Shared
    or Personal when adding a test target; OK should enable. Shared targets

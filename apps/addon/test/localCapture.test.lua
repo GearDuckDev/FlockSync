@@ -442,6 +442,23 @@ assert(FlockSyncDB.characters["Player-6932-00BB"].realm == "CAMWOW US2 Realm 6 P
 assert(FlockSyncDB.characters["Player-6932-00BB"].lastSeenAt == 7)
 assert(FlockSyncDB.characters["Player-7000-00CC"].realm == "", "Auto repair never touches other server ids")
 assert(FlockSyncDB.config.realmIdentity == nil, "Auto detection does not persist a manual override")
+local repairedGuid = "Player-6932-00BB"
+ns.MergeCharacter({ guid = repairedGuid, realm = "", lastSeenAt = 8 })
+assert(FlockSyncDB.characters[repairedGuid].realm == "CAMWOW US2 Realm 6 PvP",
+    "A newer blank guild update must not undo a repaired realm")
+assert(FlockSyncDB.characters[repairedGuid].lastSeenAt == 8, "Blank realms must not discard fresh character updates")
+local newGuid = "Player-6932-00FF"
+ns.MergeCharacter({ guid = newGuid, realm = "", lastSeenAt = 9 })
+assert(FlockSyncDB.characters[newGuid].realm == "CAMWOW US2 Realm 6 PvP",
+    "A new blank guild record resolves before it can trigger another repair notice")
+ns.MergeCharacter({ guid = "Player-7000-00CC", realm = "", lastSeenAt = 9 })
+assert(FlockSyncDB.characters["Player-7000-00CC"].realm == "", "Never guess another server's missing realm")
+ns.MergeCharacter({ guid = repairedGuid, realm = "Explicit Realm", lastSeenAt = 10 })
+ns.MergeCharacter({ guid = repairedGuid, realm = "", lastSeenAt = 11 })
+assert(FlockSyncDB.characters[repairedGuid].realm == "Explicit Realm",
+    "Preserve an established realm rather than replacing it with the local fallback")
+ns.MergeCharacter({ guid = repairedGuid, realm = "Stale Realm", lastSeenAt = 9 })
+assert(FlockSyncDB.characters[repairedGuid].realm == "Explicit Realm", "Older identity updates remain ignored")
 playerGuid = "Player-7777-00AA"
 FlockSyncDB.accountCharacters["Player-7777-00DD"] = { guid = "Player-7777-00DD", realm = "Learned Realm" }
 assert(ns.GetPlayerRealm() == "Learned Realm", "Unknown server ids learn from earlier native captures")
