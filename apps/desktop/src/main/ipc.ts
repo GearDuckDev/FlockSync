@@ -34,6 +34,7 @@ export const registerIpc = (getWindow: () => BrowserWindow | null): SyncWatcher 
     if (!res.ok) return res;
     updateStored({ apiBaseUrl: apiBaseUrl.trim(), token: res.data.token, user: res.data.user });
     await startIfLoggedIn();
+    void watcher.syncOnLaunch();
     return { ok: true, user: res.data.user };
   });
 
@@ -65,8 +66,10 @@ export const registerIpc = (getWindow: () => BrowserWindow | null): SyncWatcher 
 
 export const resumeWatcher = async (watcher: SyncWatcher): Promise<void> => {
   const s = loadStored();
-  if (s.token && s.user) await watcher.start(s.wowPath, {
+  if (!s.token || !s.user) return;
+  await watcher.start(s.wowPath, {
     apiBaseUrl: s.apiBaseUrl, token: s.token,
     isAuthorizedOfficer: s.user.role === 'OFFICER' || s.user.role === 'ADMIN',
   });
+  await watcher.syncOnLaunch();
 };

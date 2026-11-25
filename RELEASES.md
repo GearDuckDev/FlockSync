@@ -9,20 +9,23 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v1.1.2` (local preparation only; not publication) |
-| Desktop | `1.0.1` (unchanged) |
+| Combined GitHub tag | `v1.1.3` (local preparation only; not publication) |
+| Desktop | `1.0.2` |
 | API + web / server | `1.0.1` (unchanged) |
-| Main addon | `1.1.2` |
+| Main addon | `1.1.2` (unchanged) |
 | AppHelper | `1.0.0` (unchanged) |
 | Shared types | `1.0.1` (unchanged) |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
-- Blank-realm guild updates preserve a character's known realm or use the
-  existing matching-server fallback for new records, preventing repeated
-  realm-repair notices without guessing other server identities.
-- The main addon is the only changed component; update its TOC to `1.1.2`.
+- Desktop refreshes each discovered SavedVariables export from the server at
+  launch/login and follows linked SavedVariables directories when watching for
+  changes, while continuing to ignore unrelated addon files.
+- Desktop is the only changed component; update its package version to `1.0.2`.
+- Manual acceptance was reported on both devices using the prior test build.
+  The focused Desktop package is built separately; the full release bundle and
+  generated manifest still need to be rebuilt before publication.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 

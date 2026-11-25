@@ -170,3 +170,52 @@ test('missing/new account folders are reported and discovered on explicit watche
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('launch sync refreshes each exported account helper once and is quiet without exports', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'flocksync-watcher-launch-'));
+  const exported = join(root, 'WTF', 'Account', 'exported', 'SavedVariables');
+  const empty = join(root, 'WTF', 'Account', 'empty', 'SavedVariables');
+  const logs: SyncLogEvent[] = [];
+  const watcher = new SyncWatcher({ onLog: entry => logs.push(entry), onStatus: () => undefined });
+  const originalWatch = chokidar.watch;
+  let ready = Promise.resolve();
+  const watchMock = mock.method(chokidar, 'watch', (...args: Parameters<typeof originalWatch>) => {
+    const instance = originalWatch(...args);
+    ready = new Promise<void>(resolve => instance.once('ready', resolve));
+    return instance;
+  });
+  const fetchMock = mock.method(globalThis, 'fetch', async (_url: unknown, init?: RequestInit) => {
+    const payload = OfficerSyncPayloadSchema.parse(JSON.parse(String(init?.body)));
+    return new Response(JSON.stringify({
+      isAuthorizedOfficer: true, culledCharacterGuids: ['Player-Launch-Culled'], serverTimestamp: payload.exportedAt,
+      craftersIndex: [], upcomingRaids: [], goalMatches: [],
+    }));
+  });
+  const context = { apiBaseUrl: 'https://example.test', token: 'synthetic' };
+  try {
+    await mkdir(exported, { recursive: true });
+    await mkdir(empty, { recursive: true });
+    await watcher.syncOnLaunch();
+    assert.equal(fetchMock.mock.callCount(), 0, 'Launch sync requires an active login');
+
+    await watcher.start(root, context);
+    await watcher.syncOnLaunch();
+    assert.equal(fetchMock.mock.callCount(), 0);
+    assert.equal(logs.length, 0, 'No export yet must not log an error at launch');
+
+    await writeFile(join(exported, 'FlockSync.lua'), source(300));
+    await watcher.start(root, context);
+    await ready;
+    await watcher.syncOnLaunch();
+    assert.equal(fetchMock.mock.callCount(), 1);
+    assert.equal(logs.at(-1)?.status, 'SUCCESS');
+    assert.match(await readFile(join(exported, 'FlockSync_AppHelper.lua'), 'utf8'), /Player-Launch-Culled/);
+    await delay(1200);
+    assert.equal(fetchMock.mock.callCount(), 1, 'Launch helper write must not trigger another sync');
+  } finally {
+    await watcher.stop();
+    watchMock.mock.restore();
+    fetchMock.mock.restore();
+    await rm(root, { recursive: true, force: true });
+  }
+});

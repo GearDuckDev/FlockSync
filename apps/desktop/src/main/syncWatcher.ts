@@ -1,8 +1,14 @@
+import { resolve } from 'node:path';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { discoverSavedVariableFiles, discoverSavedVariablesDirs, isFlockSyncFile } from './discovery';
 import { syncFile, type SyncContext } from './syncService';
 import type { SyncLogEvent, WatcherStatus } from '../shared/ipc';
 import { initializeOfficerHelpers } from './helperBootstrap';
+
+const watchKey = (path: string): string => {
+  const full = resolve(path);
+  return process.platform === 'win32' ? full.toLowerCase() : full;
+};
 
 type Listener = { onLog: (e: SyncLogEvent) => void; onStatus: (s: WatcherStatus) => void };
 
@@ -28,9 +34,13 @@ export class SyncWatcher {
     const dirs = discoverSavedVariablesDirs(wowPath);
     if (dirs.length > 0) {
       try {
+        // Roots must bypass the filter: Chokidar checks lstat before following a linked
+        // SavedVariables folder (e.g. OneDrive), and link stats are not directories.
+        const roots = new Set(dirs.map(watchKey));
         const watcher = chokidar.watch(dirs, {
           depth: 0,
-          ignored: (file, stats) => stats !== undefined && !stats.isDirectory() && !isFlockSyncFile(file),
+          ignored: (file, stats) =>
+            stats !== undefined && !stats.isDirectory() && !roots.has(watchKey(file)) && !isFlockSyncFile(file),
           ignoreInitial: true,
           awaitWriteFinish: { stabilityThreshold: 800, pollInterval: 100 },
         });
@@ -62,6 +72,12 @@ export class SyncWatcher {
     const files = discoverSavedVariableFiles(this.wowPath);
     if (files.length === 0) return this.emitError('No FlockSync.lua files found. Log in to WoW and /reload first.');
     for (const f of files) await this.enqueue(f);
+  }
+
+  /** Refresh helper files from the server at launch; quiet when no export exists yet. */
+  async syncOnLaunch(): Promise<void> {
+    if (!this.ctx) return;
+    for (const f of discoverSavedVariableFiles(this.wowPath)) await this.enqueue(f);
   }
 
   private enqueue(file: string): Promise<unknown> {

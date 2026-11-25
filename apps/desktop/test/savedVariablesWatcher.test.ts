@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -84,6 +84,65 @@ test('reload, logout, and character-switch saves automatically upload both chara
     assert.match(helper, /103/);
     await delay(1100);
     assert.equal(payloads.length, 3, 'Helper writes must not trigger a sync feedback loop');
+  } finally {
+    await watcher.stop();
+    watchMock.mock.restore();
+    fetchMock.mock.restore();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('linked SavedVariables folder (OneDrive-style) syncs automatically without watching unrelated files', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'flocksync-linked-'));
+  const target = join(root, 'cloud', 'SavedVariables');
+  const account = join(root, 'WTF', 'Account', 'test');
+  const linked = join(account, 'SavedVariables');
+  const logs: SyncLogEvent[] = [];
+  const watcher = new SyncWatcher({ onLog: (entry) => logs.push(entry), onStatus: () => undefined });
+  const originalWatch = chokidar.watch;
+  let captured: FSWatcher | undefined;
+  const watchMock = mock.method(chokidar, 'watch', (...args: Parameters<typeof originalWatch>) => {
+    captured = originalWatch(...args);
+    return captured;
+  });
+  const fetchMock = mock.method(globalThis, 'fetch', async (_url: unknown, init?: RequestInit) => {
+    const payload = OfficerSyncPayloadSchema.parse(JSON.parse(String(init?.body)));
+    return new Response(JSON.stringify({
+      isAuthorizedOfficer: true, culledCharacterGuids: [], serverTimestamp: payload.exportedAt,
+      craftersIndex: [], upcomingRaids: [], goalMatches: [],
+    }), { status: 200 });
+  });
+  const waitFor = async (count: number): Promise<void> => {
+    for (let attempt = 0; attempt < 120 && logs.length < count; attempt++) await delay(50);
+    assert.equal(logs.length, count, `Expected ${count} automatic syncs`);
+    assert.equal(logs.at(-1)?.status, 'SUCCESS', logs.at(-1)?.message);
+  };
+  try {
+    await mkdir(target, { recursive: true });
+    await mkdir(account, { recursive: true });
+    try {
+      await symlink(target, linked, 'dir');
+    } catch (err) {
+      if (process.platform !== 'win32' || (err as NodeJS.ErrnoException).code !== 'EPERM') throw err;
+      t.diagnostic('Directory symlinks need Developer Mode on Windows; testing a directory junction instead.');
+      await symlink(target, linked, 'junction');
+    }
+    const file = join(target, 'FlockSync.lua');
+    await writeFile(file, source(100, 'Main'));
+    await writeFile(join(target, 'OtherAddon.lua'), 'OtherDB = {}');
+    await watcher.start(root, { apiBaseUrl: 'https://example.test', token: 'test' });
+    assert.ok(captured);
+    await new Promise<void>((resolve) => captured?.once('ready', resolve));
+    await writeFile(file, source(101, 'Main'));
+    await waitFor(1);
+    await rename(file, `${file}.bak`);
+    await writeFile(file, source(102, 'Main'));
+    await waitFor(2);
+    await writeFile(join(target, 'OtherAddon.lua'), 'OtherDB = { changed = true }');
+    await delay(1100);
+    assert.equal(logs.length, 2, 'Unrelated addon files and helper writes must not trigger syncs');
+    const watchedFiles = Object.values(captured.getWatched()).flat();
+    assert.ok(!watchedFiles.includes('OtherAddon.lua'), 'Unrelated addon files must stay unwatched');
   } finally {
     await watcher.stop();
     watchMock.mock.restore();

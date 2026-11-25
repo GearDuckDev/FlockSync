@@ -1,39 +1,38 @@
-## FlockSync 1.1.2
+## FlockSync 1.1.3
 
-### Prevented repeated realm repair notices (main addon)
-- Blank-realm guild updates no longer erase a character's already-known realm,
-  which could cause the same repair notice to recur.
-- New blank-realm records use the existing server-identity fallback only when
-  their GUID matches the current server (or the account has an explicit realm
-  identity). Other server identities are never guessed.
-- Older saved records with blank realms may still be repaired once. No
-  SavedVariables reset or Desktop/API change is required.
+### Automatic desktop refresh and linked-folder watching
+- Desktop now syncs each discovered `FlockSync.lua` with the server when it
+  launches or after you log in, refreshing the adjacent
+  `FlockSync_AppHelper.lua` with the latest server-returned data.
+- The watcher now follows linked `SavedVariables` folders, including Windows
+  symbolic links used for OneDrive folders. It continues to ignore unrelated
+  addon files.
+- No addon, API/web, or server changes are required.
 
 ### Upgrade instructions
-1. Exit WoW completely before replacing addon files.
-2. Members: install **FlockSync-Raider-Only.zip** into the actual client's
-   `Interface\AddOns`, yielding `FlockSync\FlockSync.toc`.
-3. Collectors: extract **FlockSync-Addon-Bundle.zip** into the same AddOns
-   folder, yielding sibling `FlockSync` and `FlockSync_AppHelper` folders.
-   The AppHelper component is unchanged; reinstalling it is not required.
-4. Preserve SavedVariables and avoid extra ZIP-named folder nesting.
-5. Collectors: log in, log out or exit, let Desktop finish a **successful**
-   sync, then log in again to load server-returned data. Repeat for each WoW
-   account folder you collect from.
-6. Desktop, API/web, shared types and server are unchanged; no Desktop
-   reinstall or server update is required.
-7. For first installation or recovery, see [DEPLOYMENT.md](./DEPLOYMENT.md).
-   Members need only the main addon. Collectors need both addons, Desktop and
-   an authorized OFFICER/ADMIN website login.
+1. Collectors: install **FlockSync-Setup-1.0.2-x64.exe** or use
+   **FlockSync-Portable-1.0.2-x64.exe**; choose one. Existing desktop settings
+   and saved WoW paths are preserved.
+2. The addon and AppHelper are unchanged. Existing installations do not need
+   addon replacement, SavedVariables resets, or a server update.
+3. For the freshest in-game data, exit WoW, open Desktop, wait for a successful
+   sync for each account folder, then log into WoW. This lets WoW load the
+   refreshed helper data safely.
+4. Desktop must be logged in to sync. If no `FlockSync.lua` export exists yet,
+   log in to WoW and `/reload` once to create it; the next Desktop launch can
+   sync it.
+5. Members need only the main addon. Collectors need both addons, Desktop, and
+   an authorized OFFICER/ADMIN website login. For first installation or
+   recovery, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ### Download choices
-- **FlockSync-Setup-1.0.1-x64.exe:** Windows collector installer, unchanged
-  Desktop **1.0.1**. Choose this or the portable alternative.
-- **FlockSync-Portable-1.0.1-x64.exe:** portable Windows collector alternative,
-  unchanged Desktop **1.0.1**. Preserve saved server/client settings.
-- **FlockSync-Raider-Only.zip:** main addon **1.1.2** for members.
-- **FlockSync-Addon-Bundle.zip:** main addon **1.1.2** plus unchanged
-  AppHelper **1.0.0** for collectors.
+- **FlockSync-Setup-1.0.2-x64.exe:** Windows collector installer for Desktop
+  **1.0.2**. Choose this or the portable alternative.
+- **FlockSync-Portable-1.0.2-x64.exe:** portable Windows collector alternative
+  for Desktop **1.0.2**. Preserve saved server/client settings.
+- **FlockSync-Raider-Only.zip:** unchanged main addon **1.1.2** for members.
+- **FlockSync-Addon-Bundle.zip:** unchanged main addon **1.1.2** plus AppHelper
+  **1.0.0** for collectors.
 - **FlockSync_Remote_Server_Deploy.zip:** unchanged API/web **1.0.1** source
   and deployment tooling for supported Linux Docker servers; not a prebuilt
   image. Existing servers do not need updating.
@@ -43,29 +42,31 @@
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Main addon | **1.1.2** | Updated (patch: bug fix) |
+| Main addon | **1.1.2** | Unchanged; reinstall not required |
 | AppHelper | **1.0.0** | Unchanged; reinstall not required |
-| Desktop | **1.0.1** | Unchanged; reinstall not required |
+| Desktop | **1.0.2** | Updated (patch: bug fix) |
 | API/web | **1.0.1** | Unchanged; no server update required |
 | Shared types | **1.0.1** | Unchanged |
 | Root workspace metadata | **1.0.0** | Unchanged |
 
 ### Channel and publication
 Prepared for the **Release** channel; not published. When authorized, publish
-one GitHub release tagged **v1.1.2**, titled **FlockSync 1.1.2**, with **Set as
+one GitHub release tagged **v1.1.3**, titled **FlockSync 1.1.3**, with **Set as
 a pre-release unchecked** and all six assets. Publishing triggers the
-CurseForge workflow to upload main addon **1.1.2** as a **Release** file.
-Desktop and server checkers see no component-version change.
+CurseForge workflow to skip the unchanged main addon **1.1.2**. Desktop users
+on **1.0.1** can update to **1.0.2** from the release manifest. This stable
+release is eligible on Release, Beta and Alpha channels; broader channels also
+include stable releases.
 
 ### Verification and acceptance
-The realm-merge regression and the full addon test suite were run with Lua 5.1;
-all addon Lua files passed Lua 5.1 syntax checks. `pnpm run typecheck` and the
-release packager completed successfully. The manifest and all release assets
-were checked against the selected component versions. The Windows installer
-and portable builds are unsigned because no code-signing certificate is
-configured. In-game acceptance of the recurring-notice fix remains pending;
-verify it with a test character before distribution. Do not treat this local
-preparation as a published release or as confirmation of manual testing.
+The Desktop watcher/configuration tests passed (36 passed, 1 skipped), and
+`pnpm run typecheck` completed successfully. The prior 1.0.1 test build was
+manually confirmed on both devices for launch-time server refresh and linked
+SavedVariables auto-sync. The 1.0.2 installer and portable package are rebuilt
+from the same tested code with the patch version incremented; the Windows
+builds are unsigned because no code-signing certificate is configured. The
+full six-asset release package and its generated manifest have not been
+rebuilt. Do not treat this local preparation as a published release.
 
 For Forever server identity, `ns.KNOWN_SERVER_REALMS` in
 `apps/addon/FlockSync/Ruleset.lua` currently maps `6932` to
