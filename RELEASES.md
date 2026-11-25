@@ -24,8 +24,8 @@ installed version with their own manifest entry, never with the bundle tag.
   changes, while continuing to ignore unrelated addon files.
 - Desktop is the only changed component; update its package version to `1.0.2`.
 - Manual acceptance was reported on both devices using the prior test build.
-  The focused Desktop package is built separately; the full release bundle and
-  generated manifest still need to be rebuilt before publication.
+  The full release bundle and manifest were rebuilt with
+  `.\scripts\package-release.ps1 -ReleaseVersion 1.1.3`.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 

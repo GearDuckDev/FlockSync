@@ -65,8 +65,9 @@ manually confirmed on both devices for launch-time server refresh and linked
 SavedVariables auto-sync. The 1.0.2 installer and portable package are rebuilt
 from the same tested code with the patch version incremented; the Windows
 builds are unsigned because no code-signing certificate is configured. The
-full six-asset release package and its generated manifest have not been
-rebuilt. Do not treat this local preparation as a published release.
+release packager rebuilt all six assets for **v1.1.3**; the generated manifest
+and addon TOC versions inside the ZIPs were checked. Do not treat this local
+preparation as a published release.
 
 For Forever server identity, `ns.KNOWN_SERVER_REALMS` in
 `apps/addon/FlockSync/Ruleset.lua` currently maps `6932` to
