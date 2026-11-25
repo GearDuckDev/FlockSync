@@ -62,11 +62,11 @@ test("admin backup, restore, folder setting, and wipe preserve safety", async ()
     assert.equal(login.status, 200, output);
     const token = login.body.token;
     assert.deepEqual((await call("GET", "/api/guild", token)).body, { guild: null });
-    const syncedGuild = { name: "Test Guild", realm: "Realm" };
+    const syncedGuild = { name: "Test Guild", realm: "1" };
     const guildSync = await call("POST", "/api/sync", token, {
       addonVersion: "test", exportedAt: 100, collectorGuild: syncedGuild,
       officerCharacter: {
-        guid: "guild-character", name: "Guild Member", realm: "Realm", classId: 1, level: 60,
+        guid: "Player-1-0000000A", name: "Guild Member", realm: "1", classId: 1, level: 60,
         isActive: true, role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: 100 },
         gear: { items: [], updatedAt: 100 }, lastSeenAt: 100
       },

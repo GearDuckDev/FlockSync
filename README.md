@@ -64,6 +64,9 @@ configured server for dashboard and server-returned information.
 There is **one main addon**, not separate member/officer editions. CurseForge
 updates the main addon only. Officers using CurseForge can extract just
 `FlockSync_AppHelper` from the GitHub bundle alongside their managed installation.
+After that, the desktop app keeps AppHelper updated automatically: it waits
+until WoW is closed, verifies the official download, keeps a backup in
+`FlockSync-Updates\backup`, and skips linked development folders.
 
 ## What you can do
 

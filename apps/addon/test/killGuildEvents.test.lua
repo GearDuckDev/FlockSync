@@ -1,6 +1,6 @@
 local net = assert(loadfile("apps/addon/test/helpers/killNetwork.lua"))()
-local client = net:client("Member One", "P1", 5)
-net:client("Officer Two", "P2", 1)
+local client = net:client("Member One", "Player-1-P1", 5)
+net:client("Officer Two", "Player-1-P2", 1)
 local requests, ns = 0, client.ns
 ns.LoadSnapshot = function() end
 local request = ns.RequestKillSync

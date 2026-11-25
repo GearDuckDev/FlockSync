@@ -27,7 +27,7 @@ function UnitGUID(unit)
     if unit and unit:match("^raid(%d+)$") then
         return "Raid-Member-" .. unit:match("^raid(%d+)$")
     end
-    return "Player-Test"
+    return "Player-1-Test"
 end
 function UnitName() return "Tester" end
 function GetUnitName() return "Tester Two" end
@@ -64,11 +64,11 @@ C_ChatInfo = {
 }
 ns.IsOnboarded = function() return onboarded end
 ns.GetProfile = function()
-    FlockSyncDB.profiles["Player-Test"] = FlockSyncDB.profiles["Player-Test"] or {
+    FlockSyncDB.profiles["Player-1-Test"] = FlockSyncDB.profiles["Player-1-Test"] or {
         role = { primaryRole = "DPS", offSpecEnabled = false, updatedAt = 1 },
         gear = { items = {}, updatedAt = 0 },
     }
-    return FlockSyncDB.profiles["Player-Test"]
+    return FlockSyncDB.profiles["Player-1-Test"]
 end
 ns.IsPlayerOfficer = function() return officer end
 ns.ReviveStaleCharacter = function() end
@@ -80,6 +80,7 @@ local function load(name)
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
 load("Ruleset")
+load("RealmMigration")
 load("Core")
 load("KillListText")
 load("Attunements")
@@ -111,14 +112,14 @@ local function drainTickers()
 end
 
 ns.PublishLocalScan()
-assert(FlockSyncDB.characters["Player-Test"].gear.items[1].slotId == 7)
-assert(FlockSyncDB.characters["Player-Test"].lastSeenAt == 100)
+assert(FlockSyncDB.characters["Player-1-Test"].gear.items[1].slotId == 7)
+assert(FlockSyncDB.characters["Player-1-Test"].lastSeenAt == 100)
 now, pants = 200, false
 fire("PLAYER_EQUIPMENT_CHANGED", 7, false)
 assert(#timers == 1)
 -- Logout may happen before the debounced two-second equipment scan.
 fire("PLAYER_LOGOUT")
-local character = FlockSyncDB.characters["Player-Test"]
+local character = FlockSyncDB.characters["Player-1-Test"]
 assert(#character.gear.items == 0, "Removed pants must disappear from the exported character")
 assert(character.gear.updatedAt == 200)
 assert(character.lastSeenAt == 200)
@@ -126,13 +127,13 @@ assert(FlockSyncDB.exportedAt == 200)
 assert(#messages == 0, "Logout capture must not broadcast")
 assert(FlockSyncDB.collectorGuild == nil, "Guildless scans must not request a collector grant")
 
-ns.MergeCharacter({ guid = "Player-Test", gear = { updatedAt = 100, items = { { slotId = 7 } } }, lastSeenAt = 100 })
+ns.MergeCharacter({ guid = "Player-1-Test", gear = { updatedAt = 100, items = { { slotId = 7 } } }, lastSeenAt = 100 })
 assert(#character.gear.items == 0, "Older guild echoes must not restore removed gear")
 assert(character.lastSeenAt == 200)
 
 guilded = true
 ns.CaptureLocalScan()
-assert(FlockSyncDB.collectorGuild.name == "Guild" and FlockSyncDB.collectorGuild.realm == "Realm")
+assert(FlockSyncDB.collectorGuild.name == "Guild" and FlockSyncDB.collectorGuild.realm == "1")
 local remote = { guid = "Other", name = "Other", realm = "Realm", gear = { updatedAt = 201, items = {} }, lastSeenAt = 201 }
 local _, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
@@ -143,14 +144,14 @@ assert(FlockSyncDB.characters.Other.lastSeenAt == 201, "Officers must still aggr
 load("Officer")
 FlockSyncHelperDB = {
     isAuthorizedOfficer = true,
-    authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
+    authorizedCollectorGuild = { name = "Guild", realm = "1" },
 }
 assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
 remote.guid = "WebsiteCollected"
 _, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
 assert(FlockSyncDB.characters.WebsiteCollected, "Website-authorized low-rank alt must catch guild broadcasts")
-FlockSyncHelperDB.authorizedCollectorGuild.realm = "OtherRealm"
+FlockSyncHelperDB.authorizedCollectorGuild.realm = "2"
 remote.guid = "NotAuthorized"
 _, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
@@ -161,7 +162,7 @@ assert(character.lastSeenAt == 200, "Onboarding must still gate capture")
 
 -- 1. Outbound CHARACTER queue coalescing, guild-name retry recovery & background event deduplication
 onboarded = true
-FlockSyncHelperDB.authorizedCollectorGuild.realm = "Realm"
+FlockSyncHelperDB.authorizedCollectorGuild.realm = "1"
 drainTimers()
 drainTickers()
 messages, tickers, timers = {}, {}, {}
@@ -239,7 +240,7 @@ local boundaryLoot = {
     id = "LTester Two-18803-20",
     itemId = 18803,
     itemLink = epicLink,
-    recipientGuid = "Player-Test",
+    recipientGuid = "Player-1-Test",
     recipientName = "Tester Two",
     instanceName = "Molten Core",
     timestamp = 1200,
@@ -281,7 +282,7 @@ now = 1305
 assert(ns.ScanProfessions("tradeskill") == true, "Scanning second profession must record changes")
 ns.PublishLocalScan()
 drainTickers()
-assert(#FlockSyncDB.characters["Player-Test"].professions.primary == 2)
+assert(#FlockSyncDB.characters["Player-1-Test"].professions.primary == 2)
 -- Now player drops Tailoring, opens the FlockSync profession summary first, then scans/publishes
 activeProfessions = { "Alchemy", "Herbalism" }
 now = 1310
@@ -291,7 +292,7 @@ assert(ns.ScanProfessions("tradeskill") == true,
     "Opening ProfessionSummary before TradeSkill must not prevent ScanProfessions from reporting the dropped profession")
 ns.PublishLocalScan()
 drainTickers()
-local profPayload = FlockSyncDB.characters["Player-Test"].professions
+local profPayload = FlockSyncDB.characters["Player-1-Test"].professions
 assert(#profPayload.primary == 1 and profPayload.primary[1].name == "Alchemy" and profPayload.updatedAt >= 1310,
     "Dropped professions must clear from exported character record even after ProfessionSummary ran")
 
@@ -400,69 +401,24 @@ assert(#invited == 40, "All 40 online assigned raid members must be invited")
 
 GetRealmName = function() return "" end
 GetNormalizedRealmName = function() return "" end
-FlockSyncDB.characters.LegacyBlank = {
-    guid = "LegacyBlank", name = "Legacy Blank", realm = "", lastSeenAt = 50,
-    gear = { updatedAt = 45, items = { { slotId = 7, itemId = 100 } } },
-}
-FlockSyncDB.accountCharacters.LegacyBlank = { guid = "LegacyBlank", name = "Legacy Blank", realm = "" }
-FlockSyncDB.characters.OtherScope = { realm = "OtherRealm", lastSeenAt = 50 }
 now = 1600
-assert(ns.CaptureLocalScan() == nil, "Do not guess an identity when the client reports no realm")
-assert(FlockSyncDB.characters.LegacyBlank.realm == "", "Unconfigured records must remain untouched")
-assert(not ns.SetRealmIdentity("  ") and not ns.SetRealmIdentity("bad|realm"))
-assert(ns.SetRealmIdentity("Test Ruleset"))
-local repaired = ns.CaptureLocalScan()
-assert(repaired.realm == "Test Ruleset" and FlockSyncDB.collectorGuild.realm == "Test Ruleset")
-assert(FlockSyncDB.officerCharacter == "Tester Two (Test Ruleset)")
-assert(FlockSyncDB.accountCharacters["Player-Test"].realm == "Test Ruleset")
-assert(FlockSyncDB.characters.LegacyBlank.realm == "Test Ruleset")
-assert(FlockSyncDB.accountCharacters.LegacyBlank.realm == "Test Ruleset")
-assert(FlockSyncDB.characters.LegacyBlank.lastSeenAt == 50
-    and FlockSyncDB.characters.LegacyBlank.gear.updatedAt == 45
-    and FlockSyncDB.characters.LegacyBlank.gear.items[1].itemId == 100)
-assert(FlockSyncDB.characters.OtherScope.realm == "OtherRealm", "Never remap an existing nonempty identity")
-assert(not ns.SetRealmIdentity("Other Ruleset"), "Changing an established identity requires migration")
-FlockSyncHelperDB.authorizedCollectorGuild.realm = "Test Ruleset"
-assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
-GetNormalizedRealmName = function() return "NormalizedRealm" end
-assert(ns.GetPlayerRealm() == "Test Ruleset", "A normalized name must not override the exact saved identity")
+local scanned = ns.CaptureLocalScan()
+assert(scanned.realm == "1" and FlockSyncDB.collectorGuild.realm == "1", "Blank client realm uses the GUID server id")
+assert(FlockSyncDB.officerCharacter == "Tester Two (1)")
+assert(FlockSyncDB.accountCharacters["Player-1-Test"].realm == "1")
 GetRealmName = function() return "Display Realm" end
-assert(ns.GetPlayerRealm() == "Display Realm")
-assert(not ns.SetRealmIdentity("Display Realm"), "Native realms never request manual identity")
-
-GetRealmName = function() return "" end
-FlockSyncDB.config.realmIdentity = nil
-local playerGuid = "Player-6932-00AA"
-UnitGUID = function() return playerGuid end
-assert(ns.GetPlayerRealm() == "CAMWOW US2 Realm 6 PvP", "Known GUID server id resolves automatically")
-FlockSyncDB.characters["Player-6932-00BB"] = { guid = "Player-6932-00BB", realm = "", lastSeenAt = 7 }
-FlockSyncDB.characters["Player-7000-00CC"] = { guid = "Player-7000-00CC", realm = "" }
-ns.RepairMissingRulesetRealms()
-assert(FlockSyncDB.characters["Player-6932-00BB"].realm == "CAMWOW US2 Realm 6 PvP")
-assert(FlockSyncDB.characters["Player-6932-00BB"].lastSeenAt == 7)
-assert(FlockSyncDB.characters["Player-7000-00CC"].realm == "", "Auto repair never touches other server ids")
-assert(FlockSyncDB.config.realmIdentity == nil, "Auto detection does not persist a manual override")
-local repairedGuid = "Player-6932-00BB"
-ns.MergeCharacter({ guid = repairedGuid, realm = "", lastSeenAt = 8 })
-assert(FlockSyncDB.characters[repairedGuid].realm == "CAMWOW US2 Realm 6 PvP",
-    "A newer blank guild update must not undo a repaired realm")
-assert(FlockSyncDB.characters[repairedGuid].lastSeenAt == 8, "Blank realms must not discard fresh character updates")
-local newGuid = "Player-6932-00FF"
-ns.MergeCharacter({ guid = newGuid, realm = "", lastSeenAt = 9 })
-assert(FlockSyncDB.characters[newGuid].realm == "CAMWOW US2 Realm 6 PvP",
-    "A new blank guild record resolves before it can trigger another repair notice")
-ns.MergeCharacter({ guid = "Player-7000-00CC", realm = "", lastSeenAt = 9 })
-assert(FlockSyncDB.characters["Player-7000-00CC"].realm == "", "Never guess another server's missing realm")
-ns.MergeCharacter({ guid = repairedGuid, realm = "Explicit Realm", lastSeenAt = 10 })
-ns.MergeCharacter({ guid = repairedGuid, realm = "", lastSeenAt = 11 })
-assert(FlockSyncDB.characters[repairedGuid].realm == "Explicit Realm",
-    "Preserve an established realm rather than replacing it with the local fallback")
-ns.MergeCharacter({ guid = repairedGuid, realm = "Stale Realm", lastSeenAt = 9 })
-assert(FlockSyncDB.characters[repairedGuid].realm == "Explicit Realm", "Older identity updates remain ignored")
-playerGuid = "Player-7777-00AA"
-FlockSyncDB.accountCharacters["Player-7777-00DD"] = { guid = "Player-7777-00DD", realm = "Learned Realm" }
-assert(ns.GetPlayerRealm() == "Learned Realm", "Unknown server ids learn from earlier native captures")
-FlockSyncDB.characters["Player-7777-00EE"] = { guid = "Player-7777-00EE", realm = "Conflicting Realm" }
-assert(ns.GetPlayerRealm() == nil, "Conflicting earlier captures are never guessed")
-assert(ns.SetRealmIdentity("Manual Realm") and ns.GetPlayerRealm() == "Manual Realm", "Manual override wins")
-print("Local scan export, logout flush, empty gear, epochs, officer aggregation and Forever identity repair: passed")
+assert(ns.GetPlayerRealm() == "1", "A native realm name never overrides the server id")
+assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
+FlockSyncHelperDB.authorizedCollectorGuild.realm = "Display Realm"
+assert(ns.GetOfficerStatusReason() ~= "Website Officer/Admin (Same Guild)", "Unmapped realm names never match")
+FlockSyncHelperDB.authorizedCollectorGuild.realm = "1"
+-- Older senders broadcast a realm name or ""; the GUID is authoritative.
+local olderGuid = "Player-6932-00BB"
+ns.MergeCharacter({ guid = olderGuid, realm = "", lastSeenAt = 7 })
+assert(FlockSyncDB.characters[olderGuid].realm == "6932")
+ns.MergeCharacter({ guid = olderGuid, realm = "CAMWOW US2 Realm 6 PvP", lastSeenAt = 8 })
+assert(FlockSyncDB.characters[olderGuid].realm == "6932" and FlockSyncDB.characters[olderGuid].lastSeenAt == 8)
+UnitGUID = function() return "Player-6932-00AA" end
+assert(ns.GetPlayerRealm() == "6932", "Every server id resolves without a lookup table")
+UnitGUID = function() return "Player-Unknown" end
+assert(ns.GetPlayerRealm() == nil and ns.CaptureLocalScan() == nil, "Never guess an identity without a server id")print("Local scan export, logout flush, empty gear, epochs, officer aggregation and GUID server identity: passed")

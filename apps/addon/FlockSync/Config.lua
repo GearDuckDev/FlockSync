@@ -87,6 +87,7 @@ function ns.InitializeDatabase()
     if type(FlockSyncDB.officerGuilds) ~= "table" then
         FlockSyncDB.officerGuilds = {}
     end
+    ns.MigrateRealmIdentity()
 end
 
 local function knownCharacter(guid, currentGuid)

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KillNoteSchema, type KillObservation, type SharedKillEntry } from '@flocksync/shared-types';
+import { formatRealm, KillNoteSchema, type KillObservation, type SharedKillEntry } from '@flocksync/shared-types';
 import { KillObservationHistory } from './KillObservationHistory';
 
 interface Props {
@@ -20,14 +20,14 @@ export const KillListCard = ({ entry, observations, disabled, change }: Props): 
   };
   const remove = async (): Promise<void> => {
     if (disabled || !window.confirm(
-      `Remove "${entry.name}" (${entry.realm}) from the shared guild Kill List? Personal entries will not be removed.`
+      `Remove "${entry.name}" (${formatRealm(entry.realm)}) from the shared guild Kill List? Personal entries will not be removed.`
     )) return;
     await change(entry);
   };
   return (
     <article className="space-y-3 rounded-lg border border-slate-800 bg-slate-900 p-4">
       <div>
-        <h3 className="font-semibold">{entry.name} <span className="text-sm text-slate-400">{entry.realm}</span></h3>
+        <h3 className="font-semibold">{entry.name} <span className="text-sm text-slate-400">{formatRealm(entry.realm)}</span></h3>
         <p className="text-xs text-slate-400">Added by {entry.author} &middot; Updated {new Date(entry.updatedAt * 1000).toLocaleString()}</p>
       </div>
       <p className="whitespace-pre-wrap break-words text-sm">{entry.note || 'No reason provided.'}</p>

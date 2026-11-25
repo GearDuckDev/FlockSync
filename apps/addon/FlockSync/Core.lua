@@ -27,15 +27,15 @@ function ns.IsOwnGuildEvent(event, unit)
 end
 
 function ns.RegisterAccountCharacter()
-    ns.RepairMissingRulesetRealms()
+    ns.MigrateRealmIdentity()
     local guid = UnitGUID("player")
     local name = ns.GetPlayerFullName()
     local realm = ns.GetPlayerRealm()
     local _, _, classId = UnitClass("player")
     if not guid or not name or not realm or not classId then
-        if not realm and not ns.missingRealmNotified then
+        if guid and not realm and not ns.missingRealmNotified then
             ns.missingRealmNotified = true
-            print("FlockSync: Realm unavailable. Set the exact guild server identity with /fs realm <name>, then /reload.")
+            print("FlockSync: Server id unavailable from this character's GUID; /reload to retry.")
         end
         return
     end
@@ -86,11 +86,8 @@ function ns.MergeCharacter(incoming)
         return
     end
     local existing = FlockSyncDB.characters[incoming.guid]
-    if incoming.realm == "" then
-        local knownRealm = type(existing) == "table" and existing.realm
-        incoming.realm = type(knownRealm) == "string" and knownRealm ~= "" and knownRealm
-            or ns.GetCharacterRealmFallback(incoming.guid) or ""
-    end
+    -- Older senders broadcast a realm name (or ""); the GUID is authoritative.
+    incoming.realm = ns.GuidServerId(incoming.guid) or incoming.realm
     if not existing then
         FlockSyncDB.characters[incoming.guid] = incoming
         return

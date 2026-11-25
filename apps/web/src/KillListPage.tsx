@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatRealm } from '@flocksync/shared-types';
 import { useAuth } from './AuthContext';
 import { useKillList } from './hooks/useKillList';
 import { KillListCard } from './components/KillListCard';
@@ -10,7 +11,7 @@ export const KillListPage = (): React.JSX.Element => {
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
   const rows = data.entries.filter((entry) =>
-    `${entry.name} ${entry.realm} ${entry.author} ${entry.note}`.toLowerCase().includes(query));
+    `${entry.name} ${entry.realm} ${formatRealm(entry.realm)} ${entry.author} ${entry.note}`.toLowerCase().includes(query));
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">

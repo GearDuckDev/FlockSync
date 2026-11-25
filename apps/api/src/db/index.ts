@@ -20,7 +20,7 @@ const initializeSqlite = (): Database.Database => {
     connection.pragma("foreign_keys = ON;");
     connection.pragma("busy_timeout = 5000;");
     try {
-      migrateDatabase(connection);
+      migrateDatabase(connection, env.GUILD_SERVER_ID);
     } catch (error) {
       connection.close();
       throw error;

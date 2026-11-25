@@ -7,17 +7,17 @@ test("shared observation persistence, immutable events, privacy, retention, dedu
   const { call, admin, create } = await startOwnershipServer(t);
   const member = await create("observer");
   const now = Math.floor(Date.now() / 1000), created = now - 100 * 86400;
-  const target = { name: "Enemy One", realm: "Realm", author: "Member One", authorGuid: "Member",
+  const target = { name: "Enemy One", realm: "1", author: "Member One", authorGuid: "Member",
     actorGuid: "Member", note: "Published", createdAt: created, updatedAt: created, deleted: false };
-  const character = { guid: "Officer", name: "Officer One", realm: "Realm", classId: 1, level: 60, isActive: true,
+  const character = { guid: "Player-1-0000000F", name: "Officer One", realm: "1", classId: 1, level: 60, isActive: true,
     role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: now - 20 },
     gear: { items: [], updatedAt: now - 20 }, lastSeenAt: now - 20 };
-  const sighting = { id: "sighting", kind: "SIGHTING", name: target.name, realm: "Realm",
+  const sighting = { id: "sighting", kind: "SIGHTING", name: target.name, realm: "1",
     targetGuid: "Enemy", targetCreatedAt: created, timestamp: now - 10, zone: "Zone One",
     reporterGuid: "Member", reporter: "Member One" };
   const battle = { ...sighting, id: "battle", kind: "KILL", actorGuid: "Member", actor: "Member One",
     victimGuid: "Enemy", victim: target.name };
-  const payload = { addonVersion: "test", collectorGuild: { name: "Guild", realm: "Realm" },
+  const payload = { addonVersion: "test", collectorGuild: { name: "Guild", realm: "1" },
     exportedAt: now, officerCharacter: character, characters: [], sharedKillList: [target] };
   const upload = (entries, extra = {}) => call("POST", "/sync", admin.token,
     { ...payload, sharedKillObservations: entries, ...extra });

@@ -5,7 +5,8 @@ function network:client(name, guild, helper)
     self.clients[#self.clients + 1] = client
     env._G, env.FlockSyncDB, env.FlockSyncHelperDB = env, {}, helper
     env.GetServerTime = function() return math.floor(self.now) end
-    env.GetRealmName = function() return "Realm" end
+    env.GetRealmName = function() return "" end
+    env.UnitGUID = function() return "Player-1-" .. name end
     env.IsInGuild = function() return client.guild ~= nil end
     env.CreateFrame = function()
         local frame = { events = {} }
@@ -48,7 +49,7 @@ function network:client(name, guild, helper)
     end
     ns.IsEnabled = function() return true end
     ns.CacheAddonReleases, ns.CompactAddonReleases = function() end, function() end
-    for _, module in ipairs({ "Ruleset", "Serializer", "Snapshot", "SnapshotComms", "Tooltips" }) do
+    for _, module in ipairs({ "Ruleset", "RealmMigration", "Serializer", "Snapshot", "SnapshotComms", "Tooltips" }) do
         local chunk = assert(loadfile("apps/addon/FlockSync/" .. module .. ".lua"))
         setfenv(chunk, env)("FlockSync", ns)
     end

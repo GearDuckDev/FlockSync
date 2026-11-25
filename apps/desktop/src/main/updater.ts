@@ -90,7 +90,7 @@ const fetchGitHubReleases = async (repo: string): Promise<GitHubRelease[]> => {
   }
 };
 
-const getGitHubReleases = (repo: string): Promise<GitHubRelease[]> => {
+export const getGitHubReleases = (repo: string): Promise<GitHubRelease[]> => {
   if (releaseCache?.repo === repo && releaseCache.expiresAt > Date.now()) {
     return Promise.resolve(releaseCache.releases);
   }

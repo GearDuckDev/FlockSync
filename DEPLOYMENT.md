@@ -45,6 +45,16 @@ daily at midnight UTC.
 An admin is seeded only when the users table is empty. Changing the seed
 password in the environment later does not reset an existing account.
 
+`GUILD_SERVER_ID` is normally left blank. During the one-time migration from
+realm names to server IDs, API startup stops without changing the database if
+the stored guild realm could belong to more than one server. If the startup
+error asks for `GUILD_SERVER_ID`, verify the guild's server ID from a trusted
+member GUID (the digits in `Player-6930-...`) and set only those digits in
+`.env`, then rerun the guarded update with `sh deploy/update-server.sh` from
+the deployed project directory. Do not guess or use a character from another
+server. Keep the setting if you may restore a pre-migration database backup;
+it is not a secret.
+
 The API limits login attempts to 10 per visitor IP per 15 minutes and
 self-registration to 5 per visitor IP per hour. These in-memory limits are
 per API process and reset when it restarts; the supported Compose deployment

@@ -119,7 +119,7 @@ local function helperSource()
     local helper = FlockSyncHelperDB
     local guild = type(helper) == "table" and helper.authorizedCollectorGuild
     if type(guild) == "table" and (guild.name ~= ns.CurrentGuildName()
-        or guild.realm ~= ns.GetPlayerRealm()) then return nil end
+        or not ns.IsPlayerRealm(guild.realm)) then return nil end
     if type(helper) == "table" and helper.isAuthorizedOfficer == true
         and timestampOf(helper) > 0 then
         return helper
@@ -134,7 +134,7 @@ function ns.LoadSnapshot()
     local cached = type(FlockSyncDB.guildSnapshot) == "table" and FlockSyncDB.guildSnapshot or nil
     local guild = cached and cached.authorizedCollectorGuild
     if cached and (cached.guild ~= ns.CurrentGuildName() or (type(guild) == "table"
-        and (guild.name ~= ns.CurrentGuildName() or guild.realm ~= ns.GetPlayerRealm()))) then
+        and (guild.name ~= ns.CurrentGuildName() or not ns.IsPlayerRealm(guild.realm)))) then
         cached = nil
     end
     if helper and timestampOf(helper) >= timestampOf(cached) then
@@ -168,7 +168,7 @@ function ns.EnforceSnapshotGuild(guildName)
     if not currentSource then return end
     local guild = currentSource.authorizedCollectorGuild
     local wrongScope = type(guild) == "table"
-        and (guild.name ~= guildName or guild.realm ~= ns.GetPlayerRealm())
+        and (guild.name ~= guildName or not ns.IsPlayerRealm(guild.realm))
     if not wrongScope and (ns.Snapshot.origin ~= "broadcast" or currentSource.guild == guildName) then return end
     rebuild({ serverTimestamp = 0 }, nil)
     currentSource = nil

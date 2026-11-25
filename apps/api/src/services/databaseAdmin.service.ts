@@ -10,6 +10,7 @@ import {
   characterOwnerships, characterOwnershipAudit, sharedKillTargets, groupOwnerships, killObservations
 } from "../db/schema.js";
 import { migrateDatabase } from "../db/migrate.js";
+import { env } from "../config/env.js";
 import { checkIntegrity, createBackupUnlocked } from "./databaseBackup.js";
 import {
   listBackupDirectories, listBackupEntries, readDatabaseAdminState,
@@ -51,7 +52,7 @@ const replaceDatabaseContents = async (sourcePath: string): Promise<void> => {
     await copyFile(sourcePath, staging);
     const stagedDb = new Database(staging);
     try {
-      migrateDatabase(stagedDb);
+      migrateDatabase(stagedDb, env.GUILD_SERVER_ID);
     } finally {
       stagedDb.close();
     }

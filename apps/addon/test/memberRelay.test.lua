@@ -1,7 +1,7 @@
 local network = assert(loadfile("apps/addon/test/helpers/memberRelay.lua"))()
 local source = {
     isAuthorizedOfficer = true, serverTimestamp = network.now, craftersIndex = {},
-    authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
+    authorizedCollectorGuild = { name = "Guild", realm = "1" },
     characterLinks = { { characterGuid = "Goal-1", ownerKey = "LegacyAccount" } },
     goalMatches = { { itemId = 123, neededBy = {
         { characterGuid = "Goal-1", characterName = "Goal Member", classId = 1 }
@@ -76,12 +76,12 @@ assert(next(member.ns.Snapshot.goalsByItem) == nil)
 local switched = network:client("Switched Alt", "Guild")
 switched.env.FlockSyncDB.guildSnapshot = {
     guild = "Guild", serverTimestamp = network.now,
-    authorizedCollectorGuild = { name = "Guild", realm = "Other Realm" },
+    authorizedCollectorGuild = { name = "Guild", realm = "2" },
     characterLinks = source.characterLinks,
 }
 switched.ns.LoadSnapshot()
 assert(not switched.ns.HasSnapshot(), "Same guild name on another realm must not restore a stale snapshot")
-officer.env.GetRealmName = function() return "Other Realm" end
+officer.env.UnitGUID = function() return "Player-2-Collector" end
 officer.ns.EnforceSnapshotGuild("Guild")
 assert(not officer.ns.HasSnapshot(), "Realm change must hide a previously loaded helper")
 print("Member crafting/goal relay, tooltip, late join and guild isolation: passed")

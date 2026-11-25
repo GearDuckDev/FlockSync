@@ -9,23 +9,27 @@ installed version with their own manifest entry, never with the bundle tag.
 
 | Item | Version |
 | --- | --- |
-| Combined GitHub tag | `v1.1.3` (local preparation only; not publication) |
-| Desktop | `1.0.2` |
-| API + web / server | `1.0.1` (unchanged) |
-| Main addon | `1.1.2` (unchanged) |
+| Combined GitHub tag | `v1.2.0` (packaged; publish after acceptance) |
+| Desktop | `1.1.0` (updated) |
+| API + web / server | `1.1.0` (updated) |
+| Main addon | `1.2.0` (updated) |
 | AppHelper | `1.0.0` (unchanged) |
-| Shared types | `1.0.1` (unchanged) |
+| Shared types | `1.1.0` (updated) |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
-- Desktop refreshes each discovered SavedVariables export from the server at
-  launch/login and follows linked SavedVariables directories when watching for
-  changes, while continuing to ignore unrelated addon files.
-- Desktop is the only changed component; update its package version to `1.0.2`.
-- Manual acceptance was reported on both devices using the prior test build.
-  The full release bundle and manifest were rebuilt with
-  `.\scripts\package-release.ps1 -ReleaseVersion 1.1.3`.
+- Characters use numeric server IDs from player GUIDs, avoiding blank Forever
+  realm names. The web UI presents these as "Server <id>".
+- Addon SavedVariables and API database migrations convert legacy realm names;
+  API migration refuses ambiguous guild identity unless `GUILD_SERVER_ID` is
+  explicitly configured.
+- Desktop automatically updates an existing, non-linked `FlockSync_AppHelper`
+  folder from the official release bundle after verifying GitHub's SHA-256
+  asset digest, waiting until WoW is closed. The main addon is left to
+  CurseForge/manual updates.
+- The previous combined release is `v1.1.3`. The complete `v1.2.0` bundle is
+  built with `.\scripts\package-release.ps1 -ReleaseVersion 1.2.0`.
 - See [RELEASE-NOTES.md](./RELEASE-NOTES.md) for upgrade instructions and
   [SERVER-OPERATIONS.md](./SERVER-OPERATIONS.md) for portable maintenance guidance.
 
@@ -331,34 +335,65 @@ correct eviction. Failed CHARACTER guild lookups report a skipped broadcast
 in chat, clear pending state, and allow a later broadcast attempt to retry.
 These checks use mocks; also verify UI and guild behavior in game before release.
 
-### Missing-realm / Kill List check
+### 1.2.0 server-ID migration candidate acceptance
+
+This is not release acceptance until the maintainer reports successful checks.
+Use a disposable test guild, test accounts, a staging server, and an isolated
+Desktop configuration; never test against production without explicit approval.
+
+1. On an isolated staging copy, back up the database before installing the new
+   API/web source. Confirm characters are assigned the server number extracted
+   from their own `Player-<id>-...` GUIDs and guild identity is migrated.
+2. Exercise an ambiguous legacy guild realm in a disposable database without
+   `GUILD_SERVER_ID`. API startup must report the ambiguity and leave the
+   database unchanged. Set the verified numeric server ID, restart, and confirm
+   the migration completes; do not test this by editing production data.
+3. With test accounts and WoW closed, back up SavedVariables and install the
+   updated member/collector addon folders. Confirm the main addon reads the
+   GUID server ID even when the client realm name is blank, then verify the
+   one-time saved-data migration leaves ambiguous/unmapped labels unchanged.
+4. Keep an authorized updated collector online while a member broadcasts.
+   Log out the collector, wait for successful Desktop sync to staging, and
+   check the character's Last Seen and displayed **Server <id>** on the
+   staging website. Log in again to load server-returned helper data.
+5. Confirm an older addon member can still send gear/Last Seen, and that
+   old/new addon kill-list peers do not interoperate until all peers update.
+   Report tested server IDs and results without account names or SavedVariables.
+6. Exit WoW, restore test SavedVariables/addon folders, and remove staging test
+   data through the normal UI. Never run this checklist against production
+   without explicit approval.
+
+### Desktop AppHelper auto-update acceptance
+
+Use a test client copy (not a linked development folder) and back up its
+`Interface\AddOns\FlockSync_AppHelper` folder first.
+
+1. Set that copy's `FlockSync_AppHelper.toc` `## Version:` lower than the
+   published AppHelper version, point Desktop's WoW path at the copy, and
+   leave the test client running. Start Desktop; within about 20 seconds the
+   log must say the update will install after World of Warcraft closes, and
+   the folder must be unchanged.
+2. Close the client. Within about a minute the log must report the update,
+   the TOC must match the release, and the old copy must be in
+   `FlockSync-Updates\backup` beside `Interface`. SavedVariables and the main
+   `FlockSync` folder must be unchanged.
+3. With a junction/symlinked AppHelper folder, Desktop must log that automatic
+   updates are skipped and leave the link and its target untouched.
+4. Restore the backed-up folder and Desktop WoW path afterwards.
 
 This is a candidate check, not release acceptance. Use a disposable test guild,
 test server and test WoW account. Back up the account's SavedVariables first;
 do not test against production without explicit approval.
 
-1. Note the **exact, case-sensitive** realm displayed beside an existing
-   website Kill List target. Check that the account's characters and collected
-   records with empty realms all belong to this same identity. The fallback is
-   account-wide: do not use it to merge data from different rulesets.
+1. Note the numeric server ID in a test character's GUID (`Player-6930-...`)
+   and confirm the website displays it as **Server 6930**.
 2. With WoW closed, install the candidate `release\FlockSync-Addon-Bundle.zip`
    for the collector, or `release\FlockSync-Raider-Only.zip` for a test member.
    Preserve SavedVariables and install both folders at the proper AddOns level.
-3. If the client reports an empty realm, the addon detects the identity
-   automatically from the numeric server id in the player GUID (for example
-   `Player-6932-...`). It uses `ns.KNOWN_SERVER_REALMS` in `Ruleset.lua`, or
-   the one realm this account captured earlier for that server id. Add new
-   Forever server ids to that table using the exact website realm. Only if
-   detection fails (chat says "Realm unavailable"), enter
-   `/fs realm <exact website realm>`, preserving spaces and capitalization.
-   The command refuses to replace an already configured identity; changing it
-   requires a separate data migration. Run `/reload`: empty character realm
-   values for the same server id are repaired, while nonempty identities and gear are preserved.
-   Incoming blank guild updates now retain a character's known realm, or resolve
-   a new character using the same fallback rules. After receiving test-member
-   updates and triggering a scan (for example by changing equipment), verify
-   that the same record does not repeatedly produce the repair notice.
-   A notice for older saved records may still appear once.
+3. Confirm the addon detects the server ID from the player GUID even when
+   WoW returns a blank realm name. Its one-time SavedVariables migration
+   rewrites records whose GUID identifies a server and leaves unmappable or
+   ambiguous legacy labels unchanged.
 4. Log out, let Desktop sync succeed, then log in again. With the Kill List
    enabled, check that existing website targets appear. Select Guild Shared
    or Personal when adding a test target; OK should enable. Shared targets

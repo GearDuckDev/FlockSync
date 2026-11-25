@@ -13,7 +13,6 @@ local HELP = {
     { "/fs raid | schedule", "Your raid schedule" },
     { "/fs kill | kill add [player name]", "View kill lists or add a target (local preview)" },
     { "/fs killoptions", "Enable Kill List and configure your personal list" },
-    { "/fs realm <exact server realm>", "Set identity if the client reports no realm; then /reload" },
     { "/fs availability", "Set timezone, days and hours for group play" },
     { "/fs minimap", "Show/hide the minimap button" },
     { "/fs debug officer [off]", "Force Officer Mode for this session (testing)" },
@@ -85,14 +84,6 @@ function ns.HandleSlashCommand(msg)
         return
     end
     local command = words[1] or ""
-    if command == "realm" then
-        local value = (msg or ""):match("^%s*%S+%s*(.-)%s*$")
-        local ok, message = ns.SetRealmIdentity(value)
-        if not ok then say(message); return end
-        say("Realm identity saved as " .. value .. ". Empty character realms on this account will use it.")
-        say("/reload, then log out and sync Desktop before logging in.")
-        return
-    end
     if command == "kill" then
         ns.KillSlash((msg or ""):match("^%s*%S+%s*(.-)%s*$") or "")
         return

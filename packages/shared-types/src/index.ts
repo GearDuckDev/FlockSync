@@ -131,3 +131,4 @@ export {
 export type { SharedKillEntry } from "./killList.js";
 export { groupCharacters, characterGroupKey, type CharacterGroup } from "./characterGroups.js";
 export { KillObservationSchema, KillObservationsSchema, type KillObservation } from "./killObservations.js";
+export { formatRealm, isServerRealm, serverIdFromGuid } from "./realm.js";

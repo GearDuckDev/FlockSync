@@ -1,13 +1,13 @@
 local net = assert(loadfile("apps/addon/test/helpers/killObservationNetwork.lua"))()
 net.now = 10000000
-local member = net:client("Member One", "P1", 5)
-local officer = net:client("Officer Two", "P2", 1)
+local member = net:client("Member One", "Player-1-P1", 5)
+local officer = net:client("Officer Two", "Player-1-P2", 1)
 local item = net:addTarget(member, "Enemy Player")
 net:addTarget(officer, "Enemy Player")
 local function event(id, timestamp, kind)
-    return { id = id, kind = kind or "KILL", name = "Enemy Player", realm = "Realm",
+    return { id = id, kind = kind or "KILL", name = "Enemy Player", realm = "1",
         targetGuid = "Enemy", targetCreatedAt = 90, timestamp = timestamp, zone = "Zone",
-        reporterGuid = "P1", reporter = "Member One", actorGuid = "P1", actor = "Member One",
+        reporterGuid = "Player-1-P1", reporter = "Member One", actorGuid = "Player-1-P1", actor = "Member One",
         victimGuid = "Enemy", victim = "Enemy Player" }
 end
 local store = member.ns.KillObservationStore("shared")
@@ -48,7 +48,7 @@ assert(next(member.ns.KillObservationStore("shared")) == nil and next(member.ns.
 local helperEvents = {}
 for index = 1, 5000 do helperEvents[index] = event("helper" .. index, net.now - index * 6) end
 officer.env.FlockSyncHelperDB = {
-    isAuthorizedOfficer = true, authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
+    isAuthorizedOfficer = true, authorizedCollectorGuild = { name = "Guild", realm = "1" },
     sharedKillObservations = helperEvents,
 }
 local notifications = 0

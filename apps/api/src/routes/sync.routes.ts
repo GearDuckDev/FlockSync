@@ -13,6 +13,7 @@ import { releaseCatalog } from "../services/releases.service.js";
 import { db } from "../db/index.js";
 import { guildIdentity } from "../db/schema.js";
 import { KillSyncConflict } from "../services/killList.service.js";
+import { normalizeSyncRealms } from "../services/realmIdentity.js";
 
 export const syncRoutes: FastifyPluginAsync = async (app) => {
   app.get("/guild", { preHandler: app.authenticate }, async () => {
@@ -26,28 +27,28 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
     onRequest: [app.authenticate, app.requireOfficer],
     bodyLimit: 10 * 1024 * 1024
   }, async (request, reply) => {
-    const payload = OfficerSyncPayloadSchema.safeParse(request.body);
-    if (!payload.success) {
+    const parsed = OfficerSyncPayloadSchema.safeParse(request.body);
+    if (!parsed.success) {
       return reply.code(400).send({ error: "Invalid officer sync payload" });
     }
-    if (payload.data.collectorGuild
-      && payload.data.collectorGuild.realm !== payload.data.officerCharacter.realm) {
+    const data = normalizeSyncRealms(parsed.data);
+    if (data.collectorGuild && data.collectorGuild.realm !== data.officerCharacter.realm) {
       return reply.code(400).send({ error: "Collector guild realm must match the synced character" });
     }
-    if (payload.data.sharedKillList?.length && (!payload.data.collectorGuild
-      || payload.data.sharedKillList.some((entry) => entry.realm !== payload.data.collectorGuild?.realm
+    if (data.sharedKillList?.length && (!data.collectorGuild
+      || data.sharedKillList.some((entry) => entry.realm !== data.collectorGuild?.realm
         || entry.updatedAt > Math.floor(Date.now() / 1000) + 30))) {
       return reply.code(400).send({ error: "Shared kills require collector guild identity, matching realm and valid clock" });
     }
-    if (payload.data.sharedKillObservations?.length && (!payload.data.collectorGuild
-      || payload.data.sharedKillObservations.some((entry) => entry.realm !== payload.data.collectorGuild?.realm
+    if (data.sharedKillObservations?.length && (!data.collectorGuild
+      || data.sharedKillObservations.some((entry) => entry.realm !== data.collectorGuild?.realm
         || entry.timestamp > Math.floor(Date.now() / 1000) + 30))) {
       return reply.code(400).send({ error: "Observations require matching collector guild/realm and valid clock" });
     }
 
     let result: Awaited<ReturnType<typeof processOfficerSync>>;
     try {
-      result = await processOfficerSync(payload.data, request.user.id);
+      result = await processOfficerSync(data, request.user.id);
     } catch (error) {
       if (!(error instanceof KillSyncConflict)) throw error;
       request.log.warn({ by: request.user.id, error: error.message }, "Kill-list upload conflict");
@@ -56,14 +57,14 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
     const addonReleases = releaseCatalog.cachedAddonReleases((error) => {
       app.log.warn({ err: error }, "Addon release metadata unavailable; sync remains successful");
     });
-    const helperReleases = payload.data.includeHelperReleases
+    const helperReleases = data.includeHelperReleases
       ? releaseCatalog.cachedHelperReleases((error) => {
         app.log.warn({ err: error }, "AppHelper release metadata unavailable; sync remains successful");
       }) : undefined;
     return ServerReturnPayloadSchema.parse({
       ...result, ...(addonReleases === undefined ? {} : { addonReleases }),
-      ...(payload.data.collectorGuild === undefined ? {} : {
-        authorizedCollectorGuild: payload.data.collectorGuild
+      ...(data.collectorGuild === undefined ? {} : {
+        authorizedCollectorGuild: data.collectorGuild
       }),
       ...(helperReleases === undefined ? {} : { helperReleases })
     });

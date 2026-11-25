@@ -59,7 +59,7 @@ function ns.GetOfficerStatusReason()
     local collectorGuild = type(helper) == "table" and helper.authorizedCollectorGuild
     if guildName and type(helper) == "table" and helper.isAuthorizedOfficer == true
         and type(collectorGuild) == "table" and collectorGuild.name == guildName
-        and collectorGuild.realm == ns.GetPlayerRealm() then
+        and ns.IsPlayerRealm(collectorGuild.realm) then
         return "Website Officer/Admin (Same Guild)"
     end
 

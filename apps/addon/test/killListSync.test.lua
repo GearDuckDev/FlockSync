@@ -1,13 +1,13 @@
 local net = assert(loadfile("apps/addon/test/helpers/killNetwork.lua"))()
-local member = net:client("Member One", "P1", 5)
-local officer = net:client("Officer Two", "P2", 1)
-local other = net:client("Member Three", "P3", 5)
+local member = net:client("Member One", "Player-1-P1", 5)
+local officer = net:client("Officer Two", "Player-1-P2", 1)
+local other = net:client("Member Three", "Player-1-P3", 5)
 local function item(client, key)
     return { key = key, destination = "shared", entry = client.ns.KillStore("shared")[key] }
 end
 member.ns.SetKillSetting("enabled", true)
-assert(member.ns.SaveKillTarget("enemy player", "Realm", string.rep("n", 500), true, true))
-local key = "realm\031enemy player"
+assert(member.ns.SaveKillTarget("enemy player", "1", string.rep("n", 500), true, true))
+local key = "1\031enemy player"
 net:drain()
 assert(#net.sent > 0, "Guild Shared creation sends automatically without Publish")
 assert(member.ns.KillStore("shared")[key].sharedLive)
@@ -16,22 +16,22 @@ assert(other.ns.KillStore("shared")[key], "Disabled/non-collector clients still 
 assert(not other.ns.KillListEnabled())
 assert(next(other.ns.KillStore("personal")) == nil, "Personal copies never transmit")
 local webEntry = {
-    name = "Web Enemy", realm = "Realm", note = "Added on the website", author = "Web.User",
+    name = "Web Enemy", realm = "1", note = "Added on the website", author = "Web.User",
     authorGuid = "web-user-id", actorGuid = "web-user-id", createdAt = math.floor(net.now),
     updatedAt = math.floor(net.now), deleted = false,
 }
 net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = webEntry })
-assert(other.ns.KillStore("shared")["realm\031web enemy"], "Web-attributed names are valid shared entries")
+assert(other.ns.KillStore("shared")["1\031web enemy"], "Web-attributed names are valid shared entries")
 other.ns.SetKillSetting("enabled", true)
 net.now = net.now + 1
-assert(other.ns.ChangeKillTarget(item(other, "realm\031web enemy"), "Web target edit", false))
+assert(other.ns.ChangeKillTarget(item(other, "1\031web enemy"), "Web target edit", false))
 net:drain()
-assert(member.ns.KillStore("shared")["realm\031web enemy"].note == "Web target edit",
+assert(member.ns.KillStore("shared")["1\031web enemy"].note == "Web target edit",
     "Guild members can edit web-created entries without author-character links")
 local sends = #net.sent
-assert(member.ns.SaveKillTarget("Private Player", "Realm", "PRIVATE_ONLY", false, true))
+assert(member.ns.SaveKillTarget("Private Player", "1", "PRIVATE_ONLY", false, true))
 net:drain()
-assert(#net.sent == sends and not officer.ns.KillStore("shared")["realm\031private player"],
+assert(#net.sent == sends and not officer.ns.KillStore("shared")["1\031private player"],
     "Personal-only save must not send a guild message")
 other.ns.SetKillSetting("enabled", true)
 net.now = net.now + 1
@@ -62,7 +62,7 @@ net:drain()
 assert(other.ns.KillStore("shared")[key].deleted, "Offline receiver catches up with durable removal")
 net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = stale })
 assert(other.ns.KillStore("shared")[key].deleted, "Old snapshots cannot resurrect removals")
-local late = net:client("Late Four", "P4", 5)
+local late = net:client("Late Four", "Player-1-P4", 5)
 assert(late.ns.RequestKillSync()); net:drain()
 assert(late.ns.KillStore("shared")[key].deleted, "Late join learns tombstones even without the creator online")
 local forged = {}
@@ -80,23 +80,23 @@ assert(other.ns.KillStore("shared")[key].deleted, "Far-future poisoning rejected
 -- Existing local drafts survive incoming snapshots without leaking to the guild.
 net.now = net.now + 1
 assert(late.ns.SetKillSetting("enabled", true))
-late.ns.KillStore("shared")["realm\031draft player"] = {
-    name = "Draft Player", realm = "Realm", note = "LOCAL_ONLY", author = late.name,
+late.ns.KillStore("shared")["1\031draft player"] = {
+    name = "Draft Player", realm = "1", note = "LOCAL_ONLY", author = late.name,
     authorGuid = late.guid, createdAt = math.floor(net.now), updatedAt = math.floor(net.now)
 }
 assert(late.ns.RespondKillSync() == nil); net:drain()
-assert(not member.ns.KillStore("shared")["realm\031draft player"])
+assert(not member.ns.KillStore("shared")["1\031draft player"])
 net.now = net.now + 1
-assert(late.ns.PublishKillDraft(item(late, "realm\031draft player")))
+assert(late.ns.PublishKillDraft(item(late, "1\031draft player")))
 net:drain()
-assert(member.ns.KillStore("shared")["realm\031draft player"].note == "LOCAL_ONLY",
+assert(member.ns.KillStore("shared")["1\031draft player"].note == "LOCAL_ONLY",
     "Legacy drafts still require an explicit share action")
 -- Newer re-add is accepted, with a new creator, only after the removal.
 net.now = net.now + 1
-assert(officer.ns.SaveKillTarget("Enemy Player", "Realm", "Re-add", true, false))
+assert(officer.ns.SaveKillTarget("Enemy Player", "1", "Re-add", true, false))
 net:drain()
 assert(not member.ns.KillStore("shared")[key].deleted)
-assert(member.ns.KillStore("shared")[key].authorGuid == "P2")
+assert(member.ns.KillStore("shared")[key].authorGuid == "Player-1-P2")
 -- Equal-time conflicting updates must not overwrite.
 forged = {}
 for field, value in pairs(officer.ns.KillStore("shared")[key]) do forged[field] = value end
@@ -110,9 +110,9 @@ assert(other.ns.KillStore("shared")[key].note == "Re-add", "Non-guild senders ar
 officer.guild = "Guild"
 -- Authorized snapshots repair stale creation identities, even when the new generation was edited before catch-up.
 net.now = net.now + 1
-assert(officer.ns.SaveKillTarget("Catch Up Player", "Realm", "Initial", true, false))
+assert(officer.ns.SaveKillTarget("Catch Up Player", "1", "Initial", true, false))
 net:drain()
-local catchUpKey = "realm\031catch up player"
+local catchUpKey = "1\031catch up player"
 other.online, late.online = false, false
 net.now = net.now + 1
 assert(officer.ns.ChangeKillTarget(item(officer, catchUpKey), "", true))
@@ -121,7 +121,7 @@ local removed = officer.ns.KillStore("shared")[catchUpKey]
 net:inject(other, officer, { v = 1, guild = other.ns.KillGuildKey(), kind = "SNAP", entry = removed })
 assert(other.ns.KillStore("shared")[catchUpKey].deleted, "One stale client knows the removal")
 net.now = net.now + 1
-assert(officer.ns.SaveKillTarget("Catch Up Player", "Realm", "Re-added", true, false))
+assert(officer.ns.SaveKillTarget("Catch Up Player", "1", "Re-added", true, false))
 net:drain()
 net.now = net.now + 1
 assert(officer.ns.ChangeKillTarget(item(officer, catchUpKey), "Edited before sync", false))

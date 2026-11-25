@@ -54,7 +54,11 @@ export const GitHubReleaseSchema = z.object({
   body: z.string().nullable().optional(),
   draft: z.boolean(),
   prerelease: z.boolean(),
-  assets: z.array(z.object({ name: z.string(), browser_download_url: z.string().url().optional() })),
+  assets: z.array(z.object({
+    name: z.string(),
+    browser_download_url: z.string().url().optional(),
+    digest: z.string().nullable().optional()
+  })),
   manifest: ReleaseManifestSchema.optional()
 });
 export const GitHubReleaseListSchema = z.array(GitHubReleaseSchema);

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { Character } from '@flocksync/shared-types';
+import { formatRealm, type Character } from '@flocksync/shared-types';
 import { SLOT_NAMES, classInfo, parseItemLink } from '../lib/wow';
 import { loadItemTooltips, rescanItemTooltips } from '../lib/wowhead';
 import { OffSpec, RoleBadge, StatusBadge } from './Badges';
@@ -34,7 +34,7 @@ export const GearDrawer = ({ character, onClose }: { character: Character; onClo
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold" style={{ color: info.color }}>{character.name}</h2>
-            <p className="text-sm text-slate-400">Level {character.level} {info.name} · {character.realm}</p>
+            <p className="text-sm text-slate-400">Level {character.level} {info.name} · {formatRealm(character.realm)}</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-md p-1.5 hover:bg-slate-800 lg:p-1"><X size={18} /></button>
         </div>

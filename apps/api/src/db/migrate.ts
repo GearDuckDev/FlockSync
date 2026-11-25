@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { migrateRealmIdentity } from "./realmMigration.js";
 
 const ColumnListSchema = z.array(z.object({ name: z.string() }));
 
@@ -24,7 +25,7 @@ const legacyColumns = {
   raid_teams: { team_type: "text NOT NULL DEFAULT 'RAID'" }
 };
 
-export const migrateDatabase = (connection: Database.Database): void => {
+export const migrateDatabase = (connection: Database.Database, guildServerId?: string): void => {
   const folder = fileURLToPath(new URL("../../drizzle", import.meta.url));
   try {
     connection.transaction(() => {
@@ -42,6 +43,10 @@ export const migrateDatabase = (connection: Database.Database): void => {
     })();
     migrate(drizzle(connection), { migrationsFolder: folder });
     console.info(JSON.stringify({ level: "info", event: "sqlite_migrations_applied" }));
+    const realms = migrateRealmIdentity(connection, guildServerId);
+    if (realms.characters + realms.guild + realms.killTargets + realms.observations > 0) {
+      console.info(JSON.stringify({ level: "info", event: "realm_identity_migrated", ...realms }));
+    }
   } catch (error) {
     console.error(JSON.stringify({
       level: "error",

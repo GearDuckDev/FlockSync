@@ -18,7 +18,8 @@ const EnvironmentSchema = z.object({
     .refine((value) => ![".", ".."].includes(value.split("/")[1] ?? ""), "Expected a GitHub owner/repository")
     .default("GearDuckDev/FlockSync"),
   INITIAL_ADMIN_EMAIL: z.string().email().optional(),
-  INITIAL_ADMIN_PASSWORD: z.string().min(16).optional()
+  INITIAL_ADMIN_PASSWORD: z.string().min(16).optional(),
+  GUILD_SERVER_ID: z.string().regex(/^\d{1,10}$/u, "GUILD_SERVER_ID must be the numeric server id").optional()
 }).strict().superRefine((value, context) => {
   if (Boolean(value.INITIAL_ADMIN_EMAIL) !== Boolean(value.INITIAL_ADMIN_PASSWORD)) {
     context.addIssue({
@@ -43,7 +44,8 @@ const parsedEnvironment = EnvironmentSchema.safeParse({
   JWT_SECRET: process.env.JWT_SECRET,
   GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
   INITIAL_ADMIN_EMAIL: process.env.INITIAL_ADMIN_EMAIL || undefined,
-  INITIAL_ADMIN_PASSWORD: process.env.INITIAL_ADMIN_PASSWORD || undefined
+  INITIAL_ADMIN_PASSWORD: process.env.INITIAL_ADMIN_PASSWORD || undefined,
+  GUILD_SERVER_ID: process.env.GUILD_SERVER_ID || undefined
 });
 
 if (!parsedEnvironment.success) {

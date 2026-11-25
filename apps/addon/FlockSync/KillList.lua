@@ -62,7 +62,7 @@ function ns.KillOfficer()
     local helper = FlockSyncHelperDB
     local guild = type(helper) == "table" and helper.authorizedCollectorGuild
     return type(helper) == "table" and helper.isAuthorizedOfficer == true and type(guild) == "table"
-        and guild.name == ns.CurrentGuildName() and guild.realm == ns.GetPlayerRealm()
+        and guild.name == ns.CurrentGuildName() and ns.IsPlayerRealm(guild.realm)
 end
 
 function ns.CanChangeKill(item, removing)

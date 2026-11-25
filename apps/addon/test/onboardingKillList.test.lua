@@ -1,5 +1,5 @@
 local ui = assert(loadfile("apps/addon/test/helpers/ui.lua"))()
-local ns, now, guid, broadcasts, option = {}, 100, "Player-1", 0, nil
+local ns, now, guid, broadcasts, option = {}, 100, "Player-1-0001", 0, nil
 function UnitGUID() return guid end
 function GetUnitName() return "Player Name-Realm" end
 function UnitName() return "Player", nil end
@@ -16,7 +16,7 @@ ns.BuildRoleControls = function() return { Refresh = function() end } end
 ns.OpenOptions = function(tab) option = tab end
 local menus = {}
 Menu = { ModifyMenu = function(tag, callback) menus[tag] = callback end }
-for _, name in ipairs({ "Config", "Ruleset", "Core", "Professions", "Availability", "KillListText", "KillList",
+for _, name in ipairs({ "Config", "Ruleset", "RealmMigration", "Core", "Professions", "Availability", "KillListText", "KillList",
     "KillListActions", "UIList", "UITabs", "UISettings", "UIKillEditor", "UIKillList",
     "WalkthroughFeatures", "Walkthrough", "KillListEntryPoints" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
@@ -92,7 +92,7 @@ ui.click(wizard.next)
 option = nil
 ui.click(wizard.finish)
 assert(option == nil and not ns.GetProfile().acceptingRequests)
-guid = "Player-2"
+guid = "Player-1-0002"
 assert(not ns.KillListEnabled() and ns.GetProfile().acceptingRequests)
 for _, widget in ipairs(ui.widgets) do assert(not widget.scripts.OnEnter, "No note tooltips") end
 GetRealmName = function() return "" end
@@ -102,20 +102,21 @@ ns.SetKillSetting("enabled", true)
 ns.OpenKillEditor()
 dialog.name:SetText("Forever Enemy")
 assert(not dialog.ok:IsEnabled())
-assert(dialog.feedback:GetText():find("/fs realm", 1, true), "Missing identity is explained")
-assert(not ns.KillUnitTarget("target"), "Missing identity must not produce an unscoped target")
-assert(ns.SetRealmIdentity("Test Ruleset"))
-ns.OpenKillEditor()
-dialog.name:SetText("Forever Enemy")
-assert(not dialog.ok:IsEnabled())
 assert(dialog.feedback:GetText():find("Select Shared", 1, true), "Disabled OK explains list selection")
 dialog.personal:SetChecked(true); ui.click(dialog.personal)
 assert(dialog.ok:IsEnabled(), "Forever's empty realm APIs must not disable OK")
-assert(dialog.targetRealm == "Test Ruleset")
+assert(dialog.targetRealm == "1", "GUID server id scopes the target")
 dialog.note:SetText(string.rep("x", 501))
 assert(not dialog.ok:IsEnabled() and dialog.feedback:GetText():find("500", 1, true))
 dialog.note:SetText("Forever reason")
 ui.click(dialog.ok)
-assert(ns.KillEntries()[1].entry.realm == "Test Ruleset")
-assert(ns.KillUnitTarget("target").realm == "Test Ruleset")
+assert(ns.KillEntries()[1].entry.realm == "1")
+assert(ns.KillUnitTarget("target").realm == "1")
+UnitGUID = function() return "Player-Unknown" end
+ns.SetKillSetting("enabled", true)
+ns.OpenKillEditor()
+dialog.name:SetText("Forever Enemy")
+assert(not dialog.ok:IsEnabled())
+assert(dialog.feedback:GetText():find("Server id unavailable", 1, true), "Missing identity is explained")
+assert(not ns.KillUnitTarget("target"), "Missing identity must not produce an unscoped target")
 print("Six-page onboarding, crafting defaults, Finish-only sharing and Forever kill-list UI tests passed")

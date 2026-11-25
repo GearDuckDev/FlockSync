@@ -51,7 +51,7 @@ function network:client(name, guid, rank)
     ns.NormalizeCharacterName = function(value)
         return type(value) == "string" and value:gsub("%-Realm$", ""):lower() or nil
     end
-    for _, module in ipairs({ "Ruleset", "Core", "Serializer", "KillListText", "KillList", "KillListActions",
+    for _, module in ipairs({ "Ruleset", "RealmMigration", "Core", "Serializer", "KillListText", "KillList", "KillListActions",
         "KillListAuthority", "KillListTransport", "KillListSync" }) do
         local chunk = assert(loadfile("apps/addon/FlockSync/" .. module .. ".lua"))
         setfenv(chunk, env)("FlockSync", ns)

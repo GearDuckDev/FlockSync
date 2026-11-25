@@ -80,7 +80,7 @@ local function create()
         local target, message = ns.ValidateKillTarget(frame.name:GetText(), frame.targetRealm, frame.note:GetText())
         local selected = frame.shared:GetChecked() == true or frame.personal:GetChecked() == true
         frame.ok:SetEnabled(target ~= nil and selected and ns.KillListEnabled())
-        if not frame.targetRealm then message = "Set the exact guild server identity with /fs realm <name>, then /reload."
+        if not frame.targetRealm then message = "Server id unavailable for this character; /reload and try again."
         elseif not selected then message = "Select Shared, Personal, or both to enable OK."
         elseif not ns.KillListEnabled() then message = "Enable Kill List with /fs killoptions first."
         elseif target then

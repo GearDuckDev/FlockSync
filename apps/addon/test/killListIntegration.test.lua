@@ -1,6 +1,6 @@
 local ui = assert(loadfile("apps/addon/test/helpers/ui.lua"))()
 local ns, guild, enemy, secret, player = {}, "Guild", true, nil, true
-function UnitGUID() return "Player-1" end
+function UnitGUID() return "Player-1-0001" end
 function UnitName() return "Enemy", nil end
 function GetUnitName(unit) return unit == "player" and "Creator Name-Realm" or "Enemy Name-Realm" end
 function GetNormalizedRealmName() return "Realm" end
@@ -12,7 +12,7 @@ function GetGuildInfo() return guild, "Member", 5 end
 function GetServerTime() return 100 end
 ns.CurrentGuildName = function() return guild end
 ns.LoadSnapshot = function() end
-ns.KillGuildMember = function() return guild and { guid = "Player-1", officer = false } or nil end
+ns.KillGuildMember = function() return guild and { guid = "Player-1-0001", officer = false } or nil end
 ns.KillLiveOfficer = function() return false end
 local sharedSends = 0
 ns.SendKillEntry = function() sharedSends = sharedSends + 1; return true end
@@ -21,12 +21,12 @@ local menus = {}
 Menu = { ModifyMenu = function(tag, callback)
     menus[tag] = callback
 end }
-for _, name in ipairs({ "Config", "Ruleset", "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions", "KillObservations", "UIList",
+for _, name in ipairs({ "Config", "Ruleset", "RealmMigration", "Core", "KillListText", "KillListAuthority", "KillList", "KillListActions", "KillObservations", "UIList",
     "UITabs", "UISettings", "UIKillEditor", "UIKillList", "UIKillHistory", "UIOptions", "UI", "Slash", "KillListEntryPoints" }) do
     assert(loadfile("apps/addon/FlockSync/" .. name .. ".lua"))("FlockSync", ns)
 end
 ns.KillGuildMember = function()
-    return guild and { guid = "Player-1", officer = false } or nil
+    return guild and { guid = "Player-1-0001", officer = false } or nil
 end
 ui.fire("ADDON_LOADED", "FlockSync")
 FlockSyncDB.config.hasCompletedOnboarding = true
@@ -45,7 +45,7 @@ for _, name in ipairs(UISpecialFrames) do
 end
 assert(registeredForEscape == 1, "Editor registers once for WoW Escape-close handling")
 assert(dialog.name:GetText() == "Enemy Mixed Case")
-assert(dialog.realm == nil and dialog.targetRealm == "Realm", "Realm is automatic, not editable")
+assert(dialog.realm == nil and dialog.targetRealm == "1", "Realm is automatic, not editable")
 assert(dialog.note:GetHeight() >= 96, "Empty reason box has a usable click area")
 local outline = ui.find(function(w) return w.parent == dialog and w.backdrop ~= nil end)
 assert(outline.backdrop.edgeFile, "Reason box has a visible border")
@@ -59,11 +59,10 @@ assert(#ns.KillEntries() == 2)
 assert(sharedSends == 1, "OK sends Guild Shared target once without a Publish click")
 assert(dialog.shared.text:GetText() == "Guild Shared (sends on save)")
 assert(ns.KillEntries()[1].entry.name == "Enemy Mixed Case")
-assert(ns.KillEntries()[1].entry.realm == "Realm", "Keep realm isolation internally")
-assert(ns.ValidateKillTarget("first last", "Realm", "").name == "First Last",
+assert(ns.KillEntries()[1].entry.realm == "1", "Keep realm isolation internally")
+assert(ns.ValidateKillTarget("first last", "1", "").name == "First Last",
     "Save validation applies the same capitalization for future sync")
 assert(ns.FormatKillName("first McLast") == "First McLast", "Preserve existing internal capitalization")
-assert(not ns.SetRealmIdentity("Other Ruleset"), "Native realm remains authoritative")
 ns.HandleSlashCommand("kill")
 local window = ui.find(function(w) return w.globalName == "FlockSyncFeaturesFrame" end)
 assert(window.tabs.selected == "killlist")
@@ -128,8 +127,7 @@ dialog.note.scripts.OnEscapePressed()
 assert(not dialog:IsShown(), "Escape while editing a reason closes the editor")
 GetRealmName = function() return "" end
 GetNormalizedRealmName = function() return "" end
-ns.HandleSlashCommand("REALM MiXeD Server Realm")
-assert(FlockSyncDB.config.realmIdentity == "MiXeD Server Realm", "Realm command preserves exact case")
-ns.HandleSlashCommand("realm Different")
-assert(FlockSyncDB.config.realmIdentity == "MiXeD Server Realm", "Changing scope cannot happen silently")
+assert(ns.KillUnitTarget("target").realm == "1", "Blank client realm still scopes targets by GUID server id")
+ns.HandleSlashCommand("realm Manual Realm")
+assert(FlockSyncDB.config.realmIdentity == nil, "Manual realm identity command is retired")
 print("Kill-list integration: tab wrapping, slash case, portrait guard, permissions and guild changes passed")

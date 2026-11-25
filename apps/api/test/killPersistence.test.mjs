@@ -7,16 +7,16 @@ test("officer persists guild kills; signed-in members can edit/remove and tombst
   const alice = await create("kill-alice"), bob = await create("kill-bob");
   const now = Math.floor(Date.now() / 1000);
   const character = {
-    guid: "Author-1", name: "Author One", realm: "Realm", classId: 1, level: 60, isActive: true,
+    guid: "Player-1-0000A001", name: "Author One", realm: "1", classId: 1, level: 60, isActive: true,
     role: { primaryRole: "DPS", offSpecEnabled: false, updatedAt: now - 20 },
     gear: { items: [], updatedAt: now - 20 }, lastSeenAt: now - 20
   };
   const entry = {
-    name: "Enemy One", realm: "Realm", author: "Author One", authorGuid: character.guid,
+    name: "Enemy One", realm: "1", author: "Author One", authorGuid: character.guid,
     actorGuid: character.guid, note: "Guild note", createdAt: now - 20, updatedAt: now - 20, deleted: false
   };
   const payload = {
-    addonVersion: "test", collectorGuild: { name: "Guild", realm: "Realm" },
+    addonVersion: "test", collectorGuild: { name: "Guild", realm: "1" },
     exportedAt: now, officerCharacter: character, characters: [], sharedKillList: [entry]
   };
   const upload = (value = payload) => call("POST", "/sync", admin.token, value);

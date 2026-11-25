@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Character } from '@flocksync/shared-types';
+import { formatRealm } from '@flocksync/shared-types';
 import { LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useDashboardData } from './hooks/useDashboardData';
@@ -41,12 +42,13 @@ export const Dashboard = (): React.JSX.Element => {
           {data.guild && (
             <div className="min-w-0 text-right lg:hidden">
               <div className="truncate text-base font-semibold">{data.guild.name}</div>
-              {data.guild.realm && <div className="truncate text-xs text-slate-400">{data.guild.realm}</div>}
+              {data.guild.realm && <div className="truncate text-xs text-slate-400">{formatRealm(data.guild.realm)}</div>}
             </div>
           )}
         </div>
-        <div className="hidden min-w-0 text-center text-xl font-semibold lg:block" title={data.guild?.realm}>
-          {data.guild?.name}
+        <div className="hidden min-w-0 text-center lg:block" title={data.guild?.realm ? formatRealm(data.guild.realm) : undefined}>
+          <div className="text-xl font-semibold">{data.guild?.name}</div>
+          {data.guild?.realm && <div className="text-xs text-slate-400">{formatRealm(data.guild.realm)}</div>}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm fold:gap-3 lg:justify-self-end">
           <span className="rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-bold text-white">{user?.role}</span>

@@ -1,14 +1,14 @@
 local net = assert(loadfile("apps/addon/test/helpers/killNetwork.lua"))()
-local officer = net:client("Officer Two", "P2", 1)
-local member = net:client("Member One", "P1", 5)
+local officer = net:client("Officer Two", "Player-1-P2", 1)
+local member = net:client("Member One", "Player-1-P1", 5)
 local chunk = assert(loadfile("apps/addon/FlockSync/KillListBridge.lua"))
 setfenv(chunk, officer.env)("FlockSync", officer.ns)
 local raw = {
-    name = "Enemy Player", realm = "Realm", author = "Member One", authorGuid = "P1",
-    actorGuid = "P1", note = "Server note", createdAt = 90, updatedAt = 95, deleted = false,
+    name = "Enemy Player", realm = "1", author = "Member One", authorGuid = "Player-1-P1",
+    actorGuid = "Player-1-P1", note = "Server note", createdAt = 90, updatedAt = 95, deleted = false,
 }
 officer.env.FlockSyncHelperDB = {
-    isAuthorizedOfficer = true, authorizedCollectorGuild = { name = "Guild", realm = "Realm" },
+    isAuthorizedOfficer = true, authorizedCollectorGuild = { name = "Guild", realm = "1" },
     sharedKillList = { raw },
 }
 officer.ns.EnforceSnapshotGuild = function() end
@@ -16,7 +16,7 @@ officer.ns.LoadSnapshot = function() end
 member.ns.LoadSnapshot = function() end
 officer:fire("PLAYER_LOGIN")
 member:fire("PLAYER_LOGIN")
-local key = "realm\031enemy player"
+local key = "1\031enemy player"
 assert(officer.ns.KillStore("shared")[key].note == "Server note")
 net:drain()
 assert(member.ns.KillStore("shared")[key].note == "Server note",
@@ -48,23 +48,28 @@ assert(officer.ns.KillStore("shared")[key].deleted, "Cross-guild helper rejected
 for _, client in ipairs({ officer, member }) do
     client.env.GetRealmName = function() return "" end
     client.env.GetNormalizedRealmName = function() return "" end
-    assert(client.ns.SetRealmIdentity("Test Ruleset"))
 end
-officer.env.FlockSyncHelperDB.authorizedCollectorGuild = { name = "Guild", realm = "Test Ruleset" }
-raw.name, raw.realm, raw.note, raw.deleted = "Forever Enemy", "Test Ruleset", "Server note", false
+-- Blank-realm clients identify by GUID server id; a pre-1.2 helper label still
+-- resolves through the migrated legacy label map until the next Desktop sync.
+officer.env.FlockSyncDB.legacyRealmLabels = { ["Legacy Realm"] = "1" }
+officer.env.FlockSyncHelperDB.authorizedCollectorGuild = { name = "Guild", realm = "Legacy Realm" }
+raw.name, raw.realm, raw.note, raw.deleted = "Forever Enemy", "1", "Server note", false
 raw.createdAt, raw.updatedAt = math.floor(net.now), math.floor(net.now)
 officer.ns.LoadServerKillList()
 officer.ns.RespondKillSync(); net:drain()
-local foreverKey = "test ruleset\031forever enemy"
+local foreverKey = "1\031forever enemy"
 assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note")
 assert(member.ns.KillStore("shared")[foreverKey].note == "Server note")
 member.ns.SetKillSetting("enabled", true)
-assert(member.ns.SaveKillTarget("New Forever Enemy", "Test Ruleset", "Guild reason", true, false))
+assert(member.ns.SaveKillTarget("New Forever Enemy", "1", "Guild reason", true, false))
 net:drain()
-assert(officer.ns.KillStore("shared")["test ruleset\031new forever enemy"].note == "Guild reason")
-officer.env.FlockSyncHelperDB.authorizedCollectorGuild.realm = "OtherRuleset"
-raw.updatedAt, raw.note = math.floor(net.now) + 1, "Wrong ruleset"
+assert(officer.ns.KillStore("shared")["1\031new forever enemy"].note == "Guild reason")
+officer.env.FlockSyncHelperDB.authorizedCollectorGuild.realm = "2"
+raw.updatedAt, raw.note = math.floor(net.now) + 1, "Wrong server"
 net.now = net.now + 1
 officer.ns.LoadServerKillList()
 assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note")
+officer.env.FlockSyncHelperDB.authorizedCollectorGuild.realm = "Unknown Realm"
+officer.ns.LoadServerKillList()
+assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note", "Unmapped legacy label rejected")
 print("Server helper import, officer redistribution, privacy, tombstones and Forever sharing: passed")

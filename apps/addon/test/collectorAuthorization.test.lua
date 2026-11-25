@@ -1,24 +1,25 @@
 local ns = {}
-local guild, realm, rank, native = "Guild", "Realm", 9, false
+local guild, realm, rank, native = "Guild", "1", 9, false
 function IsInGuild() return guild ~= nil end
 function GetGuildInfo() return guild, "Member", rank end
-function GetRealmName() return realm end
+function GetRealmName() return "" end
+function UnitGUID() return "Player-" .. realm .. "-0001" end
 C_GuildInfo = { CanViewOfficerNote = function() return native end }
 assert(loadfile("apps/addon/FlockSync/Ruleset.lua"))("FlockSync", ns)
 assert(loadfile("apps/addon/FlockSync/Officer.lua"))("FlockSync", ns)
 FlockSyncDB = { config = { forceOfficerMode = false }, officerGuilds = {} }
 FlockSyncHelperDB = { isAuthorizedOfficer = true }
 assert(not ns.IsPlayerOfficer(), "Unscoped desktop bootstrap must not authorize arbitrary guilds")
-FlockSyncHelperDB.authorizedCollectorGuild = { name = "Guild", realm = "Realm" }
+FlockSyncHelperDB.authorizedCollectorGuild = { name = "Guild", realm = "1" }
 assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
 assert(next(FlockSyncDB.officerGuilds) == nil, "Website authorization must not become permanent native permission")
 rank = 10
 assert(ns.IsPlayerOfficer(), "Low-ranked alts on the account must collect for the linked guild")
 guild = "Other"
 assert(not ns.IsPlayerOfficer(), "Other guilds must not inherit website authorization")
-guild, realm = "Guild", "OtherRealm"
+guild, realm = "Guild", "2"
 assert(not ns.IsPlayerOfficer(), "An identically named guild on another realm must not inherit authorization")
-realm, guild = "Realm", nil
+realm, guild = "1", nil
 assert(not ns.IsPlayerOfficer(), "Guildless alts must not collect")
 guild = "Guild"
 FlockSyncHelperDB.isAuthorizedOfficer = false

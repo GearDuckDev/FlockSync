@@ -59,7 +59,7 @@ if not testNS then
         end,
     }
     for _, mod in ipairs({
-        "Config", "Ruleset", "Officer", "Core", "UpdateNotices", "Serializer",
+        "Config", "Ruleset", "RealmMigration", "Officer", "Core", "UpdateNotices", "Serializer",
         "Snapshot", "Roster", "KillListText", "KillListAuthority", "Comms", "SnapshotComms",
     }) do
         assert(loadfile("apps/addon/FlockSync/" .. mod .. ".lua"))("FlockSync", testNS)

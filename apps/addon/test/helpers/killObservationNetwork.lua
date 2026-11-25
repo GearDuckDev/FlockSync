@@ -5,7 +5,7 @@ function net:client(name, guid, rank)
     local env, ns = client.env, client.ns
     client.units = { player = { name = name, guid = guid, enemy = false, player = true } }
     env.UnitGUID = function(unit) return client.units[unit] and client.units[unit].guid end
-    env.UnitName = function(unit) return client.units[unit] and client.units[unit].name, "Realm" end
+    env.UnitName = function(unit) return client.units[unit] and client.units[unit].name, nil end
     env.GetUnitName = function(unit)
         local value = client.units[unit]
         return value and (value.name .. "-Realm")
@@ -60,10 +60,10 @@ function net:client(name, guid, rank)
 end
 function net:addTarget(client, name, personal)
     local destination = personal and "personal" or "shared"
-    local key = "realm\031" .. name:lower()
+    local key = "1\031" .. name:lower()
     client.ns.KillStore(destination)[key] = {
-        name = name, realm = "Realm", author = "Member One", authorGuid = "P1",
-        actorGuid = "P1", createdAt = 90, updatedAt = 90, note = "Local note",
+        name = name, realm = "1", author = "Member One", authorGuid = "Player-1-P1",
+        actorGuid = "Player-1-P1", createdAt = 90, updatedAt = 90, note = "Local note",
         sharedLive = not personal, deleted = false,
     }
     return { key = key, destination = destination, entry = client.ns.KillStore(destination)[key] }

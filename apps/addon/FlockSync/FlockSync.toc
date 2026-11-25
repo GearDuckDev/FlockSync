@@ -1,11 +1,12 @@
 ## Interface: 16001
 ## Title: FlockSync
 ## Author: GearDuckDev
-## Version: 1.1.2
+## Version: 1.2.0
 ## SavedVariables: FlockSyncDB
 
 Config.lua
 Ruleset.lua
+RealmMigration.lua
 Officer.lua
 Core.lua
 KillListText.lua

@@ -19,9 +19,10 @@ function ns.KillUnitTarget(unit)
         local suffix = type(normalized) == "string" and normalized ~= "" and ("-" .. normalized)
         name = suffix and full:sub(-#suffix) == suffix and full:sub(1, -#suffix - 1) or full
     end
-    realm = realm and realm ~= "" and realm or ns.GetPlayerRealm()
-    if not realm then return nil end
-    return { name = name, realm = realm }
+    local server = ns.GuidServerId(readable(UnitGUID and UnitGUID(unit)))
+    if not server and (type(realm) ~= "string" or realm == "") then server = ns.GetPlayerRealm() end
+    if not server then return nil end
+    return { name = name, realm = server }
 end
 function ns.KillSlash(message)
     local command, name = (message or ""):match("^%s*(%S*)%s*(.-)%s*$")

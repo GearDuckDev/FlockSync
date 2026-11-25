@@ -10,7 +10,8 @@ import {
   onAppSettingsChanged,
   saveAppSettings,
 } from './appSettings';
-import { checkForUpdates, resetUpdateChannel, startUpdater, stopUpdater } from './updater';
+import { checkForUpdates, getGitHubReleases, resetUpdateChannel, startUpdater, stopUpdater } from './updater';
+import { startAddonUpdater, stopAddonUpdater } from './addonUpdater';
 import { createTray, destroyTray, hasTray, notifyFromTray, refreshTrayMenu } from './tray';
 import { TRAY_ICON_256 } from './trayIcon';
 
@@ -127,11 +128,17 @@ if (!app.requestSingleInstanceLock()) {
         }
       },
     });
+    startAddonUpdater({
+      getReleases: getGitHubReleases,
+      onLog: (event) => mainWindow?.webContents.send('sync-log', event),
+      notify: notifyFromTray,
+    });
 
     app.on('activate', showWindow);
     app.on('before-quit', () => {
       isQuitting = true;
       stopUpdater();
+      stopAddonUpdater();
       destroyTray();
       void watcher.stop();
     });
