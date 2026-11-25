@@ -152,10 +152,16 @@ _, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remo
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
 assert(FlockSyncDB.characters.WebsiteCollected, "Website-authorized low-rank alt must catch guild broadcasts")
 FlockSyncHelperDB.authorizedCollectorGuild.realm = "2"
+remote.guid = "OtherServerCollected"
+_, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
+for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
+assert(FlockSyncDB.characters.OtherServerCollected, "A same-guild grant from another connected-realm server still collects")
+FlockSyncHelperDB.authorizedCollectorGuild.name = "Other Guild"
 remote.guid = "NotAuthorized"
 _, chunks = ns.ChunkPayload(ns.Serialize({ updateType = "CHARACTER", data = remote, guild = "Guild" }))
 for _, chunk in ipairs(chunks) do fire("CHAT_MSG_ADDON", "FLOCKSYNC", chunk, "GUILD", "Other") end
 assert(FlockSyncDB.characters.NotAuthorized == nil, "Mismatched collector grant must not catch broadcasts")
+FlockSyncHelperDB.authorizedCollectorGuild.name = "Guild"
 onboarded, now = false, 300
 fire("PLAYER_LOGOUT")
 assert(character.lastSeenAt == 200, "Onboarding must still gate capture")
@@ -410,7 +416,7 @@ GetRealmName = function() return "Display Realm" end
 assert(ns.GetPlayerRealm() == "1", "A native realm name never overrides the server id")
 assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)")
 FlockSyncHelperDB.authorizedCollectorGuild.realm = "Display Realm"
-assert(ns.GetOfficerStatusReason() ~= "Website Officer/Admin (Same Guild)", "Unmapped realm names never match")
+assert(ns.GetOfficerStatusReason() == "Website Officer/Admin (Same Guild)", "Grant realm labels are informational")
 FlockSyncHelperDB.authorizedCollectorGuild.realm = "1"
 -- Older senders broadcast a realm name or ""; the GUID is authoritative.
 local olderGuid = "Player-6932-00BB"

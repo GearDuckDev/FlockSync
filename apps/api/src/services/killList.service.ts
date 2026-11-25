@@ -8,9 +8,10 @@ import { readDatabaseAdminState } from "./databaseAdminState.js";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export class KillSyncConflict extends Error {}
-const guildKey = (guild: { name: string; realm: string }): string => `${guild.realm}\u001f${guild.name}`;
+// One guild per server, identified by name: a connected realm spans several server ids.
+const guildKey = (guild: { name: string }): string => guild.name;
 const targetKey = (name: string, realm: string): string => `${realm.toLowerCase()}\u001f${name.toLowerCase()}`;
-const condition = (guild: { name: string; realm: string }, name: string, realm: string) =>
+const condition = (guild: { name: string }, name: string, realm: string) =>
   and(eq(sharedKillTargets.guildKey, guildKey(guild)), eq(sharedKillTargets.targetKey, targetKey(name, realm)));
 const entryOf = (row: typeof sharedKillTargets.$inferSelect): SharedKillEntry => {
   const { guildKey: _guild, targetKey: _target, ...entry } = row;
@@ -65,15 +66,15 @@ export const createSharedKill = async (
 // Only the authenticated officer upload path calls this; member authorship is
 // attested by that collector's validated guild traffic, not by a web self-claim.
 export const upsertSharedKills = (
-  tx: Transaction, entries: SharedKillEntry[], guild: { name: string; realm: string },
+  tx: Transaction, entries: SharedKillEntry[], guild: { name: string },
   resetAt: number, now: number
 ): void => {
   let targetCount = tx.select().from(sharedKillTargets)
     .where(eq(sharedKillTargets.guildKey, guildKey(guild))).all().length;
   for (const entry of entries) {
     if (entry.updatedAt <= resetAt) continue;
-    if (entry.realm !== guild.realm || entry.updatedAt > now + 30) {
-      throw new Error("Kill-list entry is outside the collector guild, reset or clock boundary");
+    if (entry.updatedAt > now + 30) {
+      throw new Error("Kill-list entry is outside the clock boundary");
     }
     const old = tx.select().from(sharedKillTargets).where(condition(guild, entry.name, entry.realm)).get();
     if (old && entry.updatedAt <= old.updatedAt) {

@@ -10,11 +10,19 @@ function ns.KillObservedGuid(guid)
     local entry = observed[guid]
     return entry and GetServerTime() - entry.at <= 300 and entry or nil
 end
+-- A target whose realm is a label (pre-1.2 or website entry on a connected
+-- realm) is not tied to one server id, so it matches the name on any server.
+local function targetMatches(entry, name, realm)
+    return entry.name:lower() == name:lower()
+        and (entry.realm == realm or not ns.IsServerRealm(entry.realm))
+end
 function ns.KillMatch(name, realm)
-    local key = realm:lower() .. "\031" .. name:lower()
+    local key, fallback = realm:lower() .. "\031" .. name:lower(), nil
     for _, item in ipairs(ns.KillEntries()) do
         if item.key == key then return item end
+        if not fallback and targetMatches(item.entry, name, realm) then fallback = item end
     end
+    return fallback
 end
 function ns.KillZone()
     local zone = ns.KillReadable(GetRealZoneText and GetRealZoneText())
@@ -26,10 +34,10 @@ function ns.RecordKillObservation(kind, target, participants, timestamp)
     local reporter = ns.GetPlayerFullName()
     if type(reporterGuid) ~= "string" or type(reporter) ~= "string" then return end
     for _, item in ipairs(ns.KillEntries()) do
-        if item.entry.name:lower() == target.name:lower() and item.entry.realm == target.realm
+        if targetMatches(item.entry, target.name, target.realm)
             and (item.destination ~= "shared" or item.entry.sharedLive) then
             local entry = {
-                kind = kind, name = item.entry.name, realm = target.realm, targetGuid = target.guid,
+                kind = kind, name = item.entry.name, realm = item.entry.realm, targetGuid = target.guid,
                 targetCreatedAt = item.entry.createdAt, timestamp = now, zone = ns.KillZone(),
                 reporterGuid = reporterGuid, reporter = reporter,
             }

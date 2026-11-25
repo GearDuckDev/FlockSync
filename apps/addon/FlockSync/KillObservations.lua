@@ -69,8 +69,8 @@ end
 
 function ns.MergeKillObservation(entry, destination, recovered, batch)
     if not ns.ValidateKillObservation(entry) then return false end
-    if destination == "shared" and (entry.realm ~= ns.GetPlayerRealm()
-        or (not recovered and entry.timestamp <= (FlockSyncDB.databaseResetAt or 0))) then return false end
+    if destination == "shared" and not recovered
+        and entry.timestamp <= (FlockSyncDB.databaseResetAt or 0) then return false end
     local targets = ns.KillStore(destination == "local" and "shared" or destination)
     local store = ns.KillObservationStore(destination)
     local target = targets and targets[keyOf(entry)]

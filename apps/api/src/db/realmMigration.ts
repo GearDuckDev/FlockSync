@@ -4,8 +4,6 @@ import { and, eq } from "drizzle-orm";
 import { isServerRealm, KillObservationSchema, serverIdFromGuid } from "@flocksync/shared-types";
 import { characters, guildIdentity, killObservations, sharedKillTargets } from "./schema.js";
 
-export class RealmMigrationError extends Error {}
-
 const SEP = "\u001f";
 type Tx = Parameters<Parameters<ReturnType<typeof drizzle>["transaction"]>[0]>[0];
 type Counts = { characters: number; guild: number; killTargets: number; observations: number };
@@ -28,15 +26,15 @@ const migrateCharacters = (tx: Tx, counts: Counts): Map<string, Set<string>> => 
   return labels;
 };
 
+// Guilds are identified by name; realms in pre-1.2.1 keys are dropped.
+const guildKeyOf = (key: string): string => splitKey(key)?.[1] ?? key;
+
 const migrateKillTargets = (tx: Tx, realmFor: (label: string) => string | undefined, counts: Counts): void => {
   for (const row of tx.select().from(sharedKillTargets).all()) {
-    const parts = splitKey(row.guildKey);
-    if (!parts || (isServerRealm(parts[0]) && isServerRealm(row.realm))) continue;
-    const guildRealm = realmFor(parts[0]);
-    const realm = realmFor(row.realm);
-    if (!guildRealm || !realm) continue;
-    const guildKey = `${guildRealm}${SEP}${parts[1]}`;
+    const guildKey = guildKeyOf(row.guildKey);
+    const realm = realmFor(row.realm) ?? row.realm;
     const targetKey = `${realm.toLowerCase()}${SEP}${row.name.toLowerCase()}`;
+    if (guildKey === row.guildKey && targetKey === row.targetKey && realm === row.realm) continue;
     const clash = tx.select().from(sharedKillTargets)
       .where(and(eq(sharedKillTargets.guildKey, guildKey), eq(sharedKillTargets.targetKey, targetKey))).get();
     tx.delete(sharedKillTargets)
@@ -48,7 +46,6 @@ const migrateKillTargets = (tx: Tx, realmFor: (label: string) => string | undefi
     counts.killTargets++;
   }
 };
-
 const parseObservation = (payload: string): ReturnType<typeof KillObservationSchema.parse> | undefined => {
   try {
     const parsed = KillObservationSchema.safeParse(JSON.parse(payload) as unknown);
@@ -60,15 +57,14 @@ const parseObservation = (payload: string): ReturnType<typeof KillObservationSch
 
 const migrateObservations = (tx: Tx, realmFor: (label: string) => string | undefined, counts: Counts): void => {
   for (const row of tx.select().from(killObservations).all()) {
-    const parts = splitKey(row.guildKey);
     const entry = parseObservation(row.payload);
-    if (!parts || !entry || (isServerRealm(parts[0]) && isServerRealm(entry.realm))) continue;
-    const guildRealm = realmFor(parts[0]);
-    const realm = realmFor(entry.realm) ?? serverIdFromGuid(entry.targetGuid);
-    if (!guildRealm || !realm) continue;
-    const guildKey = `${guildRealm}${SEP}${parts[1]}`;
+    if (!entry) continue;
+    const guildKey = guildKeyOf(row.guildKey);
+    // Must map exactly like the observation's kill target so the two keys stay linked.
+    const realm = realmFor(entry.realm) ?? entry.realm;
     const targetKey = `${realm.toLowerCase()}${SEP}${entry.name.toLowerCase()}`;
     const id = row.kind === "SIGHTING" ? `S:${targetKey}` : row.id;
+    if (guildKey === row.guildKey && id === row.id && targetKey === row.targetKey && realm === entry.realm) continue;
     const clash = tx.select().from(killObservations)
       .where(and(eq(killObservations.guildKey, guildKey), eq(killObservations.id, id))).get();
     tx.delete(killObservations)
@@ -84,7 +80,8 @@ const migrateObservations = (tx: Tx, realmFor: (label: string) => string | undef
   }
 };
 
-// Idempotent: rows already keyed by numeric server ids are left untouched.
+// Idempotent. A label shared by several servers (a connected realm) stays a
+// label: the addon matches such kill targets by name on any server.
 export const migrateRealmIdentity = (connection: Database.Database, guildServerId?: string): Counts => {
   const counts: Counts = { characters: 0, guild: 0, killTargets: 0, observations: 0 };
   drizzle(connection).transaction((tx) => {
@@ -93,22 +90,13 @@ export const migrateRealmIdentity = (connection: Database.Database, guildServerI
       const servers = labels.get(label);
       return servers?.size === 1 ? [...servers][0] : undefined;
     };
-    let guildLabel: string | undefined;
-    let guildServer: string | undefined;
     const guild = tx.select().from(guildIdentity).get();
-    if (guild && !isServerRealm(guild.realm)) {
-      guildLabel = guild.realm;
-      guildServer = guildServerId ?? unanimous(guild.realm);
-      if (!guildServer) {
-        throw new RealmMigrationError(`Stored guild realm matches ${labels.get(guild.realm)?.size ?? 0} server ids. `
-          + "Set GUILD_SERVER_ID to the guild's numeric server id (the number after \"Player-\" in any member GUID) "
-          + "and restart; the database was not changed.");
-      }
+    const guildServer = guild && !isServerRealm(guild.realm) ? guildServerId ?? unanimous(guild.realm) : undefined;
+    if (guild && guildServer) {
       tx.update(guildIdentity).set({ realm: guildServer }).where(eq(guildIdentity.id, guild.id)).run();
       counts.guild++;
     }
-    const realmFor = (label: string): string | undefined => isServerRealm(label) ? label
-      : label === guildLabel ? guildServer : unanimous(label);
+    const realmFor = (label: string): string | undefined => isServerRealm(label) ? label : unanimous(label);
     migrateKillTargets(tx, realmFor, counts);
     migrateObservations(tx, realmFor, counts);
   });

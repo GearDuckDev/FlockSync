@@ -6,9 +6,12 @@
   The web dashboard displays this identity as **Server 6930**.
 - The addon converts existing character and kill-list SavedVariables to
   server IDs once. The API migrates existing character, guild, and shared
-  kill-list data on startup. Ambiguous guild identity stops API startup before
-  database changes; see [DEPLOYMENT.md](./DEPLOYMENT.md) for the optional
-  `GUILD_SERVER_ID` override.
+  kill-list data on startup.
+- **Connected realms work without configuration.** Guilds are matched by
+  guild name, so collectors and members on different server IDs of the same
+  connected realm share one guild roster, website collector authorization, and
+  kill list. Older kill targets whose realm label spans several servers keep
+  that label and match the player name on any server.
 - Members on older addons can still send gear and Last Seen updates to updated
   collectors. Collectors must update. Kill-list sharing between old and new
   addon versions is incompatible until everyone updates.
@@ -27,9 +30,8 @@
 ### Upgrade instructions
 1. Server operators: back up the existing database and `.env`. Install the
    **FlockSync_Remote_Server_Deploy.zip** source and use the guarded update
-   instructions in [DEPLOYMENT.md](./DEPLOYMENT.md). If migration reports an
-   ambiguous realm, confirm the guild's numeric server ID before setting
-   `GUILD_SERVER_ID`; do not guess.
+   instructions in [DEPLOYMENT.md](./DEPLOYMENT.md). No new `.env` settings
+   are required.
 2. Members: exit WoW and install the updated **FlockSync** addon from
    **FlockSync-Raider-Only.zip** or CurseForge. Preserve SavedVariables and
    extract the `FlockSync` folder directly into `Interface\AddOns`.
@@ -59,28 +61,34 @@
 ### Component versions
 | Component | Version | Status |
 | --- | --- | --- |
-| Main addon | **1.2.0** | Updated |
+| Main addon | **1.2.1** | Updated; includes the connected-realm fix |
 | AppHelper | **1.0.0** | Unchanged; reinstall not required |
 | Desktop | **1.1.0** | Updated; collectors install the new Setup or Portable |
-| API/web | **1.1.0** | Updated; deploy server source |
-| Shared types | **1.1.0** | Updated with API/web |
+| API/web | **1.1.1** | Updated; deploy server source |
+| Shared types | **1.1.0** | Unchanged; reinstall not required |
 | Root workspace metadata | **1.0.0** | Unchanged |
 
 ### Channel and publication
-Published on the normal **Release** channel as one GitHub release tagged
-**v1.2.0**, titled **FlockSync 1.2.0**, with **Set as a pre-release**
+Prepare one GitHub release on the normal **Release** channel, tagged
+**v1.2.0** and titled **FlockSync 1.2.0**, with **Set as a pre-release**
 unchecked and all six assets attached. Stable updates are eligible on Release,
-Beta, and Alpha channels; unchanged components (AppHelper) do not issue update
-notices. The member addon ZIP is also published on CurseForge as **1.2.0**
-(Release).
+Beta, and Alpha channels; unchanged components (AppHelper and shared types) do
+not issue update notices. Publish the main addon ZIP separately on CurseForge
+as **1.2.1** (Release), matching its component version.
+The combined bundle keeps the overall version at **1.2.0**; the main addon
+**1.2.1** and API/web **1.1.1** component versions include patch fixes folded
+in before this first publication. No separate v1.2.1 bundle is being prepared.
 
 ### Verification and acceptance
-Workspace typecheck, the API (`test:production`, `test:updates`), Desktop, and
-Lua 5.1 addon regression suites passed, and the complete release bundle and
-manifest were built with `package-release.ps1`. No live WoW or production-server
-acceptance is claimed. Before rolling out widely, verify the guild server ID and
-migration behavior using the isolated test procedures in
-[RELEASES.md](./RELEASES.md#120-server-id-migration-candidate-acceptance)
+Workspace typecheck and the API suites passed (`test:production` 21/21 and
+`test:updates` 14/14). Desktop tests passed (39 passed, 1 skipped). Lua 5.1
+addon tests passed 20/21; the existing `gearPersistence.lua` scanner-mock
+failure remains. The complete release bundle and manifest were built and
+verified with `package-release.ps1`. The maintainer reports that the server
+update appeared to work; cross-server collection and kill-list behavior have
+not yet been confirmed in game. Before wider rollout, verify migration and
+connected-realm behavior using the isolated test procedures in
+[RELEASES.md](./RELEASES.md#120-connected-realm-and-server-id-migration-candidate-acceptance)
 and [Desktop AppHelper auto-update acceptance](./RELEASES.md#desktop-apphelper-auto-update-acceptance).
 
 No client realm-name table or `/fs realm` configuration is required. The

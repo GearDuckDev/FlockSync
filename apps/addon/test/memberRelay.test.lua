@@ -80,8 +80,9 @@ switched.env.FlockSyncDB.guildSnapshot = {
     characterLinks = source.characterLinks,
 }
 switched.ns.LoadSnapshot()
-assert(not switched.ns.HasSnapshot(), "Same guild name on another realm must not restore a stale snapshot")
+assert(switched.ns.HasSnapshot(), "A same-guild snapshot from another connected-realm server is restored")
+local officerHad = officer.ns.HasSnapshot()
 officer.env.UnitGUID = function() return "Player-2-Collector" end
 officer.ns.EnforceSnapshotGuild("Guild")
-assert(not officer.ns.HasSnapshot(), "Realm change must hide a previously loaded helper")
+assert(officer.ns.HasSnapshot() == officerHad, "Changing server within the same guild keeps the helper")
 print("Member crafting/goal relay, tooltip, late join and guild isolation: passed")

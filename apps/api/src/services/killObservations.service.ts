@@ -6,12 +6,12 @@ import { KillSyncConflict } from "./killList.service.js";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const RETENTION = 90 * 86400;
-const guildKey = (guild: { name: string; realm: string }): string => `${guild.realm}\u001f${guild.name}`;
+const guildKey = (guild: { name: string }): string => guild.name;
 const targetKey = (entry: { name: string; realm: string }): string =>
   `${entry.realm.toLowerCase()}\u001f${entry.name.toLowerCase()}`;
 const parse = (payload: string): KillObservation => KillObservationSchema.parse(JSON.parse(payload) as unknown);
 export const upsertKillObservations = (
-  tx: Transaction, incoming: KillObservation[], guild: { name: string; realm: string }, resetAt: number, now: number
+  tx: Transaction, incoming: KillObservation[], guild: { name: string }, resetAt: number, now: number
 ): void => {
   const key = guildKey(guild);
   tx.delete(killObservations).where(and(eq(killObservations.guildKey, key),
@@ -42,8 +42,8 @@ export const upsertKillObservations = (
   for (const entry of incoming) {
     if (entry.timestamp <= resetAt || (entry.kind !== "SIGHTING" && entry.timestamp < now - RETENTION)
       || targets.get(targetKey(entry)) !== entry.targetCreatedAt) continue;
-    if (entry.realm !== guild.realm || entry.timestamp > now + 30) {
-      throw new KillSyncConflict("Observation realm or clock does not match the collector");
+    if (entry.timestamp > now + 30) {
+      throw new KillSyncConflict("Observation clock does not match the collector");
     }
     const target = targetKey(entry);
     const id = entry.kind === "SIGHTING" ? `S:${target}` : entry.id;

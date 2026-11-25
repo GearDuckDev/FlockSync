@@ -11,19 +11,21 @@ installed version with their own manifest entry, never with the bundle tag.
 | --- | --- |
 | Combined GitHub tag | `v1.2.0` (packaged; publish after acceptance) |
 | Desktop | `1.1.0` (updated) |
-| API + web / server | `1.1.0` (updated) |
-| Main addon | `1.2.0` (updated) |
+| API + web / server | `1.1.1` (updated) |
+| Main addon | `1.2.1` (updated) |
 | AppHelper | `1.0.0` (unchanged) |
-| Shared types | `1.1.0` (updated) |
+| Shared types | `1.1.0` (unchanged) |
 | Root package | `1.0.0` |
 
 ### Changes in this release
 
 - Characters use numeric server IDs from player GUIDs, avoiding blank Forever
   realm names. The web UI presents these as "Server <id>".
-- Addon SavedVariables and API database migrations convert legacy realm names;
-  API migration refuses ambiguous guild identity unless `GUILD_SERVER_ID` is
-  explicitly configured.
+- Addon SavedVariables and API database migrations convert legacy realm names
+  where a label maps to one server. Guilds are matched by name, so connected
+  realms (one guild across several server IDs) need no configuration; label
+  kill targets match by name on any server, and ambiguous labels remain
+  informational.
 - Desktop automatically updates an existing, non-linked `FlockSync_AppHelper`
   folder from the official release bundle after verifying GitHub's SHA-256
   asset digest, waiting until WoW is closed. The main addon is left to
@@ -335,7 +337,7 @@ correct eviction. Failed CHARACTER guild lookups report a skipped broadcast
 in chat, clear pending state, and allow a later broadcast attempt to retry.
 These checks use mocks; also verify UI and guild behavior in game before release.
 
-### 1.2.0 server-ID migration candidate acceptance
+### 1.2.0 connected-realm and server-ID migration candidate acceptance
 
 This is not release acceptance until the maintainer reports successful checks.
 Use a disposable test guild, test accounts, a staging server, and an isolated
@@ -343,11 +345,11 @@ Desktop configuration; never test against production without explicit approval.
 
 1. On an isolated staging copy, back up the database before installing the new
    API/web source. Confirm characters are assigned the server number extracted
-   from their own `Player-<id>-...` GUIDs and guild identity is migrated.
-2. Exercise an ambiguous legacy guild realm in a disposable database without
-   `GUILD_SERVER_ID`. API startup must report the ambiguity and leave the
-   database unchanged. Set the verified numeric server ID, restart, and confirm
-   the migration completes; do not test this by editing production data.
+   from their own `Player-<id>-...` GUIDs and guild data is keyed by name.
+2. Start a disposable database whose legacy guild realm label is shared by
+   characters on several server IDs, without `GUILD_SERVER_ID`. API startup
+   must succeed and keep the label as the guild's displayed realm and as the
+   realm of existing label kill targets.
 3. With test accounts and WoW closed, back up SavedVariables and install the
    updated member/collector addon folders. Confirm the main addon reads the
    GUID server ID even when the client realm name is blank, then verify the
@@ -356,8 +358,10 @@ Desktop configuration; never test against production without explicit approval.
    Log out the collector, wait for successful Desktop sync to staging, and
    check the character's Last Seen and displayed **Server <id>** on the
    staging website. Log in again to load server-returned helper data.
-5. Confirm an older addon member can still send gear/Last Seen, and that
-   old/new addon kill-list peers do not interoperate until all peers update.
+5. Confirm an older addon member can still send gear/Last Seen, that two
+   updated collectors on different server IDs of the same guild are both
+   authorized and see the same shared kill list, and that old/new addon
+   kill-list peers do not interoperate until all peers update.
    Report tested server IDs and results without account names or SavedVariables.
 6. Exit WoW, restore test SavedVariables/addon folders, and remove staging test
    data through the normal UI. Never run this checklist against production

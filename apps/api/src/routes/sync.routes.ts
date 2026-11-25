@@ -32,18 +32,15 @@ export const syncRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: "Invalid officer sync payload" });
     }
     const data = normalizeSyncRealms(parsed.data);
-    if (data.collectorGuild && data.collectorGuild.realm !== data.officerCharacter.realm) {
-      return reply.code(400).send({ error: "Collector guild realm must match the synced character" });
-    }
+    const now = Math.floor(Date.now() / 1000);
+    // Guild data is matched by guild name; entries may come from any server of a connected realm.
     if (data.sharedKillList?.length && (!data.collectorGuild
-      || data.sharedKillList.some((entry) => entry.realm !== data.collectorGuild?.realm
-        || entry.updatedAt > Math.floor(Date.now() / 1000) + 30))) {
-      return reply.code(400).send({ error: "Shared kills require collector guild identity, matching realm and valid clock" });
+      || data.sharedKillList.some((entry) => entry.updatedAt > now + 30))) {
+      return reply.code(400).send({ error: "Shared kills require collector guild identity and valid clock" });
     }
     if (data.sharedKillObservations?.length && (!data.collectorGuild
-      || data.sharedKillObservations.some((entry) => entry.realm !== data.collectorGuild?.realm
-        || entry.timestamp > Math.floor(Date.now() / 1000) + 30))) {
-      return reply.code(400).send({ error: "Observations require matching collector guild/realm and valid clock" });
+      || data.sharedKillObservations.some((entry) => entry.timestamp > now + 30))) {
+      return reply.code(400).send({ error: "Observations require collector guild identity and valid clock" });
     }
 
     let result: Awaited<ReturnType<typeof processOfficerSync>>;

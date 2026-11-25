@@ -61,10 +61,10 @@ assert(not ns.KillStore("personal")[key])
 assert(not ns.ChangeKillTarget(sharedItem, "", true))
 ns.debugOfficerOverride, FlockSyncDB.config.forceOfficerMode = true, true
 assert(not ns.KillOfficer(), "Debug collector flags cannot grant kill-list authority")
-FlockSyncHelperDB = { isAuthorizedOfficer = true, authorizedCollectorGuild = { name = guild, realm = "2" } }
+FlockSyncHelperDB = { isAuthorizedOfficer = true, authorizedCollectorGuild = { name = "Other Guild", realm = realm } }
 assert(not ns.KillOfficer())
-FlockSyncHelperDB.authorizedCollectorGuild.realm = realm
-assert(ns.KillOfficer())
+FlockSyncHelperDB.authorizedCollectorGuild = { name = guild, realm = "2" }
+assert(ns.KillOfficer(), "Same-guild grant from another connected-realm server authorizes")
 FlockSyncHelperDB = nil
 rank, now = 1, 102
 assert(ns.ChangeKillTarget(sharedItem, "Officer edit", false))
@@ -79,7 +79,8 @@ assert(add("Re-added", true, false))
 guild = "Other"
 assert(next(ns.KillStore("shared")) == nil)
 guild, realm = "Guild", "2"
-assert(next(ns.KillStore("shared")) == nil)
+assert(ns.KillStore("shared")[key], "The guild list is shared across connected-realm servers")
+realm = "1"
 guild, realm = nil, "1"
 assert(not ns.SaveKillTarget("New", realm, "", true, true))
 assert(not personal["1\031new"], "Both-list add is atomic")

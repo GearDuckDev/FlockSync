@@ -76,12 +76,13 @@ try {
       assert.deepEqual(ServerReturnPayloadSchema.parse(grant.json()).authorizedCollectorGuild, collectorGuild);
     }
   }
-  const invalidGuild = await call("/api/sync", "ADMIN", {
+  const connectedRealm = await call("/api/sync", "ADMIN", {
     method: "POST",
     payload: { addonVersion: "test", officerCharacter: character, characters: [], exportedAt: 1,
       collectorGuild: { name: "Guild", realm: "OtherRealm" } }
   });
-  assert.equal(invalidGuild.statusCode, 400);
+  assert.equal(connectedRealm.statusCode, 200, "Collectors on another server of a connected realm are accepted");
+  assert.equal(connectedRealm.json().authorizedCollectorGuild.name, "Guild");
   failFetch(new Error("GitHub offline"));
   await tick();
   const unavailable = await sync();

@@ -38,8 +38,7 @@ function ns.SetKillSetting(key, value)
 end
 
 function ns.KillGuildKey()
-    local guild, realm = ns.CurrentGuildName(), ns.GetPlayerRealm()
-    return guild and realm and (realm .. "\031" .. guild) or nil
+    return ns.CurrentGuildName()
 end
 
 function ns.KillStore(destination)
@@ -62,7 +61,7 @@ function ns.KillOfficer()
     local helper = FlockSyncHelperDB
     local guild = type(helper) == "table" and helper.authorizedCollectorGuild
     return type(helper) == "table" and helper.isAuthorizedOfficer == true and type(guild) == "table"
-        and guild.name == ns.CurrentGuildName() and ns.IsPlayerRealm(guild.realm)
+        and ns.IsOwnGuild(guild)
 end
 
 function ns.CanChangeKill(item, removing)

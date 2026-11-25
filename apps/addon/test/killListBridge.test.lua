@@ -65,11 +65,9 @@ assert(member.ns.SaveKillTarget("New Forever Enemy", "1", "Guild reason", true, 
 net:drain()
 assert(officer.ns.KillStore("shared")["1\031new forever enemy"].note == "Guild reason")
 officer.env.FlockSyncHelperDB.authorizedCollectorGuild.realm = "2"
-raw.updatedAt, raw.note = math.floor(net.now) + 1, "Wrong server"
+raw.updatedAt, raw.note = math.floor(net.now) + 1, "Other server note"
 net.now = net.now + 1
 officer.ns.LoadServerKillList()
-assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note")
-officer.env.FlockSyncHelperDB.authorizedCollectorGuild.realm = "Unknown Realm"
-officer.ns.LoadServerKillList()
-assert(officer.ns.KillStore("shared")[foreverKey].note == "Server note", "Unmapped legacy label rejected")
+assert(officer.ns.KillStore("shared")[foreverKey].note == "Other server note",
+    "A grant from another server of the same guild still imports the guild list")
 print("Server helper import, officer redistribution, privacy, tombstones and Forever sharing: passed")

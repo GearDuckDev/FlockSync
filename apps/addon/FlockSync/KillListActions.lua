@@ -33,8 +33,8 @@ function ns.SaveKillTarget(name, realm, note, shared, personal)
     local published
     if shared then
         local member = ns.KillGuildMember(ns.GetPlayerFullName())
-        if not member or member.guid ~= guid or target.realm ~= ns.GetPlayerRealm() then
-            return fail("Current guild roster identity and matching realm are required to share; nothing saved. Retry when ready.")
+        if not member or member.guid ~= guid then
+            return fail("Current guild roster identity is required to share; nothing saved. Retry when ready.")
         end
         published = { name = target.name, realm = target.realm, note = target.note,
             author = author, authorGuid = guid, actorGuid = guid, createdAt = now,

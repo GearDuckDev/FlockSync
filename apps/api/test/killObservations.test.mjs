@@ -26,11 +26,17 @@ test("shared observation persistence, immutable events, privacy, retention, dedu
   assert.equal((await call("POST", "/sync", member.token, { ...payload, sharedKillObservations: [sighting] })).status, 403);
   assert.equal((await upload([sighting, battle])).status, 200);
   assert.equal((await read()).body.length, 2);
+  const otherCollector = await upload([], { collectorGuild: { name: "Guild", realm: "2" } });
+  assert.equal(otherCollector.status, 200);
+  assert.equal(otherCollector.body.sharedKillList.length, 1, "Guild data is shared with collectors on any server");
+  assert.equal(otherCollector.body.sharedKillObservations.length, 2);
   assert.equal((await upload([battle, { ...battle, id: "second-observer", reporterGuid: "Other", reporter: "Other One",
     timestamp: battle.timestamp + 2 }])).body.sharedKillObservations.length, 2, "Same battle from two observers deduplicates");
   assert.equal((await upload([{ ...battle, zone: "Tampered immutable battle" }])).status, 409);
   assert.equal((await upload([{ ...sighting, privateNote: "private" }])).status, 400);
-  assert.equal((await upload([{ ...sighting, realm: "Other" }])).status, 400);
+  const otherServer = { ...sighting, realm: "Other" };
+  assert.equal((await upload([otherServer])).status, 200, "Reports for unknown targets are ignored, not rejected");
+  assert.ok(!(await read()).body.some((row) => row.realm === "Other"));
   assert.equal((await upload([sighting], { collectorGuild: undefined })).status, 400);
   assert.equal((await upload([{ ...sighting, timestamp: now + 999 }])).status, 400);
   assert.equal((await upload([{ ...battle, actorGuid: undefined }])).status, 400);

@@ -45,15 +45,13 @@ daily at midnight UTC.
 An admin is seeded only when the users table is empty. Changing the seed
 password in the environment later does not reset an existing account.
 
-`GUILD_SERVER_ID` is normally left blank. During the one-time migration from
-realm names to server IDs, API startup stops without changing the database if
-the stored guild realm could belong to more than one server. If the startup
-error asks for `GUILD_SERVER_ID`, verify the guild's server ID from a trusted
-member GUID (the digits in `Player-6930-...`) and set only those digits in
-`.env`, then rerun the guarded update with `sh deploy/update-server.sh` from
-the deployed project directory. Do not guess or use a character from another
-server. Keep the setting if you may restore a pre-migration database backup;
-it is not a secret.
+`GUILD_SERVER_ID` is optional and normally left blank. Guild data is matched
+by guild name, so a guild on a connected realm (members on several server IDs)
+works without it. During the one-time migration from realm names to server
+IDs, an old guild realm label used by more than one server is kept as an
+informational label; setting `GUILD_SERVER_ID` to the digits from a trusted
+member GUID (`Player-6930-...`) only changes the realm the website displays for
+the guild. It is not a secret.
 
 The API limits login attempts to 10 per visitor IP per 15 minutes and
 self-registration to 5 per visitor IP per hour. These in-memory limits are
@@ -262,7 +260,7 @@ Migration `0001_character_auto_stale` adds `characters.auto_stale`. Addon-report
 automatically on a newer, fresh login; manual web culls clear the flag and stay
 sticky. Redeploy the API to apply it (it runs automatically on startup).
 
-The shared kill-list migration adds guild/realm-scoped records and durable
+The shared kill-list migration adds guild-scoped records and durable
 removal markers. Update the API, Desktop and main addon together for this
 preview; AppHelper code is unchanged. Personal entries/drafts do not upload.
 New additions selected as Guild Shared send their target and note automatically

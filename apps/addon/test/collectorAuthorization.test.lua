@@ -18,7 +18,7 @@ assert(ns.IsPlayerOfficer(), "Low-ranked alts on the account must collect for th
 guild = "Other"
 assert(not ns.IsPlayerOfficer(), "Other guilds must not inherit website authorization")
 guild, realm = "Guild", "2"
-assert(not ns.IsPlayerOfficer(), "An identically named guild on another realm must not inherit authorization")
+assert(ns.IsPlayerOfficer(), "Same-named guild on another server of a connected realm keeps authorization")
 realm, guild = "1", nil
 assert(not ns.IsPlayerOfficer(), "Guildless alts must not collect")
 guild = "Guild"
@@ -35,4 +35,4 @@ guild = "Other"
 assert(not ns.IsPlayerOfficer(), "Native account officer cache must remain guild-scoped")
 FlockSyncDB.config.forceOfficerMode = true
 assert(ns.GetOfficerStatusReason() == "Dev Override")
-print("Website-authorized account collectors, guild/realm scope and native permissions: passed")
+print("Website-authorized account collectors, guild-name scope and native permissions: passed")

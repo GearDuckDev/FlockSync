@@ -11,6 +11,12 @@ units.target = { name = "Enemy Player", guid = "Enemy-1", enemy = true, player =
 localClient:fire("PLAYER_TARGET_CHANGED")
 assert(localClient.sounds == 1)
 assert(#localClient.ns.KillObservationRows(item, false) == 1)
+local labelKey = "legacy label\031label enemy"
+localClient.ns.KillStore("personal")[labelKey] = { name = "Label Enemy", realm = "Legacy Label", note = "",
+    createdAt = 1, updatedAt = 1, deleted = false }
+assert(localClient.ns.KillMatch("Label Enemy", "6932"), "Label targets match the name on any connected-realm server")
+assert(not localClient.ns.KillMatch("Enemy Player", "6932"), "Server-id targets stay server-specific")
+localClient.ns.KillStore("personal")[labelKey] = nil
 localClient:fire("PLAYER_TARGET_CHANGED")
 assert(localClient.sounds == 1, "Repeated unit events obey the exact per-target cooldown")
 net:drain()

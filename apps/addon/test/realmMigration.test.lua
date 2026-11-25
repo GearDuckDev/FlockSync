@@ -44,33 +44,37 @@ FlockSyncDB = {
         } },
     } },
 }
-ns.MigrateRealmIdentity()
-assert(FlockSyncDB.realmIdentityVersion == nil, "A manual identity waits for the player GUID")
-assert(FlockSyncDB.characters["Player-6930-0002"].realm == "")
 playerGuid = "Player-6930-0001"
 ns.MigrateRealmIdentity()
 local db = FlockSyncDB
-assert(db.realmIdentityVersion == 1 and db.config.realmIdentity == nil)
+assert(db.realmIdentityVersion == 2 and db.config.realmIdentity == nil)
 assert(db.characters["Player-6930-0002"].realm == "6930" and db.characters["Player-6930-0002"].lastSeenAt == 5)
 assert(db.characters["Player-6932-0003"].realm == "6932" and db.accountCharacters["Player-6930-0001"].realm == "6930")
 assert(db.characters.Legacy.realm == "Kept Label", "Records without a server id are left alone")
 assert(db.officerCharacter == "Officer One (6930)")
-assert(ns.NormalizeRealm("CAMWOW US2 Realm 4 PvP") == "6930" and ns.NormalizeRealm("Manual Label") == "6930")
+assert(ns.NormalizeRealm("CAMWOW US2 Realm 4 PvP") == "6930")
+assert(ns.NormalizeRealm("Manual Label") == nil, "A manual identity is not pinned to the player's own server")
 assert(ns.NormalizeRealm("Shared Label") == nil, "Labels used by two servers are never guessed")
-assert(ns.IsPlayerRealm("CAMWOW US2 Realm 4 PvP") and ns.IsPlayerRealm("6930") and not ns.IsPlayerRealm("6932"))
-local shared = db.killListGuilds["6930" .. SEP .. "Guild"]
-assert(db.killListGuilds["CAMWOW US2 Realm 4 PvP" .. SEP .. "Guild"] == nil)
+ns.CurrentGuildName = function() return "Guild" end
+assert(ns.IsOwnGuild({ name = "Guild", realm = "6932" }) and not ns.IsOwnGuild({ name = "Other", realm = "6930" }),
+    "Guild scope matches by name across connected-realm servers")
+for key in pairs(db.killListGuilds) do assert(key == "Guild", "Guild stores are keyed by name: " .. key) end
+local shared = db.killListGuilds.Guild
 assert(shared["6930" .. SEP .. "enemy"].note == "old label newer", "Newest target wins on key clash")
 assert(shared["6930" .. SEP .. "other"].realm == "6930")
-assert(db.killListGuilds["Shared Label" .. SEP .. "Guild"], "Ambiguous guild keys are kept unchanged")
-local observations = db.killListObservationsGuilds["6930" .. SEP .. "Guild"]
+assert(shared["shared label" .. SEP .. "x"].realm == "Shared Label", "Ambiguous labels stay labels")
+local observations = db.killListObservationsGuilds.Guild
 assert(observations["S:6930" .. SEP .. "enemy"].timestamp == 60, "Newest sighting wins on key clash")
 assert(observations.battle.realm == "6930", "Battle ids are preserved")
 local state = db.killListCharacters["Player-6930-0001"]
-assert(state.entries["6930" .. SEP .. "personal"].realm == "6930")
-assert(state.observations["S:6930" .. SEP .. "personal"])
-assert(state.localGuildObservations["6930" .. SEP .. "Guild"]["S:6930" .. SEP .. "personal"])
+assert(state.entries["manual label" .. SEP .. "personal"].realm == "Manual Label")
+assert(state.observations["S:manual label" .. SEP .. "personal"])
+assert(state.localGuildObservations.Guild["S:manual label" .. SEP .. "personal"])
 db.characters["Player-6932-0003"].realm = "Changed"
 ns.MigrateRealmIdentity()
 assert(db.characters["Player-6932-0003"].realm == "Changed", "Migration runs once")
-print("SavedVariables realm-name to server-id migration, clashes, ambiguity and idempotency: passed")
+FlockSyncDB = { realmIdentityVersion = 1, killListGuilds = { ["6930" .. SEP .. "Guild"] = {
+    ["6930" .. SEP .. "enemy"] = target("Enemy", "6930", 25) } } }
+ns.MigrateRealmIdentity()
+assert(FlockSyncDB.killListGuilds.Guild["6930" .. SEP .. "enemy"], "Version 1 server-keyed guild stores are rekeyed")
+print("SavedVariables realm migration, name-keyed guilds, clashes, ambiguity and idempotency: passed")

@@ -84,12 +84,13 @@ export const processOfficerSync = async (
     if (payload.collectorGuild && payload.exportedAt > databaseResetAt) {
       const currentGuild = transaction.select().from(guildIdentity).get();
       if (!currentGuild || payload.exportedAt > currentGuild.updatedAt) {
-        transaction.insert(guildIdentity).values({
-          id: "server", ...payload.collectorGuild, updatedAt: payload.exportedAt
-        }).onConflictDoUpdate({
-          target: guildIdentity.id,
-          set: { ...payload.collectorGuild, updatedAt: payload.exportedAt }
-        }).run();
+        // The stored realm is informational; keep it so it does not flip between
+        // collectors on different servers of the same connected realm.
+        const realm = currentGuild?.name === payload.collectorGuild.name
+          ? currentGuild.realm : payload.collectorGuild.realm;
+        const identity = { name: payload.collectorGuild.name, realm, updatedAt: payload.exportedAt };
+        transaction.insert(guildIdentity).values({ id: "server", ...identity })
+          .onConflictDoUpdate({ target: guildIdentity.id, set: identity }).run();
       }
     }
     const incomingCharacters = new Map<string, Character>();
@@ -188,8 +189,7 @@ export const processOfficerSync = async (
     .all();
 
   const guild = db.select().from(guildIdentity).get();
-  const sameGuild = guild && payload.collectorGuild
-    && guild.name === payload.collectorGuild.name && guild.realm === payload.collectorGuild.realm;
+  const sameGuild = guild && payload.collectorGuild && guild.name === payload.collectorGuild.name;
   return {
     isAuthorizedOfficer: true,
     culledCharacterGuids: inactiveCharacters.map((character) => character.guid),

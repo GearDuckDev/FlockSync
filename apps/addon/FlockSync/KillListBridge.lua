@@ -4,7 +4,7 @@ function ns.LoadServerKillList()
     local helper = FlockSyncHelperDB
     local guild = type(helper) == "table" and helper.authorizedCollectorGuild
     if type(guild) ~= "table" or helper.isAuthorizedOfficer ~= true
-        or guild.name ~= ns.CurrentGuildName() or not ns.IsPlayerRealm(guild.realm)
+        or not ns.IsOwnGuild(guild)
         or type(helper.sharedKillList) ~= "table" then return end
     -- Direct desktop return is trusted only on this authorized collector.
     -- Guild redistribution still requires a current roster officer.

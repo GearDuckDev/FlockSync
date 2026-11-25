@@ -49,9 +49,9 @@ test("realm migration rewrites labels to GUID server ids and is idempotent", () 
     });
     assert.equal(db.prepare("SELECT realm FROM guild_identity").get().realm, "6930");
     assert.deepEqual(db.prepare("SELECT guild_key, target_key, realm FROM shared_kill_targets").all(),
-      [{ guild_key: `6930${SEP}Guild`, target_key: `6930${SEP}enemy`, realm: "6930" }]);
+      [{ guild_key: "Guild", target_key: `6930${SEP}enemy`, realm: "6930" }]);
     const row = db.prepare("SELECT guild_key, id, target_key, payload FROM kill_observations").get();
-    assert.equal(row.guild_key, `6930${SEP}Guild`);
+    assert.equal(row.guild_key, "Guild");
     assert.equal(row.id, `S:6930${SEP}enemy`);
     assert.equal(row.target_key, `6930${SEP}enemy`);
     assert.equal(JSON.parse(row.payload).realm, "6930");
@@ -60,38 +60,54 @@ test("realm migration rewrites labels to GUID server ids and is idempotent", () 
   }
 });
 
-test("ambiguous guild realm refuses to migrate until GUILD_SERVER_ID resolves it", () => {
+test("connected-realm guild migrates without GUILD_SERVER_ID and keeps label kill targets", () => {
   const db = fresh();
   try {
     seed(db, [["Player-6930-00AA", LABEL], ["Player-6932-00CC", LABEL]]);
-    assert.throws(() => migrateDatabase(db), /GUILD_SERVER_ID/u);
-    assert.equal(db.prepare("SELECT realm FROM guild_identity").get().realm, LABEL, "Failed migration rolls back");
-    assert.equal(db.prepare("SELECT count(*) AS n FROM characters WHERE realm = ?").get(LABEL).n, 2);
+    migrateDatabase(db);
+    migrateDatabase(db);
+    assert.equal(db.prepare("SELECT realm FROM guild_identity").get().realm, LABEL);
+    assert.equal(db.prepare("SELECT count(*) AS n FROM characters WHERE realm = ?").get(LABEL).n, 0);
+    const label = LABEL.toLowerCase();
+    assert.deepEqual(db.prepare("SELECT guild_key, target_key, realm FROM shared_kill_targets").all(),
+      [{ guild_key: "Guild", target_key: `${label}${SEP}enemy`, realm: LABEL }]);
+    assert.deepEqual(db.prepare("SELECT guild_key, id, target_key FROM kill_observations").all(),
+      [{ guild_key: "Guild", id: `S:${label}${SEP}enemy`, target_key: `${label}${SEP}enemy` }]);
     migrateDatabase(db, "6932");
-    assert.equal(db.prepare("SELECT realm FROM guild_identity").get().realm, "6932");
-    assert.equal(db.prepare("SELECT realm FROM shared_kill_targets").get().realm, "6932");
+    assert.equal(db.prepare("SELECT realm FROM guild_identity").get().realm, "6932", "GUILD_SERVER_ID sets the display realm");
+    assert.equal(db.prepare("SELECT realm FROM shared_kill_targets").get().realm, LABEL);
   } finally {
     db.close();
   }
 });
 
-test("sync normalization derives realms from GUIDs for legacy uploads", () => {
+test("1.2.0 server-keyed guild rows are rekeyed by guild name", () => {
+  const db = fresh();
+  try {
+    seed(db, [["Player-6930-00AA", "6930"]]);
+    db.prepare("UPDATE shared_kill_targets SET guild_key = ?, target_key = ?, realm = '6930'")
+      .run(`6930${SEP}Guild`, `6930${SEP}enemy`);
+    db.prepare("UPDATE kill_observations SET guild_key = ?").run(`6930${SEP}Guild`);
+    migrateDatabase(db);
+    assert.equal(db.prepare("SELECT guild_key FROM shared_kill_targets").get().guild_key, "Guild");
+    assert.equal(db.prepare("SELECT guild_key FROM kill_observations").get().guild_key, "Guild");
+  } finally {
+    db.close();
+  }
+});
+
+test("sync normalization derives character realms from GUIDs and leaves guild data as sent", () => {
   const character = (guid, realm) => ({ guid, realm });
   const result = normalizeSyncRealms({
     officerCharacter: character("Player-6930-00AA", LABEL),
     characters: [character("Player-6932-00BB", LABEL), character("Player-6930-00CC", ""), character("Custom", "Keep")],
     collectorGuild: { name: "Guild", realm: LABEL },
-    sharedKillList: [{ name: "Enemy", realm: LABEL }, { name: "Foreign", realm: "Elsewhere" }],
+    sharedKillList: [{ name: "Enemy", realm: LABEL }, { name: "Foreign", realm: "6932" }],
     sharedKillObservations: [{ name: "Enemy", realm: LABEL }]
   });
   assert.equal(result.officerCharacter.realm, "6930");
   assert.deepEqual(result.characters.map((c) => c.realm), ["6932", "6930", "Keep"]);
-  assert.deepEqual(result.collectorGuild, { name: "Guild", realm: "6930" });
-  assert.deepEqual(result.sharedKillList.map((e) => e.realm), ["6930", "Elsewhere"]);
-  assert.equal(result.sharedKillObservations[0].realm, "6930");
-  const mismatched = normalizeSyncRealms({
-    officerCharacter: character("Player-6930-00AA", LABEL), characters: [],
-    collectorGuild: { name: "Guild", realm: "Another" }
-  });
-  assert.equal(mismatched.collectorGuild.realm, "Another", "Mismatched guild realms stay rejectable");
+  assert.deepEqual(result.collectorGuild, { name: "Guild", realm: LABEL });
+  assert.deepEqual(result.sharedKillList.map((e) => e.realm), [LABEL, "6932"]);
+  assert.equal(result.sharedKillObservations[0].realm, LABEL);
 });

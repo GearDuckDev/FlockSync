@@ -1,15 +1,13 @@
 local addonName, ns = ...
 
 -- One-time SavedVariables migration from realm names to GUID server ids.
-local VERSION = 1
+-- Version 2 keys guild stores by guild name only (connected realms).
+local VERSION = 2
 
+-- A label maps to a server id only when every known character with it agrees;
+-- a connected-realm label stays a label and matches kill targets by name.
 local function learnLabels(db)
-    local labels, playerServer = {}, ns.GetPlayerRealm()
-    local identity = type(db.config) == "table" and db.config.realmIdentity
-    if type(identity) == "string" and identity ~= "" then
-        if not playerServer then return nil end
-        labels[identity] = playerServer
-    end
+    local labels = {}
     for _, name in ipairs({ "accountCharacters", "characters" }) do
         for key, character in pairs(type(db[name]) == "table" and db[name] or {}) do
             local realm = type(character) == "table" and character.realm
@@ -65,10 +63,9 @@ end
 local function rekeyGuilds(map, rekeyInner, stamp)
     local out = {}
     for key, store in pairs(map) do
-        local realm, guild
-        if type(key) == "string" then realm, guild = key:match("^(.-)\031(.*)$") end
-        local server = realm and ns.NormalizeRealm(realm)
-        local newKey = server and (server .. "\031" .. guild) or key
+        local guild
+        if type(key) == "string" then guild = key:match("^.-\031(.*)$") end
+        local newKey = guild or key
         if type(store) == "table" then
             store = rekeyInner(store)
             if type(out[newKey]) == "table" then
@@ -108,12 +105,11 @@ local function migrateKillLists(db)
     end
 end
 
--- Idempotent; deferred while a manual realm identity needs the player GUID.
+-- Idempotent; safe to rerun over version 1 data.
 function ns.MigrateRealmIdentity()
     local db = FlockSyncDB
     if type(db) ~= "table" or (tonumber(db.realmIdentityVersion) or 0) >= VERSION then return end
     local labels = learnLabels(db)
-    if not labels then return end
     local previous = type(db.legacyRealmLabels) == "table" and db.legacyRealmLabels or {}
     for label, server in pairs(labels) do previous[label] = previous[label] or server end
     db.legacyRealmLabels = previous
